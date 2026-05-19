@@ -8,6 +8,7 @@
   --darkred: #ff4929;
   --milkwhite: #fff9f9;
   --muted: #63748c;
+  --otpColor: #ffc6a7;
 }
 
 @theme inline {
@@ -28,6 +29,13 @@
 
   --color-milkwhite: var(--milkwhite);
   --color-muted: var(--muted);
+  --color-otp: var(--otpColor);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-google-sans-flex), Arial, Helvetica, sans-serif;
 }
 
 /* @media (prefers-color-scheme: dark) {
@@ -36,9 +44,3 @@
     --foreground: #ededed;
   }
 } */
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-google-sans-flex), Arial, Helvetica, sans-serif;
-}
