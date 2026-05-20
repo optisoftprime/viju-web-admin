@@ -3,12 +3,14 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --darkerred: #fd1d00;
-  --darkorange: #ff761c;
+  --darkerred: #ff5813;
   --darkred: #ff4929;
+  --softred: #ff4929;
+  --darkorange: #ff761c;
   --milkwhite: #fff9f9;
   --muted: #63748c;
   --otpColor: #ffc6a7;
+  --successcolor: #15e022;
 }
 
 @theme inline {
@@ -29,7 +31,7 @@
 
   --color-milkwhite: var(--milkwhite);
   --color-muted: var(--muted);
-  --color-otp: var(--otpColor);
+  --color-success: var(--successcolor);
 }
 
 body {

@@ -1,8 +1,8 @@
 import React from "react";
 
 export interface TextProps {
-  variant: "h1" | "h2" | "h3" | "body" | "small" | "caption";
-  color?: "foreground" | "muted" | "primary" | "secondary";
+  variant: "h1" | "h2" | "h3" | "body" | "small" | "caption" | "thinnote";
+  color?: "foreground" | "muted" | "primary" | "secondary" | "white";
   weight?: "thin" | "normal" | "medium" | "semibold" | "bold" | "extrabold";
   children: React.ReactNode;
   className?: string;
@@ -15,6 +15,7 @@ const sizeMap = {
   body: "text-base",
   small: "text-sm",
   caption: "text-xs",
+  thinnote: "text-[10px]",
 };
 
 const weightMap = {
@@ -31,6 +32,7 @@ const colorMap = {
   muted: "text-muted",
   primary: "text-primary",
   secondary: "text-secondary",
+  white: "text-white",
 };
 
 const defaultWeights: Record<TextProps["variant"], TextProps["weight"]> = {
@@ -40,6 +42,7 @@ const defaultWeights: Record<TextProps["variant"], TextProps["weight"]> = {
   body: "normal",
   small: "normal",
   caption: "normal",
+  thinnote: "normal",
 };
 
 export const Text: React.FC<TextProps> = ({

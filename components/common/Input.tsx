@@ -5,7 +5,7 @@ export interface InputProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
   "onChange"
 > {
-  label: string;
+  label?: string;
   name: string;
   type?: "text" | "email" | "password" | "number";
   value?: string;

@@ -24,6 +24,8 @@ const variantMap = {
   secondary: "bg-secondary text-white hover:bg-secondary/80",
   orange: "bg-orange text-white hover:bg-orange/80",
   outline: "border border-muted text-foreground hover:bg-milkwhite",
+  outlinePrimary:
+    "border border-primary text-primary hover:bg-primary hover:text-white",
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(

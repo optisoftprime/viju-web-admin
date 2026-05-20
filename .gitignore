@@ -20,6 +20,7 @@
 # production
 /build
 /context
+AGENTS.MD
 
 # misc
 .DS_Store
