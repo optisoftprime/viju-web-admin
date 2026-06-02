@@ -9,6 +9,7 @@ export { Input, type InputProps } from "./Input";
 export { Textarea, type TextareaProps } from "./Textarea";
 export { Select, type SelectProps, type SelectOption } from "./Select";
 export { Checkbox, type CheckboxProps } from "./Checkbox";
+export { default as SearchInput } from "./SearchInput";
 
 // Data Display
 export { Table, type TableProps, type TableColumn } from "./Table";
@@ -17,6 +18,7 @@ export { Table, type TableProps, type TableColumn } from "./Table";
 export { default as MainLayout } from "./MainLayout";
 export { default as Navbar } from "./Navbar";
 export { default as Sidebar } from "./Sidebar";
+export { default as AuthLayout } from "./AuthLayout";
 export {
   sidebarNavigationData,
   type NavLinkItem,

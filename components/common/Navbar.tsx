@@ -1,18 +1,40 @@
 "use client";
 
-import { Search, ChevronDown, Bell } from "lucide-react";
+import { ChevronDown, Bell } from "lucide-react";
 import { Text } from "./Text";
-import { Input } from "./Input";
+import SearchInput from "./SearchInput";
 
+/**
+ * Interface for Navbar component props
+ * @param pageTitle - The title of the current page to display
+ * @param notificationCount - Number of unread notifications to display
+ */
 interface NavbarProps {
   pageTitle?: string;
   notificationCount?: number;
 }
 
+/**
+ * Navbar Component
+ * Displays the top navigation bar with page title, search input, role switcher, and notification bell
+ * This component is fixed to the top of the page and spans the full width except for the sidebar
+ *
+ * @param {NavbarProps} props - Component props
+ * @returns {JSX.Element} - Rendered navbar component
+ */
 export default function Navbar({
   pageTitle = "Dashboard",
   notificationCount = 0,
 }: NavbarProps) {
+  /**
+   * Handle search callback from SearchInput component
+   * Logs the search value and can be extended for actual search functionality
+   */
+  const handleSearch = (value: string) => {
+    // This can be extended to trigger actual search functionality
+    // For now, the SearchInput component handles logging
+  };
+
   return (
     <nav className="fixed top-0 left-[22%] right-0 h-fit bg-white px-8 py-4 flex items-center justify-between z-40">
       {/* Left Section - Page Title */}
@@ -24,21 +46,16 @@ export default function Navbar({
 
       {/* Center Section - Search Bar */}
       <div className="flex-1 mx-8">
-        <div className="relative max-w-md">
-          <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-2 border border-transparent hover:border-muted/30 focus-within:border-muted/30 transition-colors">
-            <Search className="w-5 h-5 text-muted" />
-            <input
-              type="text"
-              placeholder="Search customers, tickets, officers..."
-              className="flex-1 bg-transparent outline-none text-xs text-foreground placeholder-muted placeholder:font-medium"
-            />
-          </div>
-        </div>
+        <SearchInput
+          placeholder="Search customers, tickets, officers..."
+          onSearch={handleSearch}
+          debounceDelay={500}
+        />
       </div>
 
       {/* Right Section - Role Switcher & Notifications */}
       <div className="flex items-center gap-6">
-        {/* Role Switcher */}
+        {/* Role Switcher - Allows viewing as different roles */}
         <button className="flex items-center gap-2 px-4 py-2 border border-muted/20  hover:bg-gray-50 transition-colors text-sm text-muted font-medium">
           <span className="text-xs">Viewing as:</span>{" "}
           <span className="text-black text-[13px] font-semibold">
@@ -47,7 +64,7 @@ export default function Navbar({
           <ChevronDown className="w-4 h-4" />
         </button>
 
-        {/* Notification Bell */}
+        {/* Notification Bell - Shows unread notification count */}
         <button className="relative p-2 hover:bg-gray-50 rounded-lg transition-colors">
           <Bell className="w-5 h-5 text-foreground" />
           {notificationCount > 0 && (

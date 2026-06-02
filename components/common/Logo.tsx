@@ -9,8 +9,8 @@ interface LogoProps {
 }
 
 const Logo: React.FC<LogoProps> = ({
-  width = "w-10",
-  height = "h-10",
+  width = "w-[165px]",
+  height = "h-[165px]",
   className = "rounded-lg",
 }) => {
   return (
@@ -20,6 +20,7 @@ const Logo: React.FC<LogoProps> = ({
       height={400}
       alt="viju brand logo"
       className={`${width} ${height} ${className}`}
+      loading="eager"
     />
   );
 };

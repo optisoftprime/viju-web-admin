@@ -44,13 +44,13 @@ export default function Sidebar() {
   return (
     <aside className="bg-primary p-6 max-h-screen overflow-y-auto">
       {/* Brand Identity Section */}
-      <div className="flex items-center gap-4 mb-6">
-        <Logo />
+      <div className="flex items-center gap-2 mb-6">
+        <Logo width="w-10" height="h-10" />
         <div className="flex flex-col">
           <Text variant="h3" weight="bold" color="white">
             Viju
           </Text>
-          <Text variant="caption" weight="thin" color="white">
+          <Text variant="caption" weight="medium" color="white">
             Account Officer Portal
           </Text>
         </div>

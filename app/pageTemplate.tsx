@@ -189,7 +189,9 @@ export default function Home() {
               name="email"
               type="email"
               value={formData.email}
-              onChange={(value) => setFormData({ ...formData, email: value })}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
               placeholder="your@email.com"
             />
 
@@ -198,8 +200,8 @@ export default function Home() {
               name="password"
               type="password"
               value={formData.password}
-              onChange={(value) =>
-                setFormData({ ...formData, password: value })
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
               }
               placeholder="Enter password"
               showPasswordToggle
