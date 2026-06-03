@@ -3,7 +3,7 @@ import React from "react";
 export interface ButtonProps {
   type?: "button" | "submit" | "reset";
   variant?: "primary" | "secondary" | "orange" | "outline";
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   disabled?: boolean;
   loading?: boolean;
   fullWidth?: boolean;
@@ -14,6 +14,7 @@ export interface ButtonProps {
 }
 
 const sizeMap = {
+  xs: "px-3 py-1.5 text-xs",
   sm: "px-3 py-1.5 text-sm",
   md: "px-4 py-2 text-base",
   lg: "px-6 py-3 text-lg",
@@ -23,7 +24,7 @@ const variantMap = {
   primary: "bg-primary text-white hover:bg-primary/80",
   secondary: "bg-secondary text-white hover:bg-secondary/80",
   orange: "bg-orange text-white hover:bg-orange/80",
-  outline: "border border-muted text-foreground hover:bg-milkwhite",
+  outline: "border border-muted/50 text-muted hover:bg-milkwhite",
   outlinePrimary:
     "border border-primary text-primary hover:bg-primary hover:text-white",
 };
@@ -66,8 +67,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || loading}
         onClick={onClick}
         className={`
-          rounded-lg font-semibold transition-all
-          focus:ring-2 ring-orange ring-offset-0
+          rounded-lg cursor-pointer font-semibold transition-all
+          
           ${sizeClass}
           ${variantClass}
           ${widthClass}

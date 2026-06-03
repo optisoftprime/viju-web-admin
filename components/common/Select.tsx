@@ -1,5 +1,7 @@
 import React from "react";
 import { Text } from "./Text";
+import dropdown from "@/assets/icons/arrow-down.svg";
+import Image from "next/image";
 
 export type SelectOption = {
   value: string;
@@ -10,7 +12,7 @@ export interface SelectProps extends Omit<
   React.SelectHTMLAttributes<HTMLSelectElement>,
   "onChange"
 > {
-  label: string;
+  label?: string;
   name: string;
   options: SelectOption[];
   value?: string;
@@ -42,11 +44,13 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
 
     return (
       <div className="flex flex-col gap-2">
-        <label htmlFor={name} className="block">
-          <Text variant="body" color="foreground" weight="medium">
-            {label}
-          </Text>
-        </label>
+        {label && (
+          <label htmlFor={name} className="block">
+            <Text variant="body" color="foreground" weight="medium">
+              {label}
+            </Text>
+          </label>
+        )}
 
         {loading ? (
           // Loading skeleton
@@ -61,11 +65,11 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
               onChange={(e) => onChange?.(e.target.value)}
               disabled={isDisabled}
               className={`
-                w-full px-4 py-2 rounded-lg appearance-none
+                w-full px-4 py-1 rounded-2xl appearance-none
                 border-2 transition-colors
-                focus:outline-none focus:ring-2 ring-orange
+                focus:outline-none focus:ring-1 ring-none text-[13px] font-bold
                 bg-white
-                ${hasError ? "border-primary" : "border-muted"}
+                ${hasError ? "border-primary" : "border-muted/40"}
                 ${isDisabled ? "opacity-50 cursor-not-allowed bg-gray-50" : ""}
                 ${className}
               `.trim()}
@@ -80,30 +84,24 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             </select>
 
             {/* Dropdown arrow */}
-            <svg
+            <Image
+              src={dropdown}
+              width={20}
+              height={20}
+              alt="drop down"
               className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted pointer-events-none"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 14l-7 7m0 0l-7-7m7 7V3"
-              />
-            </svg>
+            />
           </div>
         )}
 
         {/* Error space - reserved even when empty to prevent layout shift */}
-        <div className="h-5">
-          {hasError && (
+        {hasError && (
+          <div className="h-5">
             <Text variant="caption" color="primary" weight="medium">
               {error}
             </Text>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     );
   },

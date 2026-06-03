@@ -1,11 +1,30 @@
 "use client";
-import { MainLayout } from "@/components/common";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import AuthBanner from "@/components/auth/AuthBanner";
+import LoginForm from "@/components/auth/LoginForm";
+import { AuthLayout } from "@/components/common";
+import { useAuthStore } from "@/store/auth.store";
 
 const RootPage = () => {
+  const router = useRouter();
+  const { isAuthenticated, isLoading } = useAuthStore();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (isAuthenticated) {
+      router.push("/dashboard");
+    } else {
+      router.push("/auth/login");
+    }
+  }, [isAuthenticated, isLoading, router]);
+
   return (
-    <MainLayout pageTitle="Dashboard" notificationCount={0}>
-      {/* Root page content will be rendered here */}
-    </MainLayout>
+    <AuthLayout
+      leftChildren={<AuthBanner showLockup={false} />}
+      rightChildren={<LoginForm />}
+    />
   );
 };
 
