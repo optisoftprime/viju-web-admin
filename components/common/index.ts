@@ -19,8 +19,5 @@ export { default as MainLayout } from "./MainLayout";
 export { default as Navbar } from "./Navbar";
 export { default as Sidebar } from "./Sidebar";
 export { default as AuthLayout } from "./AuthLayout";
-export {
-  sidebarNavigationData,
-  type NavLinkItem,
-  type NavCategory,
-} from "./sidebarNavigation";
+export { default as LogoutModal } from "./LogoutModal";
+export { type NavLinkItem, type NavCategory } from "./sidebarNavigation";

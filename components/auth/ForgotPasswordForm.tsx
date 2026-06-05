@@ -4,10 +4,11 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Text, Input, Button } from "@/components/common";
+import { useForgotPassword } from "@/hooks/api/useAuth";
 
 // Validation schema
 const forgotPasswordValidationSchema = yup.object({
-  email: yup
+  identifier: yup
     .string()
     .required("Email is required")
     .email("Please enter a valid email address"),
@@ -22,16 +23,29 @@ export default function ForgotPasswordForm() {
     register,
     watch,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<ForgotPasswordFormInputs>({
     resolver: yupResolver(forgotPasswordValidationSchema),
+    mode: "onBlur",
   });
 
+  const forgotPasswordMutation = useForgotPassword();
   const formValues = watch();
 
-  const onSubmit = (data: ForgotPasswordFormInputs) => {
-    console.log("Forgot Password Form Submitted:", data);
+  const onSubmit = async (data: ForgotPasswordFormInputs) => {
+    try {
+      // Store identifier in session storage for use in OTP form
+      sessionStorage.setItem("forgotPasswordEmail", data.identifier);
+      await forgotPasswordMutation.mutateAsync({
+        identifier: data.identifier,
+      });
+    } catch (error) {
+      // Error is handled by the mutation's onError callback with toast
+      console.error("Forgot password submission error:", error);
+    }
   };
+
+  const isLoading = isSubmitting || forgotPasswordMutation.isPending;
 
   return (
     <div className="flex items-center justify-center h-full px-8 py-12">
@@ -42,7 +56,7 @@ export default function ForgotPasswordForm() {
             Forgot Password
           </Text>
           <Text variant="caption" color="muted" className="mt-2">
-            Kindly enter phone number
+            Kindly enter your email address
           </Text>
         </div>
 
@@ -61,9 +75,10 @@ export default function ForgotPasswordForm() {
             <Input
               placeholder="Enter email address"
               type="email"
-              value={formValues.email || ""}
-              {...register("email")}
-              error={errors.email?.message}
+              value={formValues.identifier || ""}
+              {...register("identifier")}
+              error={errors.identifier?.message}
+              disabled={isLoading}
             />
           </div>
 
@@ -73,8 +88,9 @@ export default function ForgotPasswordForm() {
             variant="primary"
             size="lg"
             className="w-full bg-gradient-to-r from-primary via-orange to-primary"
+            disabled={isLoading}
           >
-            Continue
+            {isLoading ? "Sending..." : "Continue"}
           </Button>
         </form>
       </div>

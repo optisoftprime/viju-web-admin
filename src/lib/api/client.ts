@@ -5,8 +5,53 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import Cookie from "js-cookie";
 
-const baseURL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/api";
+const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+// Track if we're already refreshing to avoid multiple refresh requests
+let isRefreshing = false;
+let refreshPromise: Promise<string | null> | null = null;
+
+/**
+ * Refresh the access token using refresh token
+ */
+const refreshAccessToken = async (): Promise<string | null> => {
+  try {
+    const refreshToken = Cookie.get("refresh_token");
+
+    if (!refreshToken) {
+      throw new Error("No refresh token available");
+    }
+
+    // Create a new axios instance for refresh to avoid interceptor recursion
+    const refreshInstance = axios.create({
+      baseURL,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const response = await refreshInstance.post("/auth/refresh", {
+      refresh_token: refreshToken,
+    });
+
+    const newAccessToken = response.data.access_token;
+
+    // Update the stored token
+    if (newAccessToken) {
+      Cookie.set("access_token", newAccessToken, { expires: 1 });
+      if (response.data.refresh_token) {
+        Cookie.set("refresh_token", response.data.refresh_token, {
+          expires: 30,
+        });
+      }
+    }
+
+    return newAccessToken;
+  } catch (error) {
+    console.error("Failed to refresh token:", error);
+    return null;
+  }
+};
 
 /**
  * Create and configure the Axios instance
@@ -17,7 +62,6 @@ export const createAxiosInstance = (): AxiosInstance => {
     headers: {
       "Content-Type": "application/json",
       Accept: "*/*",
-      //   Accept: "application/json",
     },
     timeout: 30000,
   });
@@ -43,18 +87,66 @@ export const createAxiosInstance = (): AxiosInstance => {
     (response) => {
       return response;
     },
-    (error) => {
+    async (error) => {
       const statusCode = error.response?.status;
+      const originalRequest = error.config;
 
-      // Handle 401 Unauthorized
-      if (statusCode === 401) {
-        // Clear token and redirect to login
-        Cookie.remove("access_token");
-        Cookie.remove("user");
+      // Handle 401 Unauthorized - Try to refresh token
+      if (statusCode === 401 && !originalRequest._retry) {
+        originalRequest._retry = true;
 
-        // Redirect to login page if not already there
-        if (typeof window !== "undefined") {
-          window.location.href = "/auth/login";
+        // If already refreshing, wait for it to complete
+        if (isRefreshing) {
+          return refreshPromise?.then((newToken) => {
+            if (newToken) {
+              originalRequest.headers.Authorization = `Bearer ${newToken}`;
+              return instance(originalRequest);
+            } else {
+              // Refresh failed, redirect to login
+              if (typeof window !== "undefined") {
+                Cookie.remove("access_token");
+                Cookie.remove("refresh_token");
+                Cookie.remove("user");
+                window.location.href = "/auth/login";
+              }
+              return Promise.reject(error);
+            }
+          });
+        }
+
+        // Start refreshing
+        isRefreshing = true;
+        refreshPromise = refreshAccessToken().then((newToken) => {
+          isRefreshing = false;
+          refreshPromise = null;
+          return newToken;
+        });
+
+        try {
+          const newToken = await refreshPromise;
+
+          if (newToken) {
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            return instance(originalRequest);
+          } else {
+            // Refresh failed, redirect to login
+            if (typeof window !== "undefined") {
+              Cookie.remove("access_token");
+              Cookie.remove("refresh_token");
+              Cookie.remove("user");
+              window.location.href = "/auth/login";
+            }
+            return Promise.reject(error);
+          }
+        } catch (refreshError) {
+          // Refresh failed, redirect to login
+          if (typeof window !== "undefined") {
+            Cookie.remove("access_token");
+            Cookie.remove("refresh_token");
+            Cookie.remove("user");
+            window.location.href = "/auth/login";
+          }
+          return Promise.reject(refreshError);
         }
       }
 

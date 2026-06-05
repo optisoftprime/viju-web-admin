@@ -4,7 +4,13 @@
  */
 
 import { apiClient, endpoints } from "@/lib/api";
-import { AuthResponse, LoginCredentials } from "@/lib/api/types";
+import {
+  AuthResponse,
+  LoginCredentials,
+  LogoutRequest,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
+} from "@/lib/api/types";
 
 export const authService = {
   /**
@@ -22,11 +28,12 @@ export const authService = {
   },
 
   /**
-   * Logout user
+   * Logout user with refresh token
    */
-  logout: async (): Promise<void> => {
+  logout: async (refreshToken: string): Promise<void> => {
     try {
-      await apiClient.post(endpoints.auth.logout);
+      const payload: LogoutRequest = { refresh_token: refreshToken };
+      await apiClient.post(endpoints.auth.logout, payload);
     } catch (error) {
       console.log({ error });
       throw error;
@@ -39,6 +46,42 @@ export const authService = {
   refresh: async (): Promise<AuthResponse> => {
     try {
       const { data } = await apiClient.post(endpoints.auth.refresh);
+      return data;
+    } catch (error) {
+      console.log({ error });
+      throw error;
+    }
+  },
+
+  /**
+   * Request password reset with email/identifier
+   */
+  forgotPassword: async (
+    payload: ForgotPasswordRequest,
+  ): Promise<{ message: string }> => {
+    try {
+      const { data } = await apiClient.post(
+        endpoints.auth.forgotPassword,
+        payload,
+      );
+      return data;
+    } catch (error) {
+      console.log({ error });
+      throw error;
+    }
+  },
+
+  /**
+   * Confirm password reset with OTP and new password
+   */
+  resetPassword: async (
+    payload: ResetPasswordRequest,
+  ): Promise<{ message: string }> => {
+    try {
+      const { data } = await apiClient.post(
+        endpoints.auth.resetPassword,
+        payload,
+      );
       return data;
     } catch (error) {
       console.log({ error });

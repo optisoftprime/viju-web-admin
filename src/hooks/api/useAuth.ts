@@ -12,7 +12,13 @@ import { authService } from "@/services/auth.service";
 import { userService } from "@/services/user.service";
 import { useAuthStore } from "@/store/auth.store";
 import { queryKeys } from "@/lib/api/queryKeys";
-import { LoginCredentials, AuthResponse, User } from "@/lib/api/types";
+import {
+  LoginCredentials,
+  AuthResponse,
+  User,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
+} from "@/lib/api/types";
 import { getErrorMessage } from "@/utils/apiError";
 
 /**
@@ -26,10 +32,15 @@ export const useLogin = () => {
     mutationFn: (credentials: LoginCredentials) =>
       authService.login(credentials),
     onSuccess: (data: AuthResponse) => {
-      // Save user and token to store
-      setAuthData(data.user, data.access_token);
+      // Save user and token to store (including refresh token if provided)
+      setAuthData(
+        data.user,
+        data.access_token,
+        data.refresh_token,
+        data.expires_in,
+      );
       // Show success toast
-      toast.success(`Welcome back, ${data.user.name}!`);
+      toast.success(`Welcome back, ${data?.user?.name}!`);
       // Redirect to dashboard
       router.push("/dashboard");
     },
@@ -46,19 +57,68 @@ export const useLogin = () => {
  */
 export const useLogout = () => {
   const router = useRouter();
-  const { logout: clearAuthData } = useAuthStore();
+  const { logout: clearAuthData, refreshToken } = useAuthStore();
 
   return useMutation({
-    mutationFn: () => authService.logout(),
+    mutationFn: () => {
+      // Use refresh token from store, or empty string if not available
+      return authService.logout(refreshToken || "");
+    },
     onSuccess: () => {
       clearAuthData();
       toast.success("Logged out successfully");
       router.push("/auth/login");
     },
     onError: (error: unknown) => {
+      // Even if logout fails, clear auth data locally
+      clearAuthData();
+      const errorMessage = getErrorMessage(error);
+      console.error("Logout failed:", error);
+      router.push("/auth/login");
+    },
+  });
+};
+
+/**
+ * Forgot Password Mutation Hook
+ */
+export const useForgotPassword = () => {
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (payload: ForgotPasswordRequest) =>
+      authService.forgotPassword(payload),
+    onSuccess: () => {
+      toast.success("Password reset code sent to your email");
+      // Redirect to OTP page
+      router.push("/auth/otp");
+    },
+    onError: (error: unknown) => {
       const errorMessage = getErrorMessage(error);
       toast.error(errorMessage);
-      console.error("Logout failed:", error);
+      console.error("Forgot password failed:", error);
+    },
+  });
+};
+
+/**
+ * Reset Password Mutation Hook
+ */
+export const useResetPassword = () => {
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (payload: ResetPasswordRequest) =>
+      authService.resetPassword(payload),
+    onSuccess: () => {
+      toast.success("Password reset successfully");
+      // Redirect to login page
+      router.push("/auth/login");
+    },
+    onError: (error: unknown) => {
+      const errorMessage = getErrorMessage(error);
+      toast.error(errorMessage);
+      console.error("Password reset failed:", error);
     },
   });
 };

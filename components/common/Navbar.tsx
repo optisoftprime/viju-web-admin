@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { ChevronDown, Bell } from "lucide-react";
 import { Text } from "./Text";
 import SearchInput from "./SearchInput";
+import LogoutModal from "./LogoutModal";
 
 /**
  * Interface for Navbar component props
@@ -26,6 +28,8 @@ export default function Navbar({
   pageTitle = "Dashboard",
   notificationCount = 0,
 }: NavbarProps) {
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
   /**
    * Handle search callback from SearchInput component
    * Logs the search value and can be extended for actual search functionality
@@ -56,13 +60,18 @@ export default function Navbar({
       {/* Right Section - Role Switcher & Notifications */}
       <div className="flex items-center gap-6">
         {/* Role Switcher - Allows viewing as different roles */}
-        <button className="flex items-center gap-2 px-4 py-2 border border-muted/20  hover:bg-gray-50 transition-colors text-sm text-muted font-medium">
-          <span className="text-xs">Viewing as:</span>{" "}
-          <span className="text-black text-[13px] font-semibold">
-            Account Officer
-          </span>
-          <ChevronDown className="w-4 h-4" />
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => setIsLogoutModalOpen(!isLogoutModalOpen)}
+            className="flex items-center gap-2 px-4 py-2 border border-muted/20  hover:bg-gray-50 transition-colors text-sm text-muted font-medium"
+          >
+            <span className="text-xs">Viewing as:</span>{" "}
+            <span className="text-black text-[13px] font-semibold">
+              Account Officer
+            </span>
+            <ChevronDown className="w-4 h-4" />
+          </button>
+        </div>
 
         {/* Notification Bell - Shows unread notification count */}
         <button className="relative p-2 hover:bg-gray-50 rounded-lg transition-colors">
@@ -74,6 +83,12 @@ export default function Navbar({
           )}
         </button>
       </div>
+
+      {/* Logout Modal */}
+      <LogoutModal
+        open={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+      />
     </nav>
   );
 }

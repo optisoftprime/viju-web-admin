@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -74,11 +75,11 @@ export default function LoginForm() {
               color="foreground"
               className="mb-2 block"
             >
-              Email
+              User Name
             </Text>
             <Input
-              placeholder="Enter your email"
-              type="email"
+              placeholder="Enter your user name"
+              type="text"
               value={formValues.email || ""}
               {...register("email")}
               error={errors.email?.message}
@@ -124,13 +125,13 @@ export default function LoginForm() {
           </Button>
 
           {/* Forgot Password Link */}
-          <div className="text-center">
-            {/* <button
-              type="button"
-              className="text-sm text-muted hover:text-primary transition-colors"
+          <div className="flex justify-between items-center mt-2">
+            <Link
+              href="/auth/forgot-password"
+              className="text-sm text-orange hover:text-primary transition-colors"
             >
               Forget Password
-            </button> */}
+            </Link>
           </div>
         </form>
       </div>
