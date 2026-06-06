@@ -1,11 +1,11 @@
 "use client";
-
-import Image from "next/image";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import * as LucideIcons from "lucide-react";
-import { sidebarNavigationData } from "./sidebarNavigation";
 import Logo from "./Logo";
 import { Text } from "./Text";
+import LogoutModal from "./LogoutModal";
+import { useAuthStore } from "@/store/auth.store";
 
 interface NavLinkItem {
   name: string;
@@ -16,6 +16,7 @@ interface NavLinkItem {
 
 interface NavCategory {
   category: string;
+  type?: string;
   links: NavLinkItem[];
 }
 
@@ -39,6 +40,77 @@ const getIconComponent = (iconName: string) => {
 };
 
 export default function Sidebar() {
+  const { user } = useAuthStore();
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+  // Log user info when component mounts or user changes
+  useEffect(() => {
+    if (user) {
+      console.log("Logged-in user:", user);
+    }
+  }, [user]);
+
+  const sidebarNavigationData: NavCategory[] = [
+    {
+      category: "ACCOUNT OFFICER",
+      type: "OFFICER",
+      links: [
+        {
+          name: "Officer's Dashboard",
+          url: "/dashboard/officer",
+
+          icon: "LayoutDashboard",
+          isActive: true,
+        },
+      ],
+    },
+    {
+      category: "REGIONAL ADMIN",
+      type: "REGIONAL_ADMIN",
+      links: [
+        {
+          name: "Regional Dashboard",
+          url: "/dashboard/regional",
+          icon: "Building2",
+        },
+        { name: "Loading Request", url: "/requests/loading", icon: "Truck" },
+        { name: "Distributors", url: "/regional/distributors", icon: "Users" },
+        { name: "Officers", url: "/regional/officers", icon: "UserCheck" },
+      ],
+    },
+    {
+      category: "LOADING OFFICER",
+      type: "LOADING_OFFICER",
+      links: [
+        {
+          name: "My Loading Queue",
+          url: "/loading/queue",
+          icon: "ClipboardList",
+        },
+      ],
+    },
+    {
+      category: "ADMINISTRATOR",
+      type: "ADMIN",
+      links: [
+        { name: "Org Dashboard", url: "/admin/dashboard", icon: "Globe" },
+        { name: "Broadcasts", url: "/admin/broadcasts", icon: "Megaphone" },
+        {
+          name: "Interaction Audits",
+          url: "/admin/audits",
+          icon: "History",
+        },
+        { name: "Distributors", url: "/admin/distributors", icon: "Users" },
+        { name: "Officers", url: "/admin/officers", icon: "UserCheck" },
+        {
+          name: "Product Flyers",
+          url: "/admin/flyers",
+          icon: "FileImage",
+        },
+      ],
+    },
+  ].filter((type) => type.type === user?.role);
+
   const navigationData: NavCategory[] = sidebarNavigationData;
 
   return (
@@ -105,15 +177,22 @@ export default function Sidebar() {
       <div className="border-t border-gray-300/40 py-8 mt-10">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 p-2 bg-white text-orange rounded-full flex uppercase font-bold items-center justify-center">
-            A
+            {user?.name?.charAt(0) || "U"}
           </div>
 
           <div className="flex flex-col">
-            <span className="text-sm font-semibold text-white">Viju</span>
-            <span className="text-xs text-white">Account Officer</span>
+            <span className="text-sm font-semibold text-white">
+              {user?.name || "User"}
+            </span>
+            <span className="text-xs text-white capitalize">
+              {user?.role?.toLowerCase() || "Staff"}
+            </span>
           </div>
         </div>
-        <button className="w-full flex items-center gap-3 text-white hover:bg-orange-600/50 rounded-lg p-3 transition-colors text-sm">
+        <button
+          onClick={() => setIsLogoutModalOpen(true)}
+          className="w-full flex items-center gap-3 text-white hover:bg-orange-600/50 rounded-lg p-3 transition-colors text-sm"
+        >
           {getIconComponent("LogOut")}
 
           <Text variant="caption" weight="medium" color="white">
@@ -121,6 +200,12 @@ export default function Sidebar() {
           </Text>
         </button>
       </div>
+
+      {/* Logout Modal */}
+      <LogoutModal
+        open={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+      />
     </aside>
   );
 }
