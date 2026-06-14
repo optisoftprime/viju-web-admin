@@ -1,4 +1,5 @@
-import React from "react";
+"use client";
+import { Controller, Control, FieldValues, Path } from "react-hook-form";
 import { Text } from "./Text";
 import dropdown from "@/assets/icons/arrow-down.svg";
 import Image from "next/image";
@@ -8,103 +9,102 @@ export type SelectOption = {
   label: string;
 };
 
-export interface SelectProps extends Omit<
-  React.SelectHTMLAttributes<HTMLSelectElement>,
-  "onChange"
-> {
+export interface SelectProps<T extends FieldValues> {
+  name: Path<T>;
+  control: Control<T>;
   label?: string;
-  name: string;
   options: SelectOption[];
-  value?: string;
   error?: string;
   disabled?: boolean;
-  onChange?: (value: string) => void;
   loading?: boolean;
+  placeholder?: string;
   className?: string;
 }
 
-export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  (
-    {
-      label,
-      name,
-      options,
-      value,
-      error,
-      disabled = false,
-      onChange,
-      loading = false,
-      className = "",
-      ...rest
-    },
-    ref,
-  ) => {
-    const hasError = !!error;
-    const isDisabled = disabled || loading || options.length === 0;
+export const Select = <T extends FieldValues>({
+  name,
+  control,
+  label,
+  options,
+  error,
+  disabled = false,
+  loading = false,
+  placeholder,
+  className = "",
+}: SelectProps<T>) => {
+  const hasError = !!error;
+  const isDisabled = disabled || loading;
 
-    return (
-      <div className="flex flex-col gap-2">
-        {label && (
-          <label htmlFor={name} className="block">
-            <Text variant="body" color="foreground" weight="medium">
-              {label}
-            </Text>
-          </label>
-        )}
+  return (
+    <div className="flex flex-col gap-2">
+      {label && (
+        <label htmlFor={name}>
+          <Text variant="body" color="foreground" weight="medium">
+            {label}
+          </Text>
+        </label>
+      )}
 
-        {loading ? (
-          // Loading skeleton
-          <div className="w-full h-10 bg-muted/20 rounded-lg animate-pulse" />
-        ) : (
-          <div className="relative">
-            <select
-              ref={ref}
-              id={name}
-              name={name}
-              value={value}
-              onChange={(e) => onChange?.(e.target.value)}
-              disabled={isDisabled}
-              className={`
-                w-full px-4 py-1 rounded-2xl appearance-none
-                border-2 transition-colors
-                focus:outline-none focus:ring-1 ring-none text-[13px] font-bold
-                bg-white
-                ${hasError ? "border-primary" : "border-muted/40"}
-                ${isDisabled ? "opacity-50 cursor-not-allowed bg-gray-50" : ""}
-                ${className}
-              `.trim()}
-              {...rest}
-            >
-              <option value="">-- Select {label} --</option>
-              {options.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+      {loading ? (
+        <div className="w-full h-10 bg-muted/20 rounded-lg animate-pulse" />
+      ) : (
+        <Controller
+          name={name}
+          control={control}
+          render={({ field }) => (
+            <div className="relative">
+              <select
+                {...field}
+                id={name}
+                disabled={isDisabled}
+                className={`
+                  w-full px-4 py-2 rounded-md appearance-none
+                  border transition-colors
+                  focus:outline-none focus:ring-1
+                  text-[13px] font-medium bg-white
+                  ${hasError ? "border-primary" : "border-muted/50"}
+                  ${
+                    isDisabled ? "opacity-50 cursor-not-allowed bg-gray-50" : ""
+                  }
+                  ${className}
+                `}
+              >
+                <option value="">{placeholder || `Select ${label}`}</option>
 
-            {/* Dropdown arrow */}
-            <Image
-              src={dropdown}
-              width={20}
-              height={20}
-              alt="drop down"
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted pointer-events-none"
-            />
-          </div>
-        )}
+                {options.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
 
-        {/* Error space - reserved even when empty to prevent layout shift */}
-        {hasError && (
-          <div className="h-5">
-            <Text variant="caption" color="primary" weight="medium">
-              {error}
-            </Text>
-          </div>
-        )}
-      </div>
-    );
-  },
-);
+              <Image
+                src={dropdown}
+                width={20}
+                height={20}
+                alt="dropdown"
+                className="
+                  absolute
+                  right-3
+                  top-1/2
+                  -translate-y-1/2
+                  w-5
+                  h-5
+                  pointer-events-none
+                "
+              />
+            </div>
+          )}
+        />
+      )}
 
-Select.displayName = "Select";
+      {hasError && (
+        <Text variant="caption" color="primary" weight="medium">
+          {error}
+        </Text>
+      )}
+    </div>
+  );
+};
+
+export default Select;

@@ -11,6 +11,10 @@
   --muted: #63748c;
   --otpColor: #ffc6a7;
   --successcolor: #15e022;
+  --statusgreen: #03a77b;
+  --statusblue: #354dee;
+  --statuslightblue: #155bbd;
+  --statuslightsky: #e6f1ff;
 }
 
 @theme inline {
@@ -32,6 +36,10 @@
   --color-milkwhite: var(--milkwhite);
   --color-muted: var(--muted);
   --color-success: var(--successcolor);
+  --color-statusgreen: var(--statusgreen);
+  --color-statusblue: var(--statusblue);
+  --color-statuslightblue: var(--statuslightblue);
+  --color-statuslightsky: var(--statuslightsky);
 }
 
 body {

@@ -58,9 +58,9 @@ export default function TicketsUI({
     <div className="flex flex-col h-full bg-white rounded-lg">
       {/* Tickets List - Scrollable */}
       <div className="flex-1 overflow-y-auto p-4">
-        {tickets.map((ticket) => (
+        {tickets.map((ticket, i) => (
           <TicketCard
-            key={ticket.id}
+            key={i}
             ticketId={ticket.id}
             title={ticket.title}
             status={ticket.status}

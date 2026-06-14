@@ -14,6 +14,7 @@ interface AuthStore {
   tokenExpiresIn: number | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  hasInitialized: boolean;
 
   // Actions
   setUser: (user: User | null) => void;
@@ -36,6 +37,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   tokenExpiresIn: null,
   isAuthenticated: false,
   isLoading: true,
+  hasInitialized: false,
 
   setUser: (user) => set({ user }),
 
@@ -82,7 +84,11 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   initializeAuth: () => {
-    // Try to restore auth from cookies on app initialization
+    const state = useAuthStore.getState();
+
+    // 👇 prevent multiple runs
+    if (state.hasInitialized) return;
+
     try {
       const token = Cookie.get("access_token");
       const refreshToken = Cookie.get("refresh_token");
@@ -92,6 +98,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
       if (token && userJson) {
         const user = JSON.parse(userJson) as User;
         const expiresIn = expiresInStr ? parseInt(expiresInStr) : null;
+
         set({
           user,
           token,
@@ -99,13 +106,23 @@ export const useAuthStore = create<AuthStore>((set) => ({
           tokenExpiresIn: expiresIn,
           isAuthenticated: true,
           isLoading: false,
+          hasInitialized: true,
         });
       } else {
-        set({ isLoading: false });
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+          isLoading: false,
+          hasInitialized: true,
+        });
       }
     } catch (error) {
       console.error("Failed to restore auth:", error);
-      set({ isLoading: false });
+      set({
+        isLoading: false,
+        hasInitialized: true,
+      });
     }
   },
 }));

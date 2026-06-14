@@ -52,9 +52,20 @@ export interface AuthContextType {
 // Dashboard Stats Types
 export interface AdminDashboardStats {
   totalCustomers: number;
-  unReadMessage: number;
-  openTickets: number;
   totalOutstandingBalance: number;
+  activeOfficers: number;
+  openTickets: number;
+  unReadMessage: number;
+  byRegion: Array<{
+    region: {
+      name: string;
+      dist: number;
+    };
+    distributors: number;
+    walletBalance: number;
+    openTickets: number;
+    activeOfficers: number;
+  }>;
 }
 
 export interface OfficerDashboardStats {
@@ -115,4 +126,70 @@ export interface RegionalAdminDashboardResponse {
     activeOfficers: number;
   };
   pendingLoadingRequests: PendingLoadingRequest[];
+}
+
+// Broadcast Types
+export type BroadcastRegion = "LAGOS" | "SOUTH_WEST" | "SOUTH_EAST" | "NORTH";
+
+export interface BroadcastRegionalRequest {
+  regions: BroadcastRegion[];
+  message: string;
+}
+
+export interface BroadcastIndividualRequest {
+  customerId: string;
+  message: string;
+  deliveryAllowance?: number;
+}
+
+export interface BroadcastHistoryFilters {
+  type?: "REGIONAL" | "INDIVIDUAL";
+  region?: BroadcastRegion;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface BroadcastHistoryItem {
+  id: string;
+  type: "REGIONAL" | "INDIVIDUAL";
+  message: string;
+  regions?: BroadcastRegion[];
+  customerId?: string;
+  distributorName?: string;
+  deliveryAllowance?: number;
+  sentBy: string;
+  sentAt: string;
+}
+
+export interface BroadcastDetail {
+  id: string;
+  type: "REGIONAL" | "INDIVIDUAL";
+  message: string;
+  regions?: BroadcastRegion[];
+  customerId?: string;
+  distributorName?: string;
+  deliveryAllowance?: number;
+  sentBy: string;
+  sentAt: string;
+  status: string;
+}
+
+// Customer Types
+export interface Customer {
+  id: string;
+  name: string;
+  erpId?: string;
+  region?: BroadcastRegion;
+  phone?: string;
+  email?: string;
+}
+
+export interface CustomerListResponse {
+  content: Customer[];
+  number: number;
+  totalPages: number;
+  totalElements: number;
+  size: number;
 }

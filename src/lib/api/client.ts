@@ -103,7 +103,11 @@ export const createAxiosInstance = (): AxiosInstance => {
               return instance(originalRequest);
             } else {
               // Refresh failed, redirect to login
-              if (typeof window !== "undefined") {
+              if (
+                statusCode === 401 &&
+                !originalRequest._retry &&
+                Cookie.get("access_token")
+              ) {
                 Cookie.remove("access_token");
                 Cookie.remove("refresh_token");
                 Cookie.remove("user");
@@ -130,7 +134,11 @@ export const createAxiosInstance = (): AxiosInstance => {
             return instance(originalRequest);
           } else {
             // Refresh failed, redirect to login
-            if (typeof window !== "undefined") {
+            if (
+              statusCode === 401 &&
+              !originalRequest._retry &&
+              Cookie.get("access_token")
+            ) {
               Cookie.remove("access_token");
               Cookie.remove("refresh_token");
               Cookie.remove("user");
@@ -140,7 +148,11 @@ export const createAxiosInstance = (): AxiosInstance => {
           }
         } catch (refreshError) {
           // Refresh failed, redirect to login
-          if (typeof window !== "undefined") {
+          if (
+            statusCode === 401 &&
+            !originalRequest._retry &&
+            Cookie.get("access_token")
+          ) {
             Cookie.remove("access_token");
             Cookie.remove("refresh_token");
             Cookie.remove("user");

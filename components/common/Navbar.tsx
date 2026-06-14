@@ -5,6 +5,7 @@ import { ChevronDown, Bell } from "lucide-react";
 import { Text } from "./Text";
 import SearchInput from "./SearchInput";
 import LogoutModal from "./LogoutModal";
+import NotificationSidebar from "@/components/NotificationSidebar";
 
 /**
  * Interface for Navbar component props
@@ -29,6 +30,7 @@ export default function Navbar({
   notificationCount = 0,
 }: NavbarProps) {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   /**
    * Handle search callback from SearchInput component
@@ -74,7 +76,10 @@ export default function Navbar({
         </div>
 
         {/* Notification Bell - Shows unread notification count */}
-        <button className="relative p-2 hover:bg-gray-50 rounded-lg transition-colors">
+        <button
+          onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+          className=" cursor-pointer p-2 hover:bg-gray-50 rounded-lg transition-colors"
+        >
           <Bell className="w-5 h-5 text-foreground" />
           {notificationCount > 0 && (
             <span className="absolute top-0 right-0 w-5 h-5 p-1 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
@@ -88,6 +93,12 @@ export default function Navbar({
       <LogoutModal
         open={isLogoutModalOpen}
         onClose={() => setIsLogoutModalOpen(false)}
+      />
+
+      {/* Notification Sidebar */}
+      <NotificationSidebar
+        isOpen={isNotificationOpen}
+        onClose={() => setIsNotificationOpen(false)}
       />
     </nav>
   );

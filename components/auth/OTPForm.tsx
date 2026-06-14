@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import OtpInput from "react-otp-input";
 import { Text, Button, Input } from "@/components/common";
 import { useResetPassword } from "@/hooks/api/useAuth";
+import Link from "next/link";
 
 export default function OTPForm() {
   const [otp, setOtp] = useState("");
@@ -168,6 +169,15 @@ export default function OTPForm() {
               : "Reset Password"}
           </Button>
         </form>
+
+        <div className="flex justify-between items-center mt-2">
+          <Link
+            href="/auth/login"
+            className="text-sm text-orange hover:text-primary transition-colors"
+          >
+            Back to Login
+          </Link>
+        </div>
       </div>
     </div>
   );

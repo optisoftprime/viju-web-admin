@@ -21,4 +21,13 @@ export const endpoints = {
     regionalDashboard: "/regional/dashboard",
     officerCustomers: "/officers/customers",
   },
+  broadcasts: {
+    sendRegional: "/admin/broadcasts/regional",
+    sendIndividual: "/admin/broadcasts/individual",
+    history: "/admin/broadcasts/history",
+    detail: "/admin/broadcasts",
+  },
+  customers: {
+    list: "/admin/customers",
+  },
 };

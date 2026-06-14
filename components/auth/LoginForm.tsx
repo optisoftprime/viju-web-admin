@@ -6,7 +6,6 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Text, Input, Button } from "@/components/common";
 import { useLogin } from "@/hooks/api/useAuth";
-import { useState } from "react";
 
 // Validation schema
 const loginValidationSchema = yup.object({

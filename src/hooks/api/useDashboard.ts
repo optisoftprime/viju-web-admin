@@ -14,6 +14,7 @@ import {
   OfficerCustomer,
   RegionalAdminDashboardResponse,
   PendingLoadingRequest,
+  AdminDashboardStats,
 } from "@/lib/api/types";
 
 /**
@@ -58,13 +59,18 @@ export const useDashboardTableData = () => {
   const { user } = useAuthStore();
 
   const getTableData = async (): Promise<
-    OfficerCustomer[] | PendingLoadingRequest[] | RegionalAdminDashboardResponse
+    | OfficerCustomer[]
+    | PendingLoadingRequest[]
+    | AdminDashboardStats
+    | RegionalAdminDashboardResponse
   > => {
     if (!user) throw new Error("User not found");
 
     switch (user.role) {
       case "OFFICER":
         return dashboardService.getOfficerCustomers();
+      case "ADMIN":
+        return dashboardService.getAdminDashboard();
       case "REGIONAL_ADMIN":
         return dashboardService.getRegionalDashboard("LAGOS");
       default:

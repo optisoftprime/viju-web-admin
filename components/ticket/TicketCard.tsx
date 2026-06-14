@@ -1,6 +1,9 @@
 "use client";
 
 import { Text, Select, type SelectOption } from "@/components/common";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 
 interface TicketCardProps {
   ticketId: string;
@@ -18,6 +21,14 @@ const statusOptions: SelectOption[] = [
   { label: "Resolved", value: "Resolved" },
 ];
 
+type TicketForm = {
+  status: string;
+};
+
+const schema = yup.object({
+  status: yup.string().required("Status is required"),
+});
+
 export default function TicketCard({
   ticketId,
   title,
@@ -26,6 +37,17 @@ export default function TicketCard({
   dateUpdated = "",
   onStatusChange,
 }: TicketCardProps) {
+  const {
+    register,
+    handleSubmit,
+    watch,
+    control,
+    setValue,
+    formState: { errors },
+  } = useForm<TicketForm>({
+    resolver: yupResolver(schema),
+  });
+
   return (
     <div className="bg-[#F5F5F5] p-6 rounded-lg space-y-2 my-3">
       {/* Title and Status Select */}
@@ -35,12 +57,20 @@ export default function TicketCard({
         </Text>
         <div className="w-40">
           <Select
+            name="status"
+            control={control}
+            label="Status"
+            options={statusOptions}
+            error={errors.status?.message}
+            placeholder="Select Status"
+          />
+          {/* <Select
             label=""
             name={`ticket-${ticketId}-status`}
             options={statusOptions}
             value={status}
             onChange={onStatusChange}
-          />
+          /> */}
         </div>
       </div>
 

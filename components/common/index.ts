@@ -9,6 +9,10 @@ export { Input, type InputProps } from "./Input";
 export { Textarea, type TextareaProps } from "./Textarea";
 export { Select, type SelectProps, type SelectOption } from "./Select";
 export { Checkbox, type CheckboxProps } from "./Checkbox";
+export {
+  MultiSelectField,
+  type SelectOption as MultiSelectOption,
+} from "./MultiSelectField";
 export { default as SearchInput } from "./SearchInput";
 
 // Data Display

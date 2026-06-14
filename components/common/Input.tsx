@@ -1,48 +1,36 @@
 import React, { useState } from "react";
-import { Text } from "./Text";
-import eyeclose from "@/assets/icons/eye-close.svg";
 import Image from "next/image";
+import eyeclose from "@/assets/icons/eye-close.svg";
+import { Text } from "./Text";
 
-export interface InputProps extends Omit<
-  React.InputHTMLAttributes<HTMLInputElement>,
-  "onChange"
-> {
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
-  name: string;
-  type?: "text" | "email" | "password" | "number";
-  value?: string;
   error?: string;
-  disabled?: boolean;
-  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
   showPasswordToggle?: boolean;
-  className?: string;
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   (
     {
       label,
-      name,
-      type = "text",
-      value,
       error,
-      disabled = false,
-      onChange,
+      type = "text",
       showPasswordToggle = type === "password",
       className = "",
-      ...rest
+      disabled,
+      ...props
     },
     ref,
   ) => {
     const [showPassword, setShowPassword] = useState(false);
-    const isPasswordType = type === "password";
-    const inputType = isPasswordType && showPassword ? "text" : type;
-    const hasError = !!error;
+
+    const isPassword = type === "password";
+    const inputType = isPassword && showPassword ? "text" : type;
 
     return (
       <div className="flex flex-col gap-2">
         {label && (
-          <label htmlFor={name} className="block">
+          <label htmlFor={props.id || props.name}>
             <Text variant="body" color="foreground" weight="medium">
               {label}
             </Text>
@@ -52,28 +40,28 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <div className="relative">
           <input
             ref={ref}
-            id={name}
-            name={name}
             type={inputType}
-            value={value}
-            onChange={onChange}
             disabled={disabled}
             className={`
-              w-full text-[14px] px-4 py-2 rounded-lg
-              transition-colors
-              border ${hasError ? "border-primary" : "border-gray-400/30"}
+              w-full px-4 py-2 rounded-lg text-sm
+              border
+              ${error ? "border-primary" : "border-muted/50"}
               focus:outline-none
-              ${disabled ? "opacity-50 cursor-not-allowed bg-gray-50" : "bg-gray-50"}
+              ${
+                disabled
+                  ? "opacity-50 cursor-not-allowed bg-gray-50"
+                  : "bg-gray-50"
+              }
               ${className}
-            `.trim()}
-            {...rest}
+            `}
+            {...props}
           />
 
-          {isPasswordType && showPasswordToggle && (
+          {isPassword && showPasswordToggle && (
             <button
               type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute right-3 top-1/2 -translate-y-1/2"
             >
               {showPassword ? (
                 <svg
@@ -98,19 +86,17 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               ) : (
                 <Image
                   src={eyeclose}
-                  alt="Hide password"
-                  width={20}
-                  height={20}
-                  className="w-4 h-4 "
+                  alt="Show password"
+                  width={16}
+                  height={16}
                 />
               )}
             </button>
           )}
         </div>
 
-        {/* Error space - reserved even when empty to prevent layout shift */}
-        <div className="h-5">
-          {hasError && (
+        <div className="min-h-[20px]">
+          {error && (
             <Text variant="caption" color="primary" weight="medium">
               {error}
             </Text>
