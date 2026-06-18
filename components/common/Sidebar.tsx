@@ -41,11 +41,11 @@ const getIconComponent = (iconName: string) => {
 };
 
 export default function Sidebar() {
-  // const { user } = useAuthStore();
-  const user = {
-    role: "LOADING_OFFICER",
-    name: "John Ade",
-  };
+  const { user } = useAuthStore();
+  // const user = {
+  //   role: "LOADING_OFFICER",
+  //   name: "John Ade",
+  // };
   // const user = {
   //   role: "REGIONAL_ADMIN",
   //   name: "John Ade",

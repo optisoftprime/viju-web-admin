@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Modal } from "@/components/common/Modal";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/common/Button";
@@ -8,24 +8,51 @@ import { Input } from "@/components/common/Input";
 import { Upload } from "lucide-react";
 import Image from "next/image";
 
+interface Flyer {
+  id?: string;
+  name: string;
+  imageUrl?: string;
+}
+
 interface AddFlyerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (flyerData: { name: string; image: string }) => void;
+  onSubmit: (flyerData: { name: string; imageUrl: string }) => void;
+  flyer?: Flyer | null;
 }
 
 export default function AddFlyerModal({
   isOpen,
   onClose,
   onSubmit,
+  flyer,
 }: AddFlyerModalProps) {
+  const isEditMode = !!flyer?.id;
+
   const [formData, setFormData] = useState({
     name: "",
-    image: "",
+    imageUrl: "",
   });
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [errors, setErrors] = useState<{ name?: string; image?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; imageUrl?: string }>(
+    {},
+  );
+
+  // Initialize form data when modal opens or flyer changes
+  useEffect(() => {
+    if (isOpen && isEditMode && flyer) {
+      setFormData({
+        name: flyer.name,
+        imageUrl: flyer.imageUrl || "",
+      });
+      setImagePreview(flyer.imageUrl || null);
+    } else if (isOpen) {
+      setFormData({ name: "", imageUrl: "" });
+      setImagePreview(null);
+    }
+    setErrors({});
+  }, [isOpen, isEditMode, flyer]);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -43,7 +70,10 @@ export default function AddFlyerModal({
     if (file) {
       // Validate file type
       if (!file.type.startsWith("image/")) {
-        setErrors({ ...errors, image: "Please upload a valid image file" });
+        setErrors({
+          ...errors,
+          imageUrl: "Please upload a valid image file",
+        });
         return;
       }
 
@@ -52,7 +82,7 @@ export default function AddFlyerModal({
       if (file.size > maxSize) {
         setErrors({
           ...errors,
-          image: "File size must be less than 5MB",
+          imageUrl: "File size must be less than 5MB",
         });
         return;
       }
@@ -61,13 +91,13 @@ export default function AddFlyerModal({
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
-        setFormData({ ...formData, image: result });
+        setFormData({ ...formData, imageUrl: result });
         setImagePreview(result);
         console.log("Form values:", {
           ...formData,
-          image: "base64_image_data",
+          imageUrl: "base64_image_data",
         });
-        setErrors({ ...errors, image: undefined });
+        setErrors({ ...errors, imageUrl: undefined });
       };
       reader.readAsDataURL(file);
     }
@@ -86,7 +116,10 @@ export default function AddFlyerModal({
     if (files.length > 0) {
       const file = files[0];
       if (!file.type.startsWith("image/")) {
-        setErrors({ ...errors, image: "Please upload a valid image file" });
+        setErrors({
+          ...errors,
+          imageUrl: "Please upload a valid image file",
+        });
         return;
       }
 
@@ -94,7 +127,7 @@ export default function AddFlyerModal({
       if (file.size > maxSize) {
         setErrors({
           ...errors,
-          image: "File size must be less than 5MB",
+          imageUrl: "File size must be less than 5MB",
         });
         return;
       }
@@ -102,27 +135,27 @@ export default function AddFlyerModal({
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
-        setFormData({ ...formData, image: result });
+        setFormData({ ...formData, imageUrl: result });
         setImagePreview(result);
         console.log("Form values:", {
           ...formData,
-          image: "base64_image_data",
+          imageUrl: "base64_image_data",
         });
-        setErrors({ ...errors, image: undefined });
+        setErrors({ ...errors, imageUrl: undefined });
       };
       reader.readAsDataURL(file);
     }
   };
 
   const validateForm = () => {
-    const newErrors: { name?: string; image?: string } = {};
+    const newErrors: { name?: string; imageUrl?: string } = {};
 
     if (!formData.name.trim()) {
       newErrors.name = "Flyer Name is required";
     }
 
-    if (!formData.image) {
-      newErrors.image = "Flyer Image is required";
+    if (!formData.imageUrl) {
+      newErrors.imageUrl = "Flyer Image is required";
     }
 
     setErrors(newErrors);
@@ -133,7 +166,7 @@ export default function AddFlyerModal({
     if (validateForm()) {
       onSubmit(formData);
       // Reset form
-      setFormData({ name: "", image: "" });
+      setFormData({ name: "", imageUrl: "" });
       setImagePreview(null);
       setErrors({});
       onClose();
@@ -141,7 +174,7 @@ export default function AddFlyerModal({
   };
 
   const handleClose = () => {
-    setFormData({ name: "", image: "" });
+    setFormData({ name: "", imageUrl: "" });
     setImagePreview(null);
     setErrors({});
     onClose();
@@ -153,7 +186,7 @@ export default function AddFlyerModal({
         {/* Modal Header */}
         <div>
           <Text variant="h3" weight="bold">
-            Add Flyer
+            {isEditMode ? "Edit Flyer" : "Add Flyer"}
           </Text>
         </div>
 
@@ -220,9 +253,9 @@ export default function AddFlyerModal({
               </label>
             </div>
 
-            {errors.image && (
+            {errors.imageUrl && (
               <Text variant="small" className="text-red-500">
-                {errors.image}
+                {errors.imageUrl}
               </Text>
             )}
           </div>
@@ -242,7 +275,7 @@ export default function AddFlyerModal({
             onClick={handleSubmit}
             className="bg-orange hover:bg-orange/90"
           >
-            Create Flyer
+            {isEditMode ? "Update Flyer" : "Create Flyer"}
           </Button>
         </div>
       </div>

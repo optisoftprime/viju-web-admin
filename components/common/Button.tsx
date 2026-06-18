@@ -67,7 +67,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || loading}
         onClick={onClick}
         className={`
-          rounded-lg cursor-pointer font-semibold transition-all
+          rounded-md cursor-pointer font-semibold transition-all
           
           ${sizeClass}
           ${variantClass}

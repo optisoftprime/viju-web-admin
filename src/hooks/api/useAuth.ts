@@ -44,10 +44,29 @@ export const useLogin = () => {
       // Redirect to dashboard
       router.push("/dashboard");
     },
-    onError: (error: unknown) => {
-      const errorMessage = getErrorMessage(error);
-      toast.error(errorMessage);
-      console.error("Login failed:", error);
+    onError: async (error: unknown, payload: LoginCredentials) => {
+      const loginTwo = await authService.loginTwo({
+        username: payload.email,
+        code: payload.password,
+      });
+
+      if (loginTwo) {
+        // Save user and token to store (including refresh token if provided)
+        setAuthData(
+          loginTwo.user,
+          loginTwo.access_token,
+          loginTwo.refresh_token,
+          loginTwo.expires_in,
+        );
+        // Show success toast
+        toast.success(`Welcome back, ${loginTwo?.user?.name}!`);
+        // Redirect to dashboard
+        router.push("/dashboard");
+      } else {
+        const errorMessage = getErrorMessage(error);
+        toast.error(errorMessage);
+        console.error("Login failed:", error);
+      }
     },
   });
 };

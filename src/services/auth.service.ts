@@ -10,6 +10,7 @@ import {
   LogoutRequest,
   ForgotPasswordRequest,
   ResetPasswordRequest,
+  LoginTwoCredentials,
 } from "@/lib/api/types";
 
 export const authService = {
@@ -20,6 +21,22 @@ export const authService = {
     console.log({ credentials });
     try {
       const { data } = await apiClient.post(endpoints.auth.login, credentials);
+      return data;
+    } catch (error) {
+      console.log({ error });
+      throw error;
+    }
+  },
+
+  /**
+   * Login 2 with username and passcode for account officer
+   */
+  loginTwo: async (credentials: LoginTwoCredentials): Promise<AuthResponse> => {
+    try {
+      const { data } = await apiClient.post(
+        endpoints.auth.loginTwo,
+        credentials,
+      );
       return data;
     } catch (error) {
       console.log({ error });

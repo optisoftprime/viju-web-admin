@@ -2,15 +2,17 @@
 
 import { useState, useMemo } from "react";
 import { MainLayout } from "@/components/common";
-import { Text, Card, Button, Table, SearchInput } from "@/components/common";
+import { Card, Button, Table } from "@/components/common";
 import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
 import AssignAccountOfficerModal from "@/components/AssignAccountOfficerModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import userIcon from "@/assets/icons/usersblack.svg";
+import { useCustomersForReassignment } from "@/hooks/api/useCustomer";
+import { useReassignCustomer } from "@/hooks/api/useCustomer";
+import { BroadcastRegion } from "@/lib/api/types";
 
-// Interface for customer data structure
-interface Customer {
+// Interface for customer data structure (transformed from API)
+interface CustomerTableRow {
   id: string;
   name: string;
   phoneNo: string;
@@ -63,174 +65,68 @@ const tableColumns = [
   },
 ];
 
-// Mock customer data
-const mockCustomerData: Customer[] = [
-  {
-    id: "1",
-    name: "Ade Foods Ltd",
-    phoneNo: "08087654321",
-    account: "VJ-00987",
-    region: "Lagos",
-    officers: "Emeka Nwokocha",
-    wallet: "₦1,240,000",
-    stock: "₦1,224,000",
-    tickets: 3,
-    action: "Reassign Officer",
-  },
-  {
-    id: "2",
-    name: "KJ Fresh Mart",
-    phoneNo: "08012345678",
-    account: "VJ-00988",
-    region: "South West",
-    officers: "David Okafor",
-    wallet: "₦850,500",
-    stock: "₦900,000",
-    tickets: 1,
-    action: "Reassign Officer",
-  },
-  {
-    id: "3",
-    name: "Premium Foods",
-    phoneNo: "08098765432",
-    account: "VJ-00989",
-    region: "South East",
-    officers: "Chinedu Obi",
-    wallet: "₦520,000",
-    stock: "₦450,000",
-    tickets: 2,
-    action: "Reassign Officer",
-  },
-  {
-    id: "4",
-    name: "Northern Supplies",
-    phoneNo: "08055555555",
-    account: "VJ-00990",
-    region: "North",
-    officers: "Hassan Mohammed",
-    wallet: "₦2,100,000",
-    stock: "₦1,950,000",
-    tickets: 0,
-    action: "Reassign Officer",
-  },
-  {
-    id: "5",
-    name: "Lagos Distributors",
-    phoneNo: "08011111111",
-    account: "VJ-00991",
-    region: "Lagos",
-    officers: "Emeka Nwokocha",
-    wallet: "₦1,500,000",
-    stock: "₦1,350,000",
-    tickets: 4,
-    action: "Reassign Officer",
-  },
-  {
-    id: "6",
-    name: "Southwest Traders",
-    phoneNo: "08022222222",
-    account: "VJ-00992",
-    region: "South West",
-    officers: "David Okafor",
-    wallet: "₦750,000",
-    stock: "₦700,000",
-    tickets: 1,
-    action: "Reassign Officer",
-  },
-  {
-    id: "7",
-    name: "Eastern Foods Inc",
-    phoneNo: "08033333333",
-    account: "VJ-00993",
-    region: "South East",
-    officers: "Chinedu Obi",
-    wallet: "₦920,000",
-    stock: "₦850,000",
-    tickets: 3,
-    action: "Reassign Officer",
-  },
-  {
-    id: "8",
-    name: "North Central Ltd",
-    phoneNo: "08044444444",
-    account: "VJ-00994",
-    region: "North",
-    officers: "Hassan Mohammed",
-    wallet: "₦1,800,000",
-    stock: "₦1,650,000",
-    tickets: 2,
-    action: "Reassign Officer",
-  },
-  {
-    id: "9",
-    name: "Island Stores",
-    phoneNo: "08055555555",
-    account: "VJ-00995",
-    region: "Lagos",
-    officers: "Emeka Nwokocha",
-    wallet: "₦3,200,000",
-    stock: "₦2,950,000",
-    tickets: 5,
-    action: "Reassign Officer",
-  },
-  {
-    id: "10",
-    name: "Coastal Retail",
-    phoneNo: "08066666666",
-    account: "VJ-00996",
-    region: "South West",
-    officers: "David Okafor",
-    wallet: "₦1,100,000",
-    stock: "₦1,000,000",
-    tickets: 0,
-    action: "Reassign Officer",
-  },
-];
-
 // Region options for tabs
 const regions = [
-  { name: "All Regions", value: "all" },
-  { name: "Lagos", value: "Lagos" },
-  { name: "South West", value: "South West" },
-  { name: "South East", value: "South East" },
-  { name: "North", value: "North" },
+  { name: "All Regions", value: "" },
+  { name: "Lagos", value: "LAGOS" },
+  { name: "South West", value: "SOUTH_WEST" },
+  { name: "South East", value: "SOUTH_EAST" },
+  { name: "North", value: "NORTH" },
 ];
 
 function CustomerReassignmentContent() {
   // State for active region filter
-  const [selectedRegion, setSelectedRegion] = useState("all");
+  const [selectedRegion, setSelectedRegion] = useState("");
+
+  // State for search
+  const [searchTerm, setSearchTerm] = useState("");
 
   // State for reassign modal
   const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
-    null,
-  );
+  const [selectedCustomer, setSelectedCustomer] =
+    useState<CustomerTableRow | null>(null);
 
   // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
 
-  /**
-   * Filter customers by selected region
-   */
-  const filteredCustomers = useMemo(() => {
-    if (selectedRegion === "all") {
-      return mockCustomerData;
-    }
-    return mockCustomerData.filter(
-      (customer) => customer.region === selectedRegion,
-    );
-  }, [selectedRegion]);
+  // Fetch customers from API
+  const {
+    data: customersData,
+    isLoading,
+    error,
+  } = useCustomersForReassignment({
+    page: currentPage,
+    pageSize: itemsPerPage,
+    region: selectedRegion ? (selectedRegion as BroadcastRegion) : undefined,
+    search: searchTerm || undefined,
+  });
+
+  // Reassign customer mutation
+  const reassignMutation = useReassignCustomer();
 
   /**
-   * Calculate pagination
+   * Transform API response to table format
    */
-  const totalItems = filteredCustomers.length;
-  const paginatedData = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredCustomers.slice(startIndex, endIndex);
-  }, [filteredCustomers, currentPage]);
+  const tableData: CustomerTableRow[] = useMemo(() => {
+    if (!customersData?.data) return [];
+
+    return customersData.data.map((customer) => ({
+      id: customer.id,
+      name: customer.name,
+      phoneNo: customer.phone,
+      account: customer.erpId,
+      region: customer.region,
+      officers: customer.officerAssignments?.[0]?.staff?.name || "Unassigned",
+      wallet: `₦${customer.outstandingBalance?.toLocaleString() || "0"}`,
+      stock: `₦${customer.outstandingBalance?.toLocaleString() || "0"}`,
+      tickets: customer._count?.supportTickets || 0,
+      action: "Reassign Officer",
+    }));
+  }, [customersData?.data]);
+
+  const totalItems = customersData?.meta.total || 0;
+  const totalPages = customersData?.meta.totalPages || 1;
 
   /**
    * Reset pagination when region changes
@@ -241,17 +137,18 @@ function CustomerReassignmentContent() {
   };
 
   /**
-   * Handle search input from SearchInput component
+   * Handle search input
    */
   const handleSearch = (value: string) => {
-    // Search logic can be implemented here
+    setSearchTerm(value);
     console.log("Search value:", value);
+    setCurrentPage(1);
   };
 
   /**
    * Handle action button click on table rows
    */
-  const handleActionClick = (action: string, row: Customer) => {
+  const handleActionClick = (action: string, row: CustomerTableRow) => {
     console.log(`Action: ${action}`, row);
     if (action.includes("Reassign")) {
       setSelectedCustomer(row);
@@ -272,7 +169,6 @@ function CustomerReassignmentContent() {
    * Handle next page button click
    */
   const handleNextPage = () => {
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
     }
@@ -286,9 +182,23 @@ function CustomerReassignmentContent() {
     name: string;
     role: string;
   }) => {
-    console.log("Officer assigned:", officer);
-    setIsReassignModalOpen(false);
-    setSelectedCustomer(null);
+    if (selectedCustomer) {
+      console.log("Officer assigned:", officer);
+      reassignMutation.mutate(
+        {
+          customerId: selectedCustomer.id,
+          request: {
+            newOfficerId: officer.id,
+          },
+        },
+        {
+          onSuccess: () => {
+            setIsReassignModalOpen(false);
+            setSelectedCustomer(null);
+          },
+        },
+      );
+    }
   };
 
   return (
@@ -315,7 +225,7 @@ function CustomerReassignmentContent() {
                   onClick={() => handleRegionChange(region.value)}
                   className={
                     selectedRegion === region.value
-                      ? "bg-primary text-white border border-primary"
+                      ? "bg-linear-to-r from-primary via-orange to-primary text-white border border-primary"
                       : "bg-white border border-muted/30 hover:border-primary hover:bg-primary hover:text-white"
                   }
                 >
@@ -323,34 +233,52 @@ function CustomerReassignmentContent() {
                 </Button>
               ))}
 
-              {/* Search Input Component */}
-              <SearchInput
+              {/* Search Input */}
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
                 placeholder="Search name or account"
-                onSearch={handleSearch}
-                debounceDelay={500}
-                fullWidth={false}
+                className="px-3 py-2 border border-muted/30 rounded-lg text-sm"
               />
             </div>
           </div>
 
-          {/* Data Table */}
-          <div className="overflow-x-auto mt-6">
-            <Table
-              columns={tableColumns}
-              data={paginatedData}
-              onRowClick={() => {}}
-              onActionClick={handleActionClick}
-            />
-          </div>
+          {/* Loading/Error States */}
+          {isLoading && (
+            <div className="py-6 text-center text-muted">
+              Loading customers...
+            </div>
+          )}
 
-          {/* Pagination Component */}
-          <Pagination
-            currentPage={currentPage}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            onPrevious={handlePreviousPage}
-            onNext={handleNextPage}
-          />
+          {error && (
+            <div className="py-6 text-center text-red-500">
+              Error loading customers. Please try again.
+            </div>
+          )}
+
+          {/* Data Table */}
+          {!isLoading && !error && (
+            <>
+              <div className="overflow-x-auto mt-6">
+                <Table
+                  columns={tableColumns}
+                  data={tableData}
+                  onRowClick={() => {}}
+                  onActionClick={handleActionClick}
+                />
+              </div>
+
+              {/* Pagination Component */}
+              <Pagination
+                currentPage={currentPage}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPrevious={handlePreviousPage}
+                onNext={handleNextPage}
+              />
+            </>
+          )}
         </Card>
 
         {/* Reassign Account Officer Modal */}

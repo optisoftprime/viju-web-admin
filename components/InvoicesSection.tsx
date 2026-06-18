@@ -2,6 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { Text } from "@/components/common";
+import { Order as APIOrder } from "@/src/lib/api/types";
+import { formatDateTime } from "@/src/utils/formatter";
 
 interface Invoice {
   id: string;
@@ -15,7 +17,11 @@ interface Invoice {
 }
 
 interface InvoicesSectionProps {
-  invoices?: Invoice[];
+  invoices?: Invoice[] | APIOrder[];
+  paymentHistory?: any[];
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
 }
 
 // Mock invoices data
@@ -263,18 +269,53 @@ const getStatusBadge = (status: "Paid" | "Part Paid") => {
   };
 };
 
+// Helper function to map API Order to component Invoice format
+const mapAPIOrderToInvoice = (apiOrder: APIOrder): Invoice => {
+  return {
+    id: apiOrder.id,
+    invoiceNo: apiOrder.erpId || apiOrder.id,
+    walletBalance: "₦0", // Not available in API Order
+    invoiceDate: apiOrder.orderDate,
+    invoiceAmount: `₦${(apiOrder.totalValue || 0).toLocaleString()}`,
+    amountPaid: "₦0", // Not available in API Order
+    outstandingAmount: `₦${(apiOrder.totalValue || 0).toLocaleString()}`,
+    paymentStatus: "Part Paid" as const,
+  };
+};
+
 export default function InvoicesSection({
   invoices = mockInvoices,
+  paymentHistory = [],
+  currentPage: externalCurrentPage,
+  totalPages: externalTotalPages,
+  onPageChange,
 }: InvoicesSectionProps) {
-  const [currentPage, setCurrentPage] = useState(1);
+  const [internalPage, setInternalPage] = useState(1);
   const itemsPerPage = 10;
+
+  // Convert API orders to component invoices if needed
+  const mappedInvoices = useMemo(() => {
+    return invoices.map((invoice) => {
+      // Check if it's an API order (has items property)
+      if ("items" in invoice) {
+        return mapAPIOrderToInvoice(invoice as APIOrder);
+      }
+      return invoice as Invoice;
+    });
+  }, [invoices]);
+
+  // Use external pagination if provided, otherwise use internal
+  const currentPage = externalCurrentPage ?? internalPage;
+  const totalPages =
+    externalTotalPages ?? Math.ceil(mappedInvoices.length / itemsPerPage);
+  const handlePageChange = onPageChange ?? setInternalPage;
 
   const paginatedInvoices = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return invoices.slice(startIndex, startIndex + itemsPerPage);
-  }, [invoices, currentPage]);
+    return mappedInvoices.slice(startIndex, startIndex + itemsPerPage);
+  }, [mappedInvoices, currentPage]);
 
-  const totalItems = invoices.length;
+  const totalItems = mappedInvoices.length;
 
   return (
     <div className="space-y-4">
@@ -325,7 +366,7 @@ export default function InvoicesSection({
                     {invoice.walletBalance}
                   </td>
                   <td className="text-left text-[14px] font-medium text-muted p-2">
-                    {invoice.invoiceDate}
+                    {formatDateTime(invoice.invoiceDate)}
                   </td>
                   <td className="text-left text-[14px] font-medium text-muted p-2">
                     {invoice.invoiceAmount}
@@ -355,7 +396,7 @@ export default function InvoicesSection({
       </div>
 
       {/* Pagination */}
-      {invoices.length > itemsPerPage && (
+      {mappedInvoices.length > itemsPerPage && (
         <div className="flex justify-between items-center mt-6">
           <Text variant="small" color="muted">
             Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
@@ -363,7 +404,7 @@ export default function InvoicesSection({
           </Text>
           <div className="flex gap-2">
             <button
-              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
               className="px-4 py-2 border border-muted/20 rounded-lg text-sm font-medium text-muted hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -371,11 +412,9 @@ export default function InvoicesSection({
             </button>
             <button
               onClick={() =>
-                setCurrentPage((prev) =>
-                  Math.min(Math.ceil(totalItems / itemsPerPage), prev + 1),
-                )
+                handlePageChange(Math.min(totalPages, currentPage + 1))
               }
-              disabled={currentPage === Math.ceil(totalItems / itemsPerPage)}
+              disabled={currentPage === totalPages}
               className="px-4 py-2 border border-muted/20 rounded-lg text-sm font-medium text-muted hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next

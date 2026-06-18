@@ -19,6 +19,11 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface LoginTwoCredentials {
+  username: string;
+  code: string;
+}
+
 export interface ForgotPasswordRequest {
   identifier: string;
 }
@@ -192,4 +197,242 @@ export interface CustomerListResponse {
   totalPages: number;
   totalElements: number;
   size: number;
+}
+
+// Audit Types
+export interface AuditTicketReply {
+  id: string;
+  ticketId: string;
+  senderType: "STAFF" | "CUSTOMER";
+  customerId?: string;
+  staffId?: string;
+  content: string;
+  attachmentUrl?: string;
+  createdAt: string;
+  staff?: {
+    id: string;
+    name: string;
+  };
+}
+
+export interface AuditTicketCustomer {
+  id: string;
+  name: string;
+  region: BroadcastRegion;
+}
+
+export interface AuditTicket {
+  id: string;
+  ticketId: string;
+  customerId: string;
+  category: string;
+  subject: string;
+  description: string;
+  attachmentUrl?: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  customer: AuditTicketCustomer;
+  replies: AuditTicketReply[];
+}
+
+export interface AuditTicketsListResponse {
+  data: AuditTicket[];
+  meta: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
+// Officer Types
+export interface Officer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  region: BroadcastRegion;
+  isActive: boolean;
+  _count?: {
+    customers: number;
+  };
+}
+
+export interface OfficersListResponse {
+  data: Officer[];
+  meta: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
+export interface CreateOfficerRequest {
+  name: string;
+  email: string;
+  phone: string;
+  region: BroadcastRegion;
+  password: string;
+}
+
+// Customer with Officer Assignments
+export interface CustomerWithOfficers {
+  id: string;
+  name: string;
+  erpId: string;
+  phone: string;
+  region: BroadcastRegion;
+  accountStatus: string;
+  outstandingBalance: number;
+  _count?: {
+    supportTickets: number;
+  };
+  officerAssignments?: Array<{
+    staff: {
+      id: string;
+      name: string;
+      email: string;
+    };
+  }>;
+}
+
+export interface CustomersListResponse {
+  data: CustomerWithOfficers[];
+  meta: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
+export interface ReassignCustomerRequest {
+  newOfficerId: string;
+}
+
+// Flyer Types
+export interface Flyer {
+  id: string;
+  name: string;
+  imageUrl: string;
+  sortOrder: number;
+  isActive: boolean;
+  createdById: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateFlyerRequest {
+  name: string;
+  imageUrl: string;
+}
+
+export interface UpdateFlyerRequest {
+  name?: string;
+  imageUrl?: string;
+  isActive?: boolean;
+}
+
+// Officer Customer Overview Types
+export interface AssignedOfficer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  isPrimary: boolean;
+}
+
+export interface DistributorOverview {
+  id: string;
+  name: string;
+  accountNumber: string;
+  phone: string;
+  email: string | null;
+  region: BroadcastRegion;
+  accountStatus: string;
+  walletBalance: number;
+  assignedOfficers: AssignedOfficer[];
+  lastUpdated: string;
+}
+
+// Officer Customer Orders Types
+export interface OrderItem {
+  id: string;
+  purchaseId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+export interface Order {
+  id: string;
+  erpId: string;
+  customerId: string;
+  orderDate: string;
+  totalItems: number;
+  totalValue: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  items: OrderItem[];
+}
+
+export interface OrdersResponse {
+  data: Order[];
+  meta: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
+// Officer Customer Invoices Types
+export interface PaymentHistory {
+  id: string;
+  erpId: string;
+  customerId: string;
+  date: string;
+  amount: number;
+  reference: string;
+  runningBalance: number;
+  createdAt: string;
+}
+
+export interface InvoicesResponse {
+  walletBalance: number;
+  invoices: Order[];
+  paymentHistory: PaymentHistory[];
+}
+
+// Officer Customer Stock Types
+export interface StockCatalogue {
+  id: string;
+  erpId: string;
+  productName: string;
+  quantity: number;
+  updatedAt: string;
+}
+
+export interface AwaitingLoading {
+  productName: string;
+  reserved: number;
+  loaded: number;
+  remaining: number;
+}
+
+export interface StockResponse {
+  catalogue: StockCatalogue[];
+  awaitingLoading: AwaitingLoading[];
 }

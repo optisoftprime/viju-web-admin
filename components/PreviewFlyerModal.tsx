@@ -9,9 +9,12 @@ import Image, { StaticImageData } from "next/image";
 interface Flyer {
   id: string;
   name: string;
-  image: string | StaticImageData;
-  position: number;
+  image?: string | StaticImageData;
+  imageUrl?: string;
+  position?: number;
+  sortOrder?: number;
   status?: string;
+  isActive?: boolean;
 }
 
 interface PreviewFlyerModalProps {
@@ -65,12 +68,14 @@ export default function PreviewFlyerModal({
 
         {/* Flyer Image Preview */}
         <div className="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100">
-          <Image
-            src={flyer.image}
-            alt={flyer.name}
-            fill
-            className="object-cover"
-          />
+          {(flyer.imageUrl || flyer.image) && (
+            <Image
+              src={(flyer.imageUrl || flyer.image) as string}
+              alt={flyer.name}
+              fill
+              className="object-cover"
+            />
+          )}
         </div>
 
         {/* Flyer Name */}

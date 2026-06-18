@@ -9,11 +9,12 @@ import AddAccountOfficerFormModal from "@/components/AddAccountOfficerFormModal"
 import PreviewAccountOfficerModal from "@/components/PreviewAccountOfficerModal";
 import SuccessModal from "@/components/SuccessModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useOfficers, useCreateOfficer } from "@/hooks/api/useOfficer";
 import plus from "@/assets/icons/plus.svg";
 import Image from "next/image";
 
-// Interface for officer data structure
-interface Officer {
+// Interface for officer data structure (transformed from API)
+interface OfficerTableRow {
   id: string;
   name: string;
   email: string;
@@ -66,142 +67,7 @@ const tableColumns = [
   },
 ];
 
-// Mock officer data
-const mockOfficerData: Officer[] = [
-  {
-    id: "1",
-    name: "James Okonkwo",
-    email: "james@gmail.com",
-    region: "Lagos",
-    role: "Loading Officer",
-    phoneNo: "+2340987654321",
-    distributors: 14,
-    tickets: 2,
-    lastLogin: "Today, 09:14",
-    action: "Deactivate",
-  },
-  {
-    id: "2",
-    name: "James Okonkwo",
-    email: "james@gmail.com",
-    region: "Lagos",
-    role: "Ware house",
-    phoneNo: "+2340987654321",
-    distributors: 14,
-    tickets: 2,
-    lastLogin: "Today, 09:14",
-    action: "Deactivate",
-  },
-  {
-    id: "3",
-    name: "James Okonkwo",
-    email: "james@gmail.com",
-    region: "Lagos",
-    role: "Loading Officer",
-    phoneNo: "+2340987654321",
-    distributors: 14,
-    tickets: 2,
-    lastLogin: "Today, 09:14",
-    action: "Deactivate",
-  },
-  {
-    id: "4",
-    name: "James Okonkwo",
-    email: "james@gmail.com",
-    region: "Lagos",
-    role: "Account",
-    phoneNo: "+2340987654321",
-    distributors: 14,
-    tickets: 2,
-    lastLogin: "Today, 09:14",
-    action: "Deactivate",
-  },
-  {
-    id: "5",
-    name: "James Okonkwo",
-    email: "james@gmail.com",
-    region: "Lagos",
-    role: "Loading Officer",
-    phoneNo: "+2340987654321",
-    distributors: 14,
-    tickets: 2,
-    lastLogin: "Today, 09:14",
-    action: "Deactivate",
-  },
-  {
-    id: "6",
-    name: "James Okonkwo",
-    email: "james@gmail.com",
-    region: "Lagos",
-    role: "Account",
-    phoneNo: "+2340987654321",
-    distributors: 14,
-    tickets: 2,
-    lastLogin: "Today, 09:14",
-    action: "Deactivate",
-  },
-  {
-    id: "7",
-    name: "James Okonkwo",
-    email: "james@gmail.com",
-    region: "Lagos",
-    role: "Loading Officer",
-    phoneNo: "+2340987654321",
-    distributors: 14,
-    tickets: 2,
-    lastLogin: "Today, 09:14",
-    action: "Deactivate",
-  },
-  {
-    id: "8",
-    name: "James Okonkwo",
-    email: "james@gmail.com",
-    region: "Lagos",
-    role: "Ware house",
-    phoneNo: "+2340987654321",
-    distributors: 14,
-    tickets: 2,
-    lastLogin: "Today, 09:14",
-    action: "Deactivate",
-  },
-  {
-    id: "9",
-    name: "James Okonkwo",
-    email: "james@gmail.com",
-    region: "Lagos",
-    role: "Loading Officer",
-    phoneNo: "+2340987654321",
-    distributors: 14,
-    tickets: 2,
-    lastLogin: "Today, 09:14",
-    action: "Deactivate",
-  },
-  {
-    id: "10",
-    name: "James Okonkwo",
-    email: "james@gmail.com",
-    region: "Lagos",
-    role: "Inactive",
-    phoneNo: "+2340987654321",
-    distributors: 14,
-    tickets: 2,
-    lastLogin: "Today, 09:14",
-    action: "Deactivate",
-  },
-];
-
-// Region options for tabs
-const regions = [
-  { name: "Lagos", value: "Lagos" },
-  { name: "South West", value: "South West" },
-  { name: "South East", value: "South East" },
-  { name: "North", value: "North" },
-];
-
 function AccountOfficersContent() {
-  // State for active region filter
-  const [selectedRegion, setSelectedRegion] = useState("Lagos");
-
   // State for modals
   const [isAddOfficerModalOpen, setIsAddOfficerModalOpen] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
@@ -209,38 +75,48 @@ function AccountOfficersContent() {
   const [successMessage, setSuccessMessage] = useState("");
 
   // State for selected officer
-  const [selectedOfficer, setSelectedOfficer] = useState<Officer | null>(null);
+  const [selectedOfficer, setSelectedOfficer] =
+    useState<OfficerTableRow | null>(null);
 
   // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 20;
+
+  // Fetch officers from API
+  const {
+    data: officersData,
+    isLoading,
+    error,
+  } = useOfficers({
+    page: currentPage,
+    pageSize: itemsPerPage,
+  });
+
+  // Create officer mutation
+  const createOfficerMutation = useCreateOfficer();
 
   /**
-   * Filter officers by selected region
+   * Transform API response to table format
    */
-  const filteredOfficers = useMemo(() => {
-    return mockOfficerData.filter(
-      (officer) => officer.region === selectedRegion,
-    );
-  }, [selectedRegion]);
+  const tableData: OfficerTableRow[] = useMemo(() => {
+    if (!officersData?.data) return [];
 
-  /**
-   * Calculate pagination
-   */
-  const totalItems = filteredOfficers.length;
-  const paginatedData = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredOfficers.slice(startIndex, endIndex);
-  }, [filteredOfficers, currentPage]);
+    return officersData.data.map((officer) => ({
+      id: officer.id,
+      name: officer.name,
+      email: officer.email,
+      region: officer.region,
+      role: officer.isActive ? "Account Officer" : "Inactive",
+      phoneNo: officer.phone,
+      distributors: officer._count?.customers || 0,
+      tickets: 0, // Tickets count not in API response, using 0
+      lastLogin: "N/A", // Last login not in API response
+      action: "Deactivate",
+    }));
+  }, [officersData?.data]);
 
-  /**
-   * Handle region change and reset pagination
-   */
-  const handleRegionChange = (region: string) => {
-    setSelectedRegion(region);
-    setCurrentPage(1);
-  };
+  const totalItems = officersData?.meta.total || 0;
+  const totalPages = officersData?.meta.totalPages || 1;
 
   /**
    * Handle search input
@@ -252,7 +128,7 @@ function AccountOfficersContent() {
   /**
    * Handle action button click on table rows
    */
-  const handleActionClick = (action: string, row: Officer) => {
+  const handleActionClick = (action: string, row: OfficerTableRow) => {
     console.log(`Action: ${action}`, row);
     if (action.includes("Deactivate")) {
       setSelectedOfficer(row);
@@ -273,7 +149,6 @@ function AccountOfficersContent() {
    * Handle next page button click
    */
   const handleNextPage = () => {
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
     }
@@ -314,7 +189,7 @@ function AccountOfficersContent() {
           <Button
             variant="primary"
             onClick={handleNewOfficer}
-            className="bg-gradient-to-r from-primary via-orange to-primary flex items-center gap-2"
+            className="bg-linear-to-r from-primary via-orange to-primary flex items-center gap-2"
           >
             <Image
               src={plus}
@@ -329,26 +204,41 @@ function AccountOfficersContent() {
 
         {/* Officers List Card */}
         <Card border={false}>
-          {/* New Officer Button */}
+          {/* Loading/Error States */}
+          {isLoading && (
+            <div className="py-6 text-center text-muted">
+              Loading officers...
+            </div>
+          )}
+
+          {error && (
+            <div className="py-6 text-center text-red-500">
+              Error loading officers. Please try again.
+            </div>
+          )}
 
           {/* Data Table */}
-          <div className="overflow-x-auto mt-6">
-            <Table
-              columns={tableColumns}
-              data={paginatedData}
-              onRowClick={() => {}}
-              onActionClick={handleActionClick}
-            />
-          </div>
+          {!isLoading && !error && (
+            <>
+              <div className="overflow-x-auto mt-6">
+                <Table
+                  columns={tableColumns}
+                  data={tableData}
+                  onRowClick={() => {}}
+                  onActionClick={handleActionClick}
+                />
+              </div>
 
-          {/* Pagination Component */}
-          <Pagination
-            currentPage={currentPage}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            onPrevious={handlePreviousPage}
-            onNext={handleNextPage}
-          />
+              {/* Pagination Component */}
+              <Pagination
+                currentPage={currentPage}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPrevious={handlePreviousPage}
+                onNext={handleNextPage}
+              />
+            </>
+          )}
         </Card>
 
         {/* Add Account Officer Modal */}

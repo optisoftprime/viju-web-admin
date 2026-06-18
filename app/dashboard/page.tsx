@@ -23,16 +23,26 @@ import {
   useDashboardTableData,
 } from "@/hooks/api/useDashboard";
 import {
+  useDistributorOverview,
+  useDistributorOrders,
+  useDistributorInvoices,
+  useDistributorStock,
+} from "@/hooks/api/useOfficerCustomer";
+import {
   AdminDashboardStats,
   OfficerDashboardStats,
   OfficerCustomer,
   PendingLoadingRequest,
   RegionalAdminDashboardResponse,
+  DistributorOverview,
+  Order,
+  StockResponse,
 } from "@/lib/api/types";
 import userIcon from "@/assets/icons/usersblack.svg";
 import { TextExtremeEnd } from "@/components/common/TextExtremeEnd";
-import { formatToNaira } from "@/src/utils/formatter";
+import { formatDateTime, formatToNaira } from "@/src/utils/formatter";
 import Image from "next/image";
+import { useAuthStore } from "@/src/store/auth.store";
 
 // Interface for distributor data structure
 interface Distributor {
@@ -99,6 +109,33 @@ const tableColumns = [
   {
     key: "action" as const,
     title: "ACTION",
+  },
+];
+
+const officerTableColumns = [
+  {
+    key: "name" as const,
+    title: "DISTRIBUTOR",
+  },
+  {
+    key: "account" as const,
+    title: "ACCOUNT#",
+  },
+  {
+    key: "balance" as const,
+    title: "BALANCE",
+  },
+  {
+    key: "lastPurchase" as const,
+    title: "LAST PURCHASE",
+  },
+  {
+    key: "openTickets" as const,
+    title: "OPEN TICKET",
+  },
+  {
+    key: "lastContact" as const,
+    title: "LAST CONTACT",
   },
 ];
 
@@ -296,6 +333,14 @@ function DashboardContent() {
   const [selectedDistributor, setSelectedDistributor] =
     useState<Distributor | null>(null);
 
+  // State for selected distributor ID (for API calls)
+  const [selectedDistributorId, setSelectedDistributorId] = useState<
+    string | null
+  >(null);
+
+  // State for orders pagination
+  const [orderPage, setOrderPage] = useState(1);
+
   // State for assign officer modal
   const [isAssignOfficerModalOpen, setIsAssignOfficerModalOpen] =
     useState(false);
@@ -323,10 +368,30 @@ function DashboardContent() {
     isLoading: tableLoading,
     error: tableError,
   } = useDashboardTableData();
-  // const { user } = useAuthStore();
-  const user = {
-    role: "LOADING_OFFICER",
-  };
+  const { user } = useAuthStore();
+
+  // Fetch officer customer data (Overview, Orders, Invoices, Stock)
+  const {
+    data: overviewData,
+    isLoading: overviewLoading,
+    error: overviewError,
+  } = useDistributorOverview(selectedDistributorId);
+  const {
+    data: ordersData,
+    isLoading: ordersLoading,
+    error: ordersError,
+  } = useDistributorOrders(selectedDistributorId, orderPage);
+  const {
+    data: invoicesData,
+    isLoading: invoicesLoading,
+    error: invoicesError,
+  } = useDistributorInvoices(selectedDistributorId);
+  const {
+    data: stockData,
+    isLoading: stockLoading,
+    error: stockError,
+  } = useDistributorStock(selectedDistributorId);
+  console.log({ stockData });
 
   // Helper function to format large numbers
   const formatNumber = (num: number) => {
@@ -350,6 +415,8 @@ function DashboardContent() {
       return dateString;
     }
   };
+
+  // console.log({ })
 
   // Map officer customers to table format
   const mapOfficerCustomersToTable = (
@@ -388,7 +455,6 @@ function DashboardContent() {
     return [];
   }, [dashboardStats]);
 
-  console.log({ adminCardData });
   // Map pending loading requests to table format
   const mapPendingLoadingRequestsToTable = (
     requests: PendingLoadingRequest[],
@@ -409,8 +475,8 @@ function DashboardContent() {
   // Transform table data based on role
   const transformedTableData: Distributor[] | AdminDashboardCard[] =
     useMemo(() => {
-      if (!tableData && user?.role !== ("REGIONAL_ADMIN" as any))
-        return mockDistributorData;
+      // if (!tableData && user?.role !== ("REGIONAL_ADMIN" as any))
+      //   return mockDistributorData;
 
       if ((user?.role as any) === "REGIONAL_ADMIN") {
         // For REGIONAL_ADMIN, use mock data
@@ -642,6 +708,13 @@ function DashboardContent() {
     setIsLoadingOfficerSuccessOpen(true);
   };
 
+  const handleDistributorSelect = (distributor: Distributor) => {
+    setSelectedDistributor(distributor);
+    setSelectedDistributorId(distributor.id);
+    setSelectedDetailTab("Overview"); // Reset to Overview tab when a new distributor is selected
+    setOrderPage(1); // Reset order page
+    console.log("Selected Distributor:", { distributor });
+  };
   return (
     <MainLayout>
       <div className="p-4 space-y-6 overflow-y-auto h-screen bg-milkwhite/90">
@@ -762,9 +835,9 @@ function DashboardContent() {
                   </div>
                 ) : (
                   <Table
-                    columns={tableColumns}
+                    columns={officerTableColumns}
                     data={paginatedData}
-                    onRowClick={setSelectedDistributor}
+                    onRowClick={handleDistributorSelect}
                     onActionClick={handleActionClick}
                   />
                 )}
@@ -791,8 +864,8 @@ function DashboardContent() {
                         {selectedDistributor.name}
                       </Text>
                       <Text variant="small" color="muted">
-                        Assigned to Emeka Nwokocha • last updated 2026-05-18
-                        10:18 AM
+                        Assigned to {user?.name} • last updated{" "}
+                        {selectedDistributor.lastContact}
                       </Text>
                     </div>
                     <Button
@@ -833,21 +906,118 @@ function DashboardContent() {
 
                   {/* Detail Tab Content */}
                   <div className="min-h-100 overflow-y-auto mt-4">
-                    {selectedDetailTab === "Overview" && (
-                      <OverviewSection
-                        distributorName={selectedDistributor.name}
-                        phoneNumber="09098765443"
-                        emailAddress="jameso@gmail.com"
-                        region="Lagos"
-                        accountOfficer="Viju Account Officer"
-                        accountBalance="₦1,567,000.00"
-                        stockBalance="420 Cartons"
-                        lastActivity="April 4, 2026"
-                      />
-                    )}
-                    {selectedDetailTab === "Orders" && <OrdersSection />}
-                    {selectedDetailTab === "Invoices" && <InvoicesSection />}
-                    {selectedDetailTab === "Stock" && <StockSection />}
+                    {selectedDetailTab === "Overview" &&
+                      (overviewLoading ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            Loading overview...
+                          </Text>
+                        </div>
+                      ) : overviewError ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            Error loading overview. Please try again.
+                          </Text>
+                        </div>
+                      ) : overviewData ? (
+                        <OverviewSection
+                          distributorName={overviewData.name}
+                          phoneNumber={overviewData.phone || "N/A"}
+                          emailAddress={overviewData.email || "N/A"}
+                          region={overviewData.region}
+                          accountOfficer={
+                            overviewData.assignedOfficers?.[0]?.name || "N/A"
+                          }
+                          accountBalance={formatCurrency(
+                            overviewData.walletBalance,
+                          )}
+                          stockBalance="420 Cartons"
+                          lastActivity={formatDate(overviewData.lastUpdated)}
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            No overview data available
+                          </Text>
+                        </div>
+                      ))}
+                    {selectedDetailTab === "Orders" &&
+                      (ordersLoading ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            Loading orders...
+                          </Text>
+                        </div>
+                      ) : ordersError ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            Error loading orders. Please try again.
+                          </Text>
+                        </div>
+                      ) : ordersData && ordersData.data.length > 0 ? (
+                        <OrdersSection
+                          orders={ordersData.data}
+                          currentPage={orderPage}
+                          totalPages={ordersData.meta.totalPages}
+                          onPageChange={setOrderPage}
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            No orders found
+                          </Text>
+                        </div>
+                      ))}
+                    {selectedDetailTab === "Invoices" &&
+                      (invoicesLoading ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            Loading invoices...
+                          </Text>
+                        </div>
+                      ) : invoicesError ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            Error loading invoices. Please try again.
+                          </Text>
+                        </div>
+                      ) : invoicesData && invoicesData.invoices.length > 0 ? (
+                        <InvoicesSection
+                          invoices={invoicesData.invoices}
+                          paymentHistory={invoicesData.paymentHistory}
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            No invoices found
+                          </Text>
+                        </div>
+                      ))}
+                    {selectedDetailTab === "Stock" &&
+                      (stockLoading ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            Loading stock...
+                          </Text>
+                        </div>
+                      ) : stockError ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            Error loading stock. Please try again.
+                          </Text>
+                        </div>
+                      ) : stockData ? (
+                        <StockSection
+                          catalogue={stockData.catalogue}
+                          awaitingLoading={stockData.awaitingLoading}
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            No stock data available
+                          </Text>
+                        </div>
+                      ))}
                     {selectedDetailTab === "Chat" && (
                       <ChatUI
                         profileName={selectedDistributor.name}

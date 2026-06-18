@@ -15,6 +15,11 @@ interface Stock {
 
 interface StockSectionProps {
   stocks?: Stock[];
+  catalogue?: any[];
+  awaitingLoading?: any[];
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
 }
 
 // Mock stocks data
@@ -248,16 +253,39 @@ const getStatusBadge = (status: "Available" | "Low Stock" | "Out of Stock") => {
 
 export default function StockSection({
   stocks = mockStocks,
+  catalogue = [],
+  awaitingLoading = [],
+  currentPage: externalCurrentPage,
+  totalPages: externalTotalPages,
+  onPageChange,
 }: StockSectionProps) {
-  const [currentPage, setCurrentPage] = useState(1);
+  // console.log({ catalogue, awaitingLoading });
+  const [internalPage, setInternalPage] = useState(1);
   const itemsPerPage = 10;
+
+  const combinedData = useMemo(() => {
+    if (catalogue.length === 0 && awaitingLoading.length === 0) {
+      return mockStocks;
+    }
+    return [...catalogue, ...awaitingLoading];
+  }, [catalogue, awaitingLoading]);
+
+  console.log({ combinedData });
+  // Use catalogue data if provided, otherwise use stocks
+  const displayData = combinedData.length > 0 ? combinedData : stocks;
+
+  // Use external pagination if provided, otherwise use internal
+  const currentPage = externalCurrentPage ?? internalPage;
+  const totalPages =
+    externalTotalPages ?? Math.ceil(displayData.length / itemsPerPage);
+  const handlePageChange = onPageChange ?? setInternalPage;
 
   const paginatedStocks = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return stocks.slice(startIndex, startIndex + itemsPerPage);
-  }, [stocks, currentPage]);
+    return displayData.slice(startIndex, startIndex + itemsPerPage);
+  }, [displayData, currentPage]);
 
-  const totalItems = stocks.length;
+  const totalItems = displayData.length;
 
   return (
     <div className="space-y-4">
@@ -332,7 +360,7 @@ export default function StockSection({
       </div>
 
       {/* Pagination */}
-      {stocks.length > itemsPerPage && (
+      {displayData.length > itemsPerPage && (
         <div className="flex justify-between items-center mt-6">
           <Text variant="small" color="muted">
             Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
@@ -340,7 +368,7 @@ export default function StockSection({
           </Text>
           <div className="flex gap-2">
             <button
-              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
               className="px-4 py-2 border border-muted/20 rounded-lg text-sm font-medium text-muted hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -348,11 +376,9 @@ export default function StockSection({
             </button>
             <button
               onClick={() =>
-                setCurrentPage((prev) =>
-                  Math.min(Math.ceil(totalItems / itemsPerPage), prev + 1),
-                )
+                handlePageChange(Math.min(totalPages, currentPage + 1))
               }
-              disabled={currentPage === Math.ceil(totalItems / itemsPerPage)}
+              disabled={currentPage === totalPages}
               className="px-4 py-2 border border-muted/20 rounded-lg text-sm font-medium text-muted hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next

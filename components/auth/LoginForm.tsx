@@ -9,10 +9,7 @@ import { useLogin } from "@/hooks/api/useAuth";
 
 // Validation schema
 const loginValidationSchema = yup.object({
-  email: yup
-    .string()
-    .required("Email is required")
-    .email("Please enter a valid email address"),
+  email: yup.string().required("Email is required"),
   password: yup
     .string()
     .required("Password is required")

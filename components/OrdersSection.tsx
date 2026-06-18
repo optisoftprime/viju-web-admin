@@ -3,6 +3,8 @@
 import { useState, useMemo } from "react";
 import { Table, Text } from "@/components/common";
 import Pagination from "@/components/Pagination";
+import { Order as APIOrder } from "@/src/lib/api/types";
+import { formatDateTime } from "@/src/utils/formatter";
 
 interface Order {
   id: string;
@@ -15,7 +17,10 @@ interface Order {
 }
 
 interface OrdersSectionProps {
-  orders?: Order[];
+  orders?: Order[] | APIOrder[];
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
 }
 
 // Mock orders data
@@ -241,18 +246,54 @@ const getStatusBadge = (status: "Delivered" | "Processing") => {
   };
 };
 
+// Helper function to map API Order to component Order format
+const mapAPIOrderToOrder = (apiOrder: APIOrder): Order => {
+  return {
+    id: apiOrder.id,
+    orderId: apiOrder.erpId || apiOrder.id,
+    orderDate: apiOrder.orderDate,
+    product: apiOrder.items?.[0]?.productName || "N/A",
+    quantity: apiOrder.totalItems || 0,
+    totalValue: `₦${(apiOrder.totalValue || 0).toLocaleString()}`,
+    status:
+      apiOrder.status === "Delivered" || apiOrder.status === "Processing"
+        ? apiOrder.status
+        : "Processing",
+  };
+};
+
 export default function OrdersSection({
   orders = mockOrders,
+  currentPage: externalCurrentPage,
+  totalPages: externalTotalPages,
+  onPageChange,
 }: OrdersSectionProps) {
-  const [currentPage, setCurrentPage] = useState(1);
+  const [internalPage, setInternalPage] = useState(1);
   const itemsPerPage = 10;
+
+  // Convert API orders to component orders if needed
+  const mappedOrders = useMemo(() => {
+    return orders.map((order) => {
+      // Check if it's an API order (has items property)
+      if ("items" in order) {
+        return mapAPIOrderToOrder(order as APIOrder);
+      }
+      return order as Order;
+    });
+  }, [orders]);
+
+  // Use external pagination if provided, otherwise use internal
+  const currentPage = externalCurrentPage ?? internalPage;
+  const totalPages =
+    externalTotalPages ?? Math.ceil(mappedOrders.length / itemsPerPage);
+  const handlePageChange = onPageChange ?? setInternalPage;
 
   const paginatedOrders = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return orders.slice(startIndex, startIndex + itemsPerPage);
-  }, [orders, currentPage]);
+    return mappedOrders.slice(startIndex, startIndex + itemsPerPage);
+  }, [mappedOrders, currentPage]);
 
-  const totalItems = orders.length;
+  const totalItems = mappedOrders.length;
 
   return (
     <div className="space-y-4">
@@ -297,7 +338,7 @@ export default function OrdersSection({
                     {order.orderId}
                   </td>
                   <td className="text-left text-[14px] font-medium text-muted p-2">
-                    {order.orderDate}
+                    {formatDateTime(order.orderDate)}
                   </td>
                   <td className="text-left text-[14px] font-medium text-muted p-2">
                     {order.product}
@@ -327,7 +368,7 @@ export default function OrdersSection({
       </div>
 
       {/* Pagination */}
-      {orders.length > itemsPerPage && (
+      {mappedOrders.length > itemsPerPage && (
         <div className="flex justify-between items-center mt-6">
           <Text variant="small" color="muted">
             Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
@@ -335,7 +376,7 @@ export default function OrdersSection({
           </Text>
           <div className="flex gap-2">
             <button
-              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
               className="px-4 py-2 border border-muted/20 rounded-lg text-sm font-medium text-muted hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -343,9 +384,7 @@ export default function OrdersSection({
             </button>
             <button
               onClick={() =>
-                setCurrentPage((prev) =>
-                  Math.min(Math.ceil(totalItems / itemsPerPage), prev + 1),
-                )
+                handlePageChange(Math.min(totalPages, currentPage + 1))
               }
               disabled={currentPage === Math.ceil(totalItems / itemsPerPage)}
               className="px-4 py-2 border border-muted/20 rounded-lg text-sm font-medium text-muted hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"

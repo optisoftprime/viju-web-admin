@@ -6,8 +6,9 @@ import { Text, Modal, Input, Button } from "@/components/common";
 import OfficerSelectionCard from "@/components/OfficerSelectionCard";
 import searchIcon from "@/assets/icons/search-icon-gray.svg";
 import { BoldTopText } from "./common/BoldTopText";
+import { useOfficers } from "@/hooks/api/useOfficer";
 
-interface Officer {
+interface OfficerData {
   id: string;
   name: string;
   role: string;
@@ -16,7 +17,7 @@ interface Officer {
 interface AssignAccountOfficerModalProps {
   isOpen?: boolean;
   onClose?: () => void;
-  onConfirm?: (officer: Officer) => void;
+  onConfirm?: (officer: OfficerData) => void;
   distributorName?: string;
   distributorData?: {
     distributor: string;
@@ -29,12 +30,6 @@ interface AssignAccountOfficerModalProps {
     ticket: string;
   };
 }
-
-const mockOfficers: Officer[] = [
-  { id: "1", name: "Ifeanyi Okonkwo", role: "Account officer" },
-  { id: "2", name: "Ifeanyi Okonkwo", role: "Account officer" },
-  { id: "3", name: "Ifeanyi Okonkwo", role: "Account officer" },
-];
 
 export default function AssignAccountOfficerModal({
   isOpen = false,
@@ -57,17 +52,31 @@ export default function AssignAccountOfficerModal({
   );
   const [searchInput, setSearchInput] = useState("");
 
-  // Filter officers based on search input
+  // Fetch officers from API
+  const { data: officersData, isLoading, error } = useOfficers();
+
+  // Transform API officers to component format and filter based on search
   const filteredOfficers = useMemo(() => {
-    if (!searchInput.trim()) return mockOfficers;
-    return mockOfficers.filter(
+    if (!officersData?.data) return [];
+
+    const officers = officersData.data.map((officer) => ({
+      id: officer.id,
+      name: officer.name,
+      role: "Account Officer",
+    }));
+
+    if (!searchInput.trim()) return officers;
+
+    return officers.filter(
       (officer) =>
         officer.name.toLowerCase().includes(searchInput.toLowerCase()) ||
         officer.role.toLowerCase().includes(searchInput.toLowerCase()),
     );
-  }, [searchInput]);
+  }, [officersData?.data, searchInput]);
 
-  const selectedOfficer = mockOfficers.find((o) => o.id === selectedOfficerId);
+  const selectedOfficer = filteredOfficers.find(
+    (o) => o.id === selectedOfficerId,
+  );
 
   const handleConfirm = () => {
     if (selectedOfficer) {
@@ -119,7 +128,7 @@ export default function AssignAccountOfficerModal({
         {/* Available Officers Section */}
         <div className="space-y-2 pt-4">
           <Text variant="body" weight="bold" color="foreground">
-            Available Account Officers in Lagos
+            Available Account Officers
           </Text>
 
           {/* Search Input */}
@@ -143,7 +152,23 @@ export default function AssignAccountOfficerModal({
 
           {/* Officer Selection List */}
           <div className="space-y-0 rounded-md overflow-hidden">
-            {filteredOfficers.length > 0 ? (
+            {isLoading && (
+              <div className="p-4 text-center">
+                <Text variant="caption" color="muted">
+                  Loading officers...
+                </Text>
+              </div>
+            )}
+
+            {error && (
+              <div className="p-4 text-center">
+                <Text variant="caption" color="muted">
+                  Error loading officers. Please try again.
+                </Text>
+              </div>
+            )}
+
+            {!isLoading && !error && filteredOfficers.length > 0 ? (
               filteredOfficers.map((officer) => (
                 <OfficerSelectionCard
                   key={officer.id}
@@ -154,13 +179,13 @@ export default function AssignAccountOfficerModal({
                   onClick={() => setSelectedOfficerId(officer.id)}
                 />
               ))
-            ) : (
+            ) : !isLoading && !error ? (
               <div className="p-4 text-center">
                 <Text variant="caption" color="muted">
                   No officers found
                 </Text>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -177,8 +202,8 @@ export default function AssignAccountOfficerModal({
         {/* Confirm Button */}
         <Button
           onClick={handleConfirm}
-          disabled={!selectedOfficer}
-          className="w-full mt-8 bg-gradient-to-r from-[#FF0000] to-[#FF5A00] text-white rounded-lg py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!selectedOfficer || isLoading}
+          className="w-full mt-8 bg-linear-to-r from-[#FF0000] to-[#FF5A00] text-white rounded-lg py-3 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Confirm Assignment
         </Button>

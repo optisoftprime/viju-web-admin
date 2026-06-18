@@ -49,6 +49,7 @@ export const dashboardService = {
    */
   getOfficerCustomers: async (): Promise<OfficerCustomer[]> => {
     const { data } = await apiClient.get(endpoints.dashboard.officerCustomers);
-    return data;
+    const officerCustomers = data.data;
+    return officerCustomers;
   },
 };

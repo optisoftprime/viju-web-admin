@@ -2,39 +2,26 @@
 
 import { useState, useMemo } from "react";
 import { MainLayout } from "@/components/common";
-import { Text, Card, Button, Table, SearchInput } from "@/components/common";
+import { Text, Card, Button, Table } from "@/components/common";
 import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
 import ProtectedRoute from "@/components/ProtectedRoute";
-
-// Interface for audit data structure
-interface AuditLog {
-  id: string;
-  officer: string;
-  email: string;
-  action: string;
-  timestamp: string;
-  region: string;
-  status: string;
-}
+import { useAuditTickets } from "@/hooks/api/useAudit";
+import { BroadcastRegion } from "@/lib/api/types";
 
 // Table columns definition
 const tableColumns = [
   {
-    key: "officer" as const,
-    title: "OFFICER",
+    key: "ticketId" as const,
+    title: "TICKET ID",
   },
   {
-    key: "email" as const,
-    title: "EMAIL",
+    key: "subject" as const,
+    title: "SUBJECT",
   },
   {
-    key: "action" as const,
-    title: "ACTION",
-  },
-  {
-    key: "timestamp" as const,
-    title: "TIMESTAMP",
+    key: "customerName" as const,
+    title: "CUSTOMER",
   },
   {
     key: "region" as const,
@@ -44,114 +31,40 @@ const tableColumns = [
     key: "status" as const,
     title: "STATUS",
   },
-];
-
-// Mock audit log data
-const mockAuditData: AuditLog[] = [
   {
-    id: "1",
-    officer: "James Okonkwo",
-    email: "james@gmail.com",
-    action: "Login",
-    timestamp: "2026-06-10 09:14:32",
-    region: "Lagos",
-    status: "Success",
-  },
-  {
-    id: "2",
-    officer: "James Okonkwo",
-    email: "james@gmail.com",
-    action: "Customer Update",
-    timestamp: "2026-06-10 09:14:32",
-    region: "Lagos",
-    status: "Success",
-  },
-  {
-    id: "3",
-    officer: "James Okonkwo",
-    email: "james@gmail.com",
-    action: "Report Generated",
-    timestamp: "2026-06-10 09:14:32",
-    region: "Lagos",
-    status: "Pending",
-  },
-  {
-    id: "4",
-    officer: "James Okonkwo",
-    email: "james@gmail.com",
-    action: "Data Export",
-    timestamp: "2026-06-10 09:14:32",
-    region: "Lagos",
-    status: "Failed",
-  },
-  {
-    id: "5",
-    officer: "James Okonkwo",
-    email: "james@gmail.com",
-    action: "Login",
-    timestamp: "2026-06-10 09:14:32",
-    region: "Lagos",
-    status: "Success",
-  },
-  {
-    id: "6",
-    officer: "James Okonkwo",
-    email: "james@gmail.com",
-    action: "Customer Update",
-    timestamp: "2026-06-10 09:14:32",
-    region: "Lagos",
-    status: "Success",
-  },
-  {
-    id: "7",
-    officer: "James Okonkwo",
-    email: "james@gmail.com",
-    action: "Report Generated",
-    timestamp: "2026-06-10 09:14:32",
-    region: "Lagos",
-    status: "Pending",
-  },
-  {
-    id: "8",
-    officer: "James Okonkwo",
-    email: "james@gmail.com",
-    action: "Data Export",
-    timestamp: "2026-06-10 09:14:32",
-    region: "Lagos",
-    status: "Failed",
-  },
-  {
-    id: "9",
-    officer: "James Okonkwo",
-    email: "james@gmail.com",
-    action: "Login",
-    timestamp: "2026-06-10 09:14:32",
-    region: "Lagos",
-    status: "Success",
-  },
-  {
-    id: "10",
-    officer: "James Okonkwo",
-    email: "james@gmail.com",
-    action: "Customer Update",
-    timestamp: "2026-06-10 09:14:32",
-    region: "Lagos",
-    status: "Success",
+    key: "createdAt" as const,
+    title: "DATE",
   },
 ];
 
 // Region options for tabs
 const regions = [
-  { name: "All Regions", value: "all" },
-  { name: "Lagos", value: "Lagos" },
-  { name: "South West", value: "South West" },
-  { name: "South East", value: "South East" },
-  { name: "North", value: "North" },
+  { name: "All Regions", value: "" },
+  { name: "Lagos", value: "LAGOS" },
+  { name: "South West", value: "SOUTH_WEST" },
+  { name: "South East", value: "SOUTH_EAST" },
+  { name: "North", value: "NORTH" },
 ];
+
+// Transform API data to table format
+interface AuditTableRow {
+  id: string;
+  ticketId: string;
+  subject: string;
+  customerName: string;
+  region: string;
+  status: string;
+  createdAt: string;
+}
 
 function InteractionAuditContent() {
   // State for active region filter
-  const [selectedRegion, setSelectedRegion] = useState("all");
+  const [selectedRegion, setSelectedRegion] = useState("");
+
+  // State for filter inputs
+  const [customerName, setCustomerName] = useState("");
+  const [officerName, setOfficerName] = useState("");
+  const [keyword, setKeyword] = useState("");
 
   // State for date filter
   const [startDate, setStartDate] = useState("");
@@ -159,41 +72,50 @@ function InteractionAuditContent() {
 
   // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 20;
+
+  // Fetch audit tickets from API
+  const {
+    data: auditData,
+    isLoading,
+    error,
+  } = useAuditTickets({
+    page: currentPage,
+    pageSize: itemsPerPage,
+    region: selectedRegion ? (selectedRegion as BroadcastRegion) : undefined,
+    customerName: customerName || undefined,
+    officerName: officerName || undefined,
+    keyword: keyword || undefined,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+  });
 
   /**
-   * Filter audit logs by selected region and dates
+   * Transform API response to table format
    */
-  const filteredAudits = useMemo(() => {
-    let filtered = mockAuditData;
+  const tableData: AuditTableRow[] = useMemo(() => {
+    if (!auditData?.data) return [];
 
-    if (selectedRegion !== "all") {
-      filtered = filtered.filter((audit) => audit.region === selectedRegion);
-    }
+    return auditData.data.map((ticket) => ({
+      id: ticket.id,
+      ticketId: ticket.ticketId,
+      subject: ticket.subject,
+      customerName: ticket.customer.name,
+      region: ticket.customer.region,
+      status: ticket.status,
+      createdAt: new Date(ticket.createdAt).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }),
+    }));
+  }, [auditData?.data]);
 
-    // Filter by date range if dates are provided
-    if (startDate && endDate) {
-      filtered = filtered.filter((audit) => {
-        const auditDate = new Date(audit.timestamp).toLocaleDateString("en-CA");
-        return auditDate >= startDate && auditDate <= endDate;
-      });
-    }
-
-    return filtered;
-  }, [selectedRegion, startDate, endDate]);
-
-  /**
-   * Calculate pagination
-   */
-  const totalItems = filteredAudits.length;
-  const paginatedData = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredAudits.slice(startIndex, endIndex);
-  }, [filteredAudits, currentPage]);
+  const totalItems = auditData?.meta.total || 0;
+  const totalPages = auditData?.meta.totalPages || 1;
 
   /**
-   * Handle region change and reset pagination
+   * Handle region change
    */
   const handleRegionChange = (region: string) => {
     setSelectedRegion(region);
@@ -216,13 +138,6 @@ function InteractionAuditContent() {
   };
 
   /**
-   * Handle search input
-   */
-  const handleSearch = (value: string) => {
-    console.log("Search value:", value);
-  };
-
-  /**
    * Handle previous page button click
    */
   const handlePreviousPage = () => {
@@ -235,7 +150,6 @@ function InteractionAuditContent() {
    * Handle next page button click
    */
   const handleNextPage = () => {
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
     }
@@ -253,8 +167,8 @@ function InteractionAuditContent() {
         {/* Audit Logs Card */}
         <Card border={false}>
           {/* Filters Section */}
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            {/* Region Filter Tabs */}
+          <div className="space-y-4">
+            {/* Row 1: Region Filter Tabs */}
             <div className="flex items-center space-x-3 flex-wrap">
               {regions.map((region) => (
                 <Button
@@ -265,7 +179,7 @@ function InteractionAuditContent() {
                   onClick={() => handleRegionChange(region.value)}
                   className={
                     selectedRegion === region.value
-                      ? "bg-gradient-to-r from-primary via-orange to-primary text-white border border-primary"
+                      ? "bg-linear-to-r from-primary via-orange to-primary text-white border border-primary"
                       : "bg-white border border-muted/30 hover:border-primary hover:bg-primary hover:text-white"
                   }
                 >
@@ -274,7 +188,41 @@ function InteractionAuditContent() {
               ))}
             </div>
 
-            {/* Date Filters */}
+            {/* Row 2: Filter Input Fields */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <input
+                type="text"
+                value={customerName}
+                onChange={(e) => {
+                  setCustomerName(e.target.value);
+                  setCurrentPage(1);
+                }}
+                placeholder="Customer name"
+                className="px-3 py-2 border border-muted/30 rounded-lg text-sm"
+              />
+              <input
+                type="text"
+                value={officerName}
+                onChange={(e) => {
+                  setOfficerName(e.target.value);
+                  setCurrentPage(1);
+                }}
+                placeholder="Officer name"
+                className="px-3 py-2 border border-muted/30 rounded-lg text-sm"
+              />
+              <input
+                type="text"
+                value={keyword}
+                onChange={(e) => {
+                  setKeyword(e.target.value);
+                  setCurrentPage(1);
+                }}
+                placeholder="Keyword"
+                className="px-3 py-2 border border-muted/30 rounded-lg text-sm"
+              />
+            </div>
+
+            {/* Row 3: Date Filters */}
             <div className="flex items-center gap-3">
               <input
                 type="date"
@@ -294,24 +242,41 @@ function InteractionAuditContent() {
             </div>
           </div>
 
-          {/* Data Table */}
-          <div className="overflow-x-auto mt-6">
-            <Table
-              columns={tableColumns}
-              data={paginatedData}
-              onRowClick={() => {}}
-              onActionClick={() => {}}
-            />
-          </div>
+          {/* Loading/Error States */}
+          {isLoading && (
+            <div className="py-6 text-center text-muted">
+              Loading audit tickets...
+            </div>
+          )}
 
-          {/* Pagination Component */}
-          <Pagination
-            currentPage={currentPage}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            onPrevious={handlePreviousPage}
-            onNext={handleNextPage}
-          />
+          {error && (
+            <div className="py-6 text-center text-red-500">
+              Error loading audit tickets. Please try again.
+            </div>
+          )}
+
+          {/* Data Table */}
+          {!isLoading && !error && (
+            <>
+              <div className="overflow-x-auto mt-6">
+                <Table
+                  columns={tableColumns}
+                  data={tableData}
+                  onRowClick={() => {}}
+                  onActionClick={() => {}}
+                />
+              </div>
+
+              {/* Pagination Component */}
+              <Pagination
+                currentPage={currentPage}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPrevious={handlePreviousPage}
+                onNext={handleNextPage}
+              />
+            </>
+          )}
         </Card>
       </div>
     </MainLayout>

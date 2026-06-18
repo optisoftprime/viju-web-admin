@@ -6,6 +6,8 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Button, Input, Modal, Select, Text } from "./common";
+import { useCreateOfficer } from "@/hooks/api/useOfficer";
+import { BroadcastRegion } from "@/lib/api/types";
 
 interface AddAccountOfficerModalProps {
   isOpen: boolean;
@@ -38,10 +40,10 @@ const schema = yup.object({
 type FormData = yup.InferType<typeof schema>;
 
 const regions = [
-  { label: "Lagos", value: "Lagos" },
-  { label: "South West", value: "South West" },
-  { label: "South East", value: "South East" },
-  { label: "North", value: "North" },
+  { label: "Lagos", value: "LAGOS" },
+  { label: "South West", value: "SOUTH_WEST" },
+  { label: "South East", value: "SOUTH_EAST" },
+  { label: "North", value: "NORTH" },
 ];
 
 // Generate password function
@@ -61,12 +63,14 @@ export default function AddAccountOfficerModal({
   onSuccess,
 }: AddAccountOfficerModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const createOfficerMutation = useCreateOfficer();
   const {
     register,
     handleSubmit,
     watch,
     control,
     setValue,
+    reset,
     formState: { errors },
   } = useForm<FormData>({
     resolver: yupResolver(schema),
@@ -83,16 +87,22 @@ export default function AddAccountOfficerModal({
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     try {
-      // Simulate API call
-      console.log("Form submitted:", data);
-      setTimeout(() => {
-        setIsSubmitting(false);
-        onSuccess?.();
-        onClose();
-      }, 500);
+      await createOfficerMutation.mutateAsync({
+        name: data.fullName,
+        email: data.emailAddress,
+        phone: data.phoneNumber,
+        region: data.region as BroadcastRegion,
+        password: data.temporaryPassword,
+      });
+
+      console.log("Officer created:", data);
+      reset();
+      setIsSubmitting(false);
+      onSuccess?.();
+      onClose();
     } catch (error) {
       setIsSubmitting(false);
-      console.error("Error submitting form:", error);
+      console.error("Error creating officer:", error);
     }
   };
 
