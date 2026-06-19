@@ -26,9 +26,7 @@ export default function MainLayout({
         <Navbar pageTitle={pageTitle} notificationCount={notificationCount} />
 
         {/* Main Content Area */}
-        <main className="mt-20 flex-1 overflow-y-auto p-6 bg-background">
-          {children}
-        </main>
+        <main className="pt-20 overflow-y-auto bg-milkwhite">{children}</main>
       </div>
     </div>
   );

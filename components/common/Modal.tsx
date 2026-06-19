@@ -1,5 +1,11 @@
-import React, { useEffect } from "react";
-import { Button } from "./Button";
+import React, { Fragment, useEffect } from "react";
+import {
+  Dialog,
+  DialogPanel,
+  Transition,
+  TransitionChild,
+} from "@headlessui/react";
+
 import { Text } from "./Text";
 
 export interface ModalProps {
@@ -22,77 +28,96 @@ export const Modal: React.FC<ModalProps> = ({
   className = "",
 }) => {
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && open) {
-        onClose();
-      }
-    };
-
     if (open) {
-      document.addEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "hidden";
     }
 
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "auto";
     };
-  }, [open, onClose]);
-
-  if (!open) return null;
+  }, [open]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Overlay */}
-      <div
-        className="absolute inset-0 bg-foreground/50"
-        onClick={onClose}
-      ></div>
+    <Transition appear show={open} as={Fragment}>
+      <Dialog as="div" className="relative z-50" onClose={onClose}>
+        {/* Overlay */}
+        <TransitionChild
+          as={Fragment}
+          enter="duration-300 ease-out"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="duration-200 ease-in"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <div className="fixed inset-0 bg-foreground/50" aria-hidden="true" />
+        </TransitionChild>
 
-      {/* Modal Box */}
-      <div
-        className={`
-          relative bg-milkwhite rounded-xl shadow-lg
-          max-w-md w-full mx-4
-          ${className}
-        `.trim()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-muted">
-          {title && (
-            <Text variant="h2" color="foreground" weight="semibold">
-              {title}
-            </Text>
-          )}
-          <button
-            onClick={onClose}
-            className="ml-auto text-muted hover:text-foreground transition-colors"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        {/* Modal Container */}
+        <div className="fixed inset-0 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center text-center">
+            <TransitionChild
+              as={Fragment}
+              enter="duration-300 ease-out"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="duration-200 ease-in"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+              <DialogPanel
+                className={`
+                  relative bg-milkwhite rounded-xl shadow-lg
+                  max-w-lg w-full mx-4
+                  text-left align-middle
+                  transition-all
+                  ${className}
+                `.trim()}
+              >
+                {/* Header */}
+                {title && (
+                  <div className="flex items-center justify-between p-6">
+                    <Text variant="h2" color="foreground" weight="semibold">
+                      {title}
+                    </Text>
+                  </div>
+                )}
+                <div className="relative">
+                  <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 ml-auto cursor-pointer text-muted hover:text-foreground transition-colors"
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Content */}
+                <div className="p-6">{children}</div>
+
+                {/* Actions */}
+                {actions && (
+                  <div className="flex gap-3 p-6 border-t border-muted">
+                    {actions}
+                  </div>
+                )}
+              </DialogPanel>
+            </TransitionChild>
+          </div>
         </div>
-
-        {/* Content */}
-        <div className="p-6">{children}</div>
-
-        {/* Actions */}
-        {actions && (
-          <div className="flex gap-3 p-6 border-t border-muted">{actions}</div>
-        )}
-      </div>
-    </div>
+      </Dialog>
+    </Transition>
   );
 };
 
