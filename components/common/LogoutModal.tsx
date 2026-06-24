@@ -17,7 +17,7 @@ export default function LogoutModal({ open, onClose }: LogoutModalProps) {
     try {
       await logoutMutation.mutateAsync();
     } catch (error) {
-      console.error("Logout error:", error);
+      console.log("Logout error:", error);
     }
   };
 

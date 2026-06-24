@@ -44,7 +44,7 @@ export const auditService = {
       );
       return data;
     } catch (error) {
-      console.error("Fetch audit tickets failed:", error);
+      console.log("Fetch audit tickets failed:", error);
       throw error;
     }
   },

@@ -38,7 +38,7 @@ export const customerService = {
       );
       return data;
     } catch (error) {
-      console.error("Fetch customers failed:", error);
+      console.log("Fetch customers failed:", error);
       throw error;
     }
   },
@@ -63,7 +63,7 @@ export const customerService = {
       );
       return data;
     } catch (error) {
-      console.error("Fetch customers for reassignment failed:", error);
+      console.log("Fetch customers for reassignment failed:", error);
       throw error;
     }
   },
@@ -80,7 +80,7 @@ export const customerService = {
       const { data } = await apiClient.patch(url, request);
       return data;
     } catch (error) {
-      console.error("Reassign customer failed:", error);
+      console.log("Reassign customer failed:", error);
       throw error;
     }
   },

@@ -41,7 +41,7 @@ export default function ForgotPasswordForm() {
       });
     } catch (error) {
       // Error is handled by the mutation's onError callback with toast
-      console.error("Forgot password submission error:", error);
+      console.log("Forgot password submission error:", error);
     }
   };
 

@@ -37,7 +37,7 @@ export default function LoginForm() {
       await loginMutation.mutateAsync(data);
     } catch (error) {
       // Error is handled by the mutation's onError callback with toast
-      console.error("Login submission error:", error);
+      console.log("Login submission error:", error);
     }
   };
 

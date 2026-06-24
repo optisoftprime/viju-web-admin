@@ -165,7 +165,7 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
       }
     } catch (error) {
       // Error is handled by the mutation's onError callback with toast
-      console.error("Broadcast submission error:", error);
+      console.log("Broadcast submission error:", error);
     }
   };
 

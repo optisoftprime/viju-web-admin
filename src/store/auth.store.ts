@@ -118,7 +118,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
         });
       }
     } catch (error) {
-      console.error("Failed to restore auth:", error);
+      console.log("Failed to restore auth:", error);
       set({
         isLoading: false,
         hasInitialized: true,

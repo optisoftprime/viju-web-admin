@@ -13,6 +13,7 @@ interface NavLinkItem {
   url: string;
   icon: string;
   isActive?: boolean;
+  secondaryLink?: string;
 }
 
 interface NavCategory {
@@ -111,7 +112,12 @@ export default function Sidebar() {
       category: "ADMINISTRATOR",
       type: "ADMIN",
       links: [
-        { name: "Org Dashboard", url: "/dashboard", icon: "Globe" },
+        {
+          name: "Org Dashboard",
+          url: "/dashboard",
+          icon: "Globe",
+          secondaryLink: "/admin/distributors",
+        },
         { name: "Broadcasts", url: "/broadcast", icon: "Megaphone" },
         {
           name: "Interaction Audits",
@@ -177,7 +183,8 @@ export default function Sidebar() {
             </Text>
             <div className="flex flex-col gap-1">
               {category.links.map((link: NavLinkItem, linkIndex: number) => {
-                const isActive = pathname === link.url;
+                const isActive =
+                  pathname === link.url || pathname === link.secondaryLink;
                 return (
                   <Link
                     key={linkIndex}

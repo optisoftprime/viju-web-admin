@@ -30,7 +30,7 @@ export const officerService = {
       );
       return data;
     } catch (error) {
-      console.error("Fetch officers failed:", error);
+      console.log("Fetch officers failed:", error);
       throw error;
     }
   },
@@ -43,7 +43,7 @@ export const officerService = {
       const { data } = await apiClient.post(endpoints.officers.create, officer);
       return data;
     } catch (error) {
-      console.error("Create officer failed:", error);
+      console.log("Create officer failed:", error);
       throw error;
     }
   },

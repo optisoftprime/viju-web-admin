@@ -9,7 +9,8 @@ export const endpoints = {
     logout: "/auth/logout",
     refresh: "/auth/refresh",
     forgotPassword: "/auth/staff/password-reset/request",
-    resetPassword: "/auth/staff/password-reset/confirm",
+    verifyOTP: "/auth/staff/password-reset/verify-otp",
+    resetPassword: "/auth/staff/password-reset/reset",
   },
   user: {
     me: "/users/me",
@@ -50,5 +51,15 @@ export const endpoints = {
     orders: "/officers/customers/{id}/orders",
     invoices: "/officers/customers/{id}/invoices",
     stock: "/officers/customers/{id}/stock",
+    waybills: "/officers/customers/{id}/waybills",
+    tickets: "/tickets/{id}",
+    sendReply: "/tickets/{id}/replies",
+  },
+  chat: {
+    history: "/chat/{otherUserId}",
+    sendMessage: "/chat/{receiverId}",
+  },
+  uploads: {
+    file: "/uploads",
   },
 };

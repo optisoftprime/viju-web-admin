@@ -11,6 +11,8 @@ import {
   ForgotPasswordRequest,
   ResetPasswordRequest,
   LoginTwoCredentials,
+  VerifyOTPRequest,
+  VerifyOTPResponse,
 } from "@/lib/api/types";
 
 export const authService = {
@@ -18,7 +20,6 @@ export const authService = {
    * Login with email and password
    */
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    console.log({ credentials });
     try {
       const { data } = await apiClient.post(endpoints.auth.login, credentials);
       return data;
@@ -81,6 +82,19 @@ export const authService = {
         endpoints.auth.forgotPassword,
         payload,
       );
+      return data;
+    } catch (error) {
+      console.log({ error });
+      throw error;
+    }
+  },
+
+  /**
+   * Verify OTP code and get reset token
+   */
+  verifyOTP: async (payload: VerifyOTPRequest): Promise<VerifyOTPResponse> => {
+    try {
+      const { data } = await apiClient.post(endpoints.auth.verifyOTP, payload);
       return data;
     } catch (error) {
       console.log({ error });

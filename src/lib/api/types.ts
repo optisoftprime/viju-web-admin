@@ -28,12 +28,6 @@ export interface ForgotPasswordRequest {
   identifier: string;
 }
 
-export interface ResetPasswordRequest {
-  identifier: string;
-  code: string;
-  newPassword: string;
-}
-
 export interface User {
   id: string;
   name: string;
@@ -435,4 +429,143 @@ export interface AwaitingLoading {
 export interface StockResponse {
   catalogue: StockCatalogue[];
   awaitingLoading: AwaitingLoading[];
+}
+
+// Officer Customer Waybills Types
+export interface Waybill {
+  id: string;
+  reference: string;
+  customerId: string;
+  region: BroadcastRegion;
+  linkedPurchaseId: string;
+  truckPlateNumber: string;
+  driverName: string;
+  driverPhone: string;
+  requestedLoadingDate: string;
+  quantityCartons: number;
+  destination: string;
+  termsAcceptedAt: string;
+  externalFormUrl: string;
+  status: string;
+  assignedOfficerId: string;
+  assignedAt: string;
+  assignedById: string;
+  loadingStartedAt?: string;
+  completedAt?: string;
+  waybillDocumentUrl?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WaybillsResponse {
+  data: Waybill[];
+  meta: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
+// Officer Tickets Types
+export interface TicketReply {
+  id: string;
+  ticketId: string;
+  senderType: "CUSTOMER" | "STAFF";
+  customerId?: string;
+  staffId?: string;
+  content: string;
+  attachmentUrl?: string;
+  createdAt: string;
+}
+
+export interface TicketCustomer {
+  id: string;
+  erpId: string;
+  name: string;
+  phone: string;
+  email: string;
+  profilePhotoUrl?: string;
+  accountStatus: string;
+  outstandingBalance: number;
+  region: BroadcastRegion;
+  failedLoginAttempts: number;
+  lockedUntil?: string;
+  assignedOfficerId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TicketThread {
+  id: string;
+  ticketId: string;
+  customerId: string;
+  category: string;
+  subject: string;
+  description: string;
+  attachmentUrl?: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  replies: TicketReply[];
+  customer: TicketCustomer;
+}
+
+export interface SendTicketReplyRequest {
+  content: string;
+  attachmentUrl?: string;
+}
+
+// Chat Types
+export interface ChatMessage {
+  id: string;
+  customerId: string;
+  staffId: string;
+  senderType: "STAFF" | "CUSTOMER";
+  content: string;
+  attachmentUrl?: string;
+  createdAt: string;
+  readAt?: string | null;
+}
+
+export interface SendMessageRequest {
+  content: string;
+  attachmentUrl?: string;
+}
+
+// File Upload Types
+export interface FileUploadResponse {
+  url: string;
+  key: string;
+  size: number;
+  mimeType: string;
+}
+
+// File Upload Types
+export interface FileUploadResponse {
+  url: string;
+  filename: string;
+  size: number;
+}
+
+// Password Reset Types
+export interface ForgotPasswordRequest {
+  identifier: string;
+}
+
+export interface VerifyOTPRequest {
+  identifier: string;
+  code: string;
+}
+
+export interface VerifyOTPResponse {
+  reset_token: string;
+}
+
+export interface ResetPasswordRequest {
+  reset_token: string;
+  newPassword: string;
 }

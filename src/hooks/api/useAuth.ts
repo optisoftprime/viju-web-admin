@@ -18,6 +18,8 @@ import {
   User,
   ForgotPasswordRequest,
   ResetPasswordRequest,
+  VerifyOTPRequest,
+  VerifyOTPResponse,
 } from "@/lib/api/types";
 import { getErrorMessage } from "@/utils/apiError";
 
@@ -65,7 +67,7 @@ export const useLogin = () => {
       } else {
         const errorMessage = getErrorMessage(error);
         toast.error(errorMessage);
-        console.error("Login failed:", error);
+        console.log("Login failed:", error);
       }
     },
   });
@@ -92,7 +94,7 @@ export const useLogout = () => {
       // Even if logout fails, clear auth data locally
       clearAuthData();
       const errorMessage = getErrorMessage(error);
-      console.error("Logout failed:", error);
+      console.log("Logout failed:", error);
       router.push("/auth/login");
     },
   });
@@ -115,7 +117,25 @@ export const useForgotPassword = () => {
     onError: (error: unknown) => {
       const errorMessage = getErrorMessage(error);
       toast.error(errorMessage);
-      console.error("Forgot password failed:", error);
+      console.log("Forgot password failed:", error);
+    },
+  });
+};
+
+/**
+ * Verify OTP Mutation Hook
+ */
+export const useVerifyOTP = () => {
+  return useMutation({
+    mutationFn: (payload: VerifyOTPRequest): Promise<VerifyOTPResponse> =>
+      authService.verifyOTP(payload),
+    onSuccess: () => {
+      toast.success("OTP verified successfully");
+    },
+    onError: (error: unknown) => {
+      const errorMessage = getErrorMessage(error);
+      toast.error(errorMessage);
+      console.log("OTP verification failed:", error);
     },
   });
 };
@@ -137,7 +157,7 @@ export const useResetPassword = () => {
     onError: (error: unknown) => {
       const errorMessage = getErrorMessage(error);
       toast.error(errorMessage);
-      console.error("Password reset failed:", error);
+      console.log("Password reset failed:", error);
     },
   });
 };

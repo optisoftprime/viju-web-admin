@@ -46,7 +46,7 @@ export default function PreviewAccountOfficerModal({
       }, 500);
     } catch (error) {
       setIsDeactivating(false);
-      console.error("Error deactivating officer:", error);
+      console.log("Error deactivating officer:", error);
     }
   };
 

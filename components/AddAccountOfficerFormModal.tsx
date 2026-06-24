@@ -102,7 +102,7 @@ export default function AddAccountOfficerModal({
       onClose();
     } catch (error) {
       setIsSubmitting(false);
-      console.error("Error creating officer:", error);
+      console.log("Error creating officer:", error);
     }
   };
 

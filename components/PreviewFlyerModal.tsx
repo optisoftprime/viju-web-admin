@@ -45,7 +45,7 @@ export default function PreviewFlyerModal({
       }, 500);
     } catch (error) {
       setIsDeactivating(false);
-      console.error("Error deactivating flyer:", error);
+      console.log("Error deactivating flyer:", error);
     }
   };
 

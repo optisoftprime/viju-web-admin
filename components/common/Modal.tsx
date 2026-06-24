@@ -74,6 +74,24 @@ export const Modal: React.FC<ModalProps> = ({
                   ${className}
                 `.trim()}
               >
+                <button
+                  onClick={onClose}
+                  className="absolute top-4 right-4 ml-auto cursor-pointer text-muted hover:text-foreground transition-colors"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
                 {/* Header */}
                 {title && (
                   <div className="flex items-center justify-between p-6">
@@ -82,26 +100,6 @@ export const Modal: React.FC<ModalProps> = ({
                     </Text>
                   </div>
                 )}
-                <div className="relative">
-                  <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 ml-auto cursor-pointer text-muted hover:text-foreground transition-colors"
-                  >
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
 
                 {/* Content */}
                 <div className="p-6">{children}</div>

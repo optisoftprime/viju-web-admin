@@ -27,6 +27,7 @@ import {
   useDistributorOrders,
   useDistributorInvoices,
   useDistributorStock,
+  useDistributorWaybills,
 } from "@/hooks/api/useOfficerCustomer";
 import {
   AdminDashboardStats,
@@ -37,12 +38,15 @@ import {
   DistributorOverview,
   Order,
   StockResponse,
+  WaybillsResponse,
 } from "@/lib/api/types";
 import userIcon from "@/assets/icons/usersblack.svg";
 import { TextExtremeEnd } from "@/components/common/TextExtremeEnd";
 import { formatDateTime, formatToNaira } from "@/src/utils/formatter";
 import Image from "next/image";
 import { useAuthStore } from "@/src/store/auth.store";
+import { useRouter } from "next/navigation";
+import LoadingOfficer from "@/components/loadingOfficer/LoadingOfficer";
 
 // Interface for distributor data structure
 interface Distributor {
@@ -323,6 +327,7 @@ const mockLoadingRequests: Distributor[] = [
 ];
 
 function DashboardContent() {
+  const router = useRouter();
   // State for active tab filter
   const [selectedTab, setSelectedTab] = useState("all");
 
@@ -340,6 +345,9 @@ function DashboardContent() {
 
   // State for orders pagination
   const [orderPage, setOrderPage] = useState(1);
+
+  // State for waybills pagination
+  const [waybillPage, setWaybillPage] = useState(1);
 
   // State for assign officer modal
   const [isAssignOfficerModalOpen, setIsAssignOfficerModalOpen] =
@@ -391,6 +399,11 @@ function DashboardContent() {
     isLoading: stockLoading,
     error: stockError,
   } = useDistributorStock(selectedDistributorId);
+  const {
+    data: waybillsData,
+    isLoading: waybillsLoading,
+    error: waybillsError,
+  } = useDistributorWaybills(selectedDistributorId, waybillPage);
   console.log({ stockData });
 
   // Helper function to format large numbers
@@ -506,11 +519,11 @@ function DashboardContent() {
     }, [tableData, user?.role]);
 
   // Calculate pagination
-  const totalItems = transformedTableData.length;
+  const totalItems = transformedTableData?.length || 0;
   const paginatedData = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    return transformedTableData.slice(startIndex, endIndex);
+    return transformedTableData?.slice(startIndex, endIndex) || [];
   }, [transformedTableData, currentPage]);
 
   // Determine stats display based on user role
@@ -713,19 +726,23 @@ function DashboardContent() {
     setSelectedDistributorId(distributor.id);
     setSelectedDetailTab("Overview"); // Reset to Overview tab when a new distributor is selected
     setOrderPage(1); // Reset order page
+    setWaybillPage(1); // Reset waybill page
     console.log("Selected Distributor:", { distributor });
   };
   return (
     <MainLayout>
       <div className="p-4 space-y-6 overflow-y-auto h-screen bg-milkwhite/90">
-        {/* Page Header Component */}
-        <PageHeader
-          title="Good Morning,"
-          subtitle="Welcome back to the Viju Account Officer Portal"
-        />
-
-        {/* Stats Cards Grid */}
-        <div className="grid grid-cols-4 gap-4">{renderStats()}</div>
+        {(user?.role as any) !== "LOADING_OFFICER" && (
+          <>
+            {/* Page Header Component */}
+            <PageHeader
+              title="Good Morning,"
+              subtitle="Welcome back to the Viju Account Officer Portal"
+            />
+            {/* Stats Cards Grid */}
+            <div className="grid grid-cols-4 gap-4">{renderStats()}</div>
+          </>
+        )}
 
         {user?.role === "ADMIN" && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-14">
@@ -747,12 +764,17 @@ function DashboardContent() {
                 />
                 <TextExtremeEnd left="Tickets" right={stat.openTickets} />
                 <TextExtremeEnd left="Officers" right={stat.activeOfficers} />
-                <div className="flex gap-1 mt-3 items-center text-orange">
+                <div
+                  onClick={() => {
+                    router.push(`/admin/distributors`);
+                  }}
+                  className="flex gap-1 mt-3 items-center text-orange"
+                >
                   <Text
                     variant="small"
                     color="primary"
                     weight="medium"
-                    className="underline "
+                    className="underline cursor-pointer"
                   >
                     View Details
                   </Text>
@@ -1008,6 +1030,7 @@ function DashboardContent() {
                         </div>
                       ) : stockData ? (
                         <StockSection
+                          currentPage={currentPage}
                           catalogue={stockData.catalogue}
                           awaitingLoading={stockData.awaitingLoading}
                         />
@@ -1022,10 +1045,42 @@ function DashboardContent() {
                       <ChatUI
                         profileName={selectedDistributor.name}
                         profileStatus="Online"
+                        distributorId={selectedDistributorId}
                       />
                     )}
-                    {selectedDetailTab === "Tickets" && <TicketsUI />}
-                    {selectedDetailTab === "Waybills" && <WaybillsSection />}
+                    {selectedDetailTab === "Tickets" && (
+                      <TicketsUI
+                        distributorId={selectedDistributorId}
+                        distributorName={selectedDistributor?.name}
+                      />
+                    )}
+                    {selectedDetailTab === "Waybills" &&
+                      (waybillsLoading ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            Loading waybills...
+                          </Text>
+                        </div>
+                      ) : waybillsError ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            Error loading waybills. Please try again.
+                          </Text>
+                        </div>
+                      ) : waybillsData && waybillsData.data.length > 0 ? (
+                        <WaybillsSection
+                          waybills={waybillsData.data}
+                          currentPage={waybillPage}
+                          totalPages={waybillsData.meta.totalPages}
+                          onPageChange={setWaybillPage}
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            No waybills found
+                          </Text>
+                        </div>
+                      ))}
                   </div>
                 </div>
               </Card>
@@ -1128,6 +1183,8 @@ function DashboardContent() {
             />
           </div>
         )}
+
+        {(user?.role as any) === "LOADING_OFFICER" && <LoadingOfficer />}
       </div>
     </MainLayout>
   );

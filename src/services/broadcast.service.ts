@@ -26,7 +26,7 @@ export const broadcastService = {
       );
       return data;
     } catch (error) {
-      console.error("Send regional broadcast failed:", error);
+      console.log("Send regional broadcast failed:", error);
       throw error;
     }
   },
@@ -44,7 +44,7 @@ export const broadcastService = {
       );
       return data;
     } catch (error) {
-      console.error("Send individual broadcast failed:", error);
+      console.log("Send individual broadcast failed:", error);
       throw error;
     }
   },
@@ -69,7 +69,7 @@ export const broadcastService = {
       );
       return data;
     } catch (error) {
-      console.error("Fetch broadcast history failed:", error);
+      console.log("Fetch broadcast history failed:", error);
       throw error;
     }
   },
@@ -84,7 +84,7 @@ export const broadcastService = {
       );
       return data;
     } catch (error) {
-      console.error("Fetch broadcast detail failed:", error);
+      console.log("Fetch broadcast detail failed:", error);
       throw error;
     }
   },
