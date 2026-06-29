@@ -13,6 +13,7 @@ import { CreateOfficerRequest } from "@/lib/api/types";
 interface GetOfficersParams {
   page?: number;
   pageSize?: number;
+  search?: string;
 }
 
 /**
@@ -27,6 +28,7 @@ export const useOfficers = (params: GetOfficersParams = {}) => {
       officerService.getOfficers({
         page: params.page ?? 1,
         pageSize: params.pageSize ?? 20,
+        search: params.search,
       }),
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1,

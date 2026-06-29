@@ -31,7 +31,6 @@ export const useBroadcastRegional = () => {
     onError: (error: unknown) => {
       const errorMessage = getErrorMessage(error);
       toast.error(errorMessage || "Failed to send regional broadcast");
-      console.log("Regional broadcast failed:", error);
     },
   });
 };
@@ -49,7 +48,6 @@ export const useBroadcastIndividual = () => {
     onError: (error: unknown) => {
       const errorMessage = getErrorMessage(error);
       toast.error(errorMessage || "Failed to send individual broadcast");
-      console.log("Individual broadcast failed:", error);
     },
   });
 };

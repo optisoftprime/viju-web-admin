@@ -10,7 +10,7 @@ const AssignedCard = ({
   assignedDate,
 }: AssignedCardProps) => {
   return (
-    <div className="p-2 bg-white rounded-xl space-y-1.5">
+    <div className="p-2 bg-white border border-muted/20 rounded-xl space-y-1.5">
       <div className="flex items-center justify-between">
         <Text variant="caption" color="muted" weight="normal">
           {assignedCode}

@@ -47,6 +47,7 @@ import Image from "next/image";
 import { useAuthStore } from "@/src/store/auth.store";
 import { useRouter } from "next/navigation";
 import LoadingOfficer from "@/components/loadingOfficer/LoadingOfficer";
+import ExportRecord from "@/components/ExportRecord";
 
 // Interface for distributor data structure
 interface Distributor {
@@ -364,6 +365,7 @@ function DashboardContent() {
   // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch dashboard stats
   const {
@@ -375,7 +377,7 @@ function DashboardContent() {
     data: tableData,
     isLoading: tableLoading,
     error: tableError,
-  } = useDashboardTableData();
+  } = useDashboardTableData({ search: searchTerm || undefined });
   const { user } = useAuthStore();
 
   // Fetch officer customer data (Overview, Orders, Invoices, Stock)
@@ -404,7 +406,6 @@ function DashboardContent() {
     isLoading: waybillsLoading,
     error: waybillsError,
   } = useDistributorWaybills(selectedDistributorId, waybillPage);
-  console.log({ stockData });
 
   // Helper function to format large numbers
   const formatNumber = (num: number) => {
@@ -428,8 +429,6 @@ function DashboardContent() {
       return dateString;
     }
   };
-
-  // console.log({ })
 
   // Map officer customers to table format
   const mapOfficerCustomersToTable = (
@@ -666,17 +665,15 @@ function DashboardContent() {
    * Can be extended to filter the distributor data
    */
   const handleSearch = (value: string) => {
-    // Search logic can be implemented here
-    // For now, the SearchInput handles the debounce and logging
+    setSearchTerm(value);
+    setCurrentPage(1);
   };
 
   /**
    * Handle action button click on table rows
    * Shows what action was clicked (View, Edit, Delete, etc.)
    */
-  const handleActionClick = (action: string, row: Distributor) => {
-    console.log(`Action: ${action}`, row);
-  };
+  const handleActionClick = (action: string, row: Distributor) => {};
 
   /**
    * Handle previous page button click
@@ -705,7 +702,6 @@ function DashboardContent() {
     name: string;
     role: string;
   }) => {
-    console.log("Officer assigned:", officer);
     // Can add additional logic here to update the distributor's assigned officer
   };
 
@@ -717,7 +713,6 @@ function DashboardContent() {
     name: string;
     role: string;
   }) => {
-    console.log("Loading officer assigned:", officer);
     setIsLoadingOfficerSuccessOpen(true);
   };
 
@@ -727,18 +722,21 @@ function DashboardContent() {
     setSelectedDetailTab("Overview"); // Reset to Overview tab when a new distributor is selected
     setOrderPage(1); // Reset order page
     setWaybillPage(1); // Reset waybill page
-    console.log("Selected Distributor:", { distributor });
   };
   return (
     <MainLayout>
-      <div className="p-4 space-y-6 overflow-y-auto h-screen bg-milkwhite/90">
+      <div className="px-4 pt-4 pb-30 space-y-6 overflow-y-auto h-screen bg-milkwhite/90">
         {(user?.role as any) !== "LOADING_OFFICER" && (
           <>
             {/* Page Header Component */}
-            <PageHeader
-              title="Good Morning,"
-              subtitle="Welcome back to the Viju Account Officer Portal"
-            />
+            <div className="flex items-center justify-between ">
+              <PageHeader
+                title="Good Morning,"
+                subtitle="Welcome back to the Viju Account Officer Portal"
+              />
+
+              <ExportRecord />
+            </div>
             {/* Stats Cards Grid */}
             <div className="grid grid-cols-4 gap-4">{renderStats()}</div>
           </>
@@ -890,12 +888,12 @@ function DashboardContent() {
                         {selectedDistributor.lastContact}
                       </Text>
                     </div>
-                    <Button
+                    {/* <Button
                       variant="primary"
                       onClick={() => setIsAssignOfficerModalOpen(true)}
                     >
                       Assign Officer
-                    </Button>
+                    </Button> */}
                   </div>
 
                   {/* Detail Tabs Navigation */}
@@ -1142,7 +1140,6 @@ function DashboardContent() {
                       }
                     }}
                     onActionClick={(action, row) => {
-                      console.log(`Action: ${action}`, row);
                       if (action === "Assign Officer") {
                         setIsAssignLoadingOfficerModalOpen(true);
                       }

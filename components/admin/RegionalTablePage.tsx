@@ -131,7 +131,6 @@ function RegionalTable({ isAdmin = false, region }: RegionalTablePageProps) {
    * Handle action button click
    */
   const handleActionClick = (action: string, row: Distributor) => {
-    console.log(`Action: ${action}`, row);
     if (action === "Assign Officer") {
       setIsAssignOfficerModalOpen(true);
     }
@@ -164,7 +163,6 @@ function RegionalTable({ isAdmin = false, region }: RegionalTablePageProps) {
     name: string;
     role: string;
   }) => {
-    console.log("Officer assigned:", officer);
     setIsLoadingOfficerSuccessOpen(true);
   };
 

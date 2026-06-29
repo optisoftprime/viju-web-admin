@@ -55,7 +55,11 @@ export const useDashboardStats = () => {
  * For OFFICER: returns customers list
  * For REGIONAL_ADMIN: returns pending loading requests
  */
-export const useDashboardTableData = () => {
+interface DashboardTableParams {
+  search?: string;
+}
+
+export const useDashboardTableData = (params: DashboardTableParams = {}) => {
   const { user } = useAuthStore();
 
   const getTableData = async (): Promise<
@@ -68,7 +72,7 @@ export const useDashboardTableData = () => {
 
     switch (user.role) {
       case "OFFICER":
-        return dashboardService.getOfficerCustomers();
+        return dashboardService.getOfficerCustomers(params.search);
       case "ADMIN":
         return dashboardService.getAdminDashboard();
       case "REGIONAL_ADMIN":
@@ -79,7 +83,7 @@ export const useDashboardTableData = () => {
   };
 
   return useQuery({
-    queryKey: [queryKeys.all[0], "dashboardTable", user?.role],
+    queryKey: [queryKeys.all[0], "dashboardTable", user?.role, params.search],
     queryFn: getTableData,
     enabled:
       !!user && (user.role === "OFFICER" || user.role === "REGIONAL_ADMIN"),

@@ -164,7 +164,6 @@ export const createAxiosInstance = (): AxiosInstance => {
 
       // Handle 403 Forbidden
       if (statusCode === 403) {
-        console.log("Access forbidden");
       }
 
       // Log errors in development mode

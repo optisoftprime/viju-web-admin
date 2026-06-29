@@ -11,9 +11,11 @@ import {
   InvoicesResponse,
   StockResponse,
   WaybillsResponse,
+  OfficerTicketsResponse,
   TicketThread,
   SendTicketReplyRequest,
   FileUploadResponse,
+  TicketStatusUpdateResponse,
 } from "@/lib/api/types";
 
 export const officerCustomerService = {
@@ -75,13 +77,26 @@ export const officerCustomerService = {
   },
 
   /**
-   * Get ticket thread for a distributor
+   * Get tickets assigned to the current officer
    */
-  getTicketThread: async (distributorId: string): Promise<TicketThread> => {
-    const url = endpoints.officerCustomers.tickets.replace(
-      "{id}",
-      distributorId,
+  getOfficerTickets: async (
+    page: number = 1,
+    pageSize: number = 20,
+  ): Promise<OfficerTicketsResponse> => {
+    const response = await apiClient.get<OfficerTicketsResponse>(
+      endpoints.officerCustomers.list,
+      {
+        params: { page, pageSize },
+      },
     );
+    return response.data;
+  },
+
+  /**
+   * Get ticket thread for a ticket
+   */
+  getTicketThread: async (ticketId: string): Promise<TicketThread> => {
+    const url = endpoints.officerCustomers.tickets.replace("{id}", ticketId);
     const response = await apiClient.get<TicketThread>(url);
     return response.data;
   },
@@ -95,6 +110,20 @@ export const officerCustomerService = {
   ): Promise<TicketThread> => {
     const url = endpoints.officerCustomers.sendReply.replace("{id}", ticketId);
     const response = await apiClient.post<TicketThread>(url, request);
+    return response.data;
+  },
+
+  /**
+   * Update a ticket status
+   */
+  updateTicketStatus: async (
+    ticketId: string,
+    status: string,
+  ): Promise<TicketStatusUpdateResponse> => {
+    const url = endpoints.officerCustomers.status.replace("{id}", ticketId);
+    const response = await apiClient.patch<TicketStatusUpdateResponse>(url, {
+      status,
+    });
     return response.data;
   },
 

@@ -57,11 +57,6 @@ export default function Sidebar() {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   // Log user info when component mounts or user changes
-  useEffect(() => {
-    if (user) {
-      console.log("Logged-in user:", user);
-    }
-  }, [user]);
 
   const sidebarNavigationData: NavCategory[] = [
     {
@@ -223,7 +218,7 @@ export default function Sidebar() {
         </div>
         <button
           onClick={() => setIsLogoutModalOpen(true)}
-          className="w-full flex items-center gap-3 text-white hover:bg-orange-600/50 rounded-lg p-3 transition-colors text-sm"
+          className="w-full cursor-pointer flex items-center gap-3 text-white hover:bg-orange-600/50 rounded-lg p-3 transition-colors text-sm"
         >
           {getIconComponent("LogOut")}
 

@@ -67,7 +67,6 @@ export const useLogin = () => {
       } else {
         const errorMessage = getErrorMessage(error);
         toast.error(errorMessage);
-        console.log("Login failed:", error);
       }
     },
   });
@@ -94,7 +93,7 @@ export const useLogout = () => {
       // Even if logout fails, clear auth data locally
       clearAuthData();
       const errorMessage = getErrorMessage(error);
-      console.log("Logout failed:", error);
+      toast.error(errorMessage || "Failed to logout");
       router.push("/auth/login");
     },
   });
@@ -117,7 +116,6 @@ export const useForgotPassword = () => {
     onError: (error: unknown) => {
       const errorMessage = getErrorMessage(error);
       toast.error(errorMessage);
-      console.log("Forgot password failed:", error);
     },
   });
 };
@@ -135,7 +133,6 @@ export const useVerifyOTP = () => {
     onError: (error: unknown) => {
       const errorMessage = getErrorMessage(error);
       toast.error(errorMessage);
-      console.log("OTP verification failed:", error);
     },
   });
 };
@@ -157,7 +154,6 @@ export const useResetPassword = () => {
     onError: (error: unknown) => {
       const errorMessage = getErrorMessage(error);
       toast.error(errorMessage);
-      console.log("Password reset failed:", error);
     },
   });
 };

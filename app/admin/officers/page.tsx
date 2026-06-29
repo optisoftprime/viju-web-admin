@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { MainLayout } from "@/components/common";
-import { Card, Button, Table } from "@/components/common";
+import { Card, Button, Table, SearchInput } from "@/components/common";
 import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
 import AddAccountOfficerFormModal from "@/components/AddAccountOfficerFormModal";
@@ -80,6 +80,7 @@ function AccountOfficersContent() {
 
   // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
   const itemsPerPage = 20;
 
   // Fetch officers from API
@@ -90,6 +91,7 @@ function AccountOfficersContent() {
   } = useOfficers({
     page: currentPage,
     pageSize: itemsPerPage,
+    search: searchTerm || undefined,
   });
 
   // Create officer mutation
@@ -122,14 +124,14 @@ function AccountOfficersContent() {
    * Handle search input
    */
   const handleSearch = (value: string) => {
-    console.log("Search value:", value);
+    setSearchTerm(value);
+    setCurrentPage(1);
   };
 
   /**
    * Handle action button click on table rows
    */
   const handleActionClick = (action: string, row: OfficerTableRow) => {
-    console.log(`Action: ${action}`, row);
     if (action.includes("Deactivate")) {
       setSelectedOfficer(row);
       setIsPreviewModalOpen(true);
@@ -220,6 +222,13 @@ function AccountOfficersContent() {
           {/* Data Table */}
           {!isLoading && !error && (
             <>
+              <div className="flex justify-end mt-4">
+                <SearchInput
+                  placeholder="Search officers"
+                  onSearch={handleSearch}
+                  debounceDelay={500}
+                />
+              </div>
               <div className="overflow-x-auto mt-6">
                 <Table
                   columns={tableColumns}

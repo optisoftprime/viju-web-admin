@@ -6,6 +6,7 @@ import OtpInput from "react-otp-input";
 import { Text, Button, Input } from "@/components/common";
 import { useVerifyOTP, useResetPassword } from "@/hooks/api/useAuth";
 import Link from "next/link";
+import { toast } from "sonner";
 
 export default function OTPForm() {
   const [step, setStep] = useState<"otp" | "password">("otp"); // Step 1: OTP, Step 2: Password
@@ -47,7 +48,7 @@ export default function OTPForm() {
       setStep("password");
     } catch (error) {
       // Error is handled by the mutation's onError callback with toast
-      console.log("OTP verification error:", error);
+      toast.error("OTP verification error: " + (error as Error).message);
     }
   };
 
@@ -72,7 +73,7 @@ export default function OTPForm() {
       // Redirect to login on success is handled by mutation
     } catch (error) {
       // Error is handled by the mutation's onError callback with toast
-      console.log("Password reset error:", error);
+      toast.error("Password reset error: " + (error as Error).message);
     }
   };
 

@@ -9,7 +9,9 @@ import AssignAccountOfficerModal from "@/components/AssignAccountOfficerModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useCustomersForReassignment } from "@/hooks/api/useCustomer";
 import { useReassignCustomer } from "@/hooks/api/useCustomer";
+import { customerService } from "@/services/customer.service";
 import { BroadcastRegion } from "@/lib/api/types";
+import ExportRecord from "@/components/ExportRecord";
 
 // Interface for customer data structure (transformed from API)
 interface CustomerTableRow {
@@ -141,15 +143,41 @@ function CustomerReassignmentContent() {
    */
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-    console.log("Search value:", value);
+
     setCurrentPage(1);
+  };
+
+  const downloadCsvFile = (blob: Blob, filename: string) => {
+    const url = window.URL.createObjectURL(
+      new Blob([blob], { type: "text/csv;charset=utf-8;" }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleExport = async () => {
+    try {
+      const csvBlob = await customerService.exportCustomers({
+        region: selectedRegion
+          ? (selectedRegion as BroadcastRegion)
+          : undefined,
+        search: searchTerm || undefined,
+      });
+      downloadCsvFile(csvBlob, "viju-customers.csv");
+    } catch (error) {
+      console.error("Customer export failed", error);
+    }
   };
 
   /**
    * Handle action button click on table rows
    */
   const handleActionClick = (action: string, row: CustomerTableRow) => {
-    console.log(`Action: ${action}`, row);
     if (action.includes("Reassign")) {
       setSelectedCustomer(row);
       setIsReassignModalOpen(true);
@@ -183,7 +211,6 @@ function CustomerReassignmentContent() {
     role: string;
   }) => {
     if (selectedCustomer) {
-      console.log("Officer assigned:", officer);
       reassignMutation.mutate(
         {
           customerId: selectedCustomer.id,
@@ -205,10 +232,13 @@ function CustomerReassignmentContent() {
     <MainLayout>
       <div className="p-4 space-y-6 overflow-y-auto h-screen bg-milkwhite/90">
         {/* Page Header Component */}
-        <PageHeader
-          title="Customer Reassignment"
-          subtitle="Reassign account officers to customers"
-        />
+        <div className="flex items-center justify-between">
+          <PageHeader
+            title="Customer Reassignment"
+            subtitle="Reassign account officers to customers"
+          />
+          <ExportRecord onClick={handleExport} />
+        </div>
 
         {/* Customer List Card */}
         <Card border={false}>

@@ -9,6 +9,7 @@ import { OfficersListResponse, CreateOfficerRequest } from "@/lib/api/types";
 interface GetOfficersParams {
   page?: number;
   pageSize?: number;
+  search?: string;
 }
 
 export const officerService = {
@@ -24,13 +25,13 @@ export const officerService = {
         queryParams.append("page", String(params.page));
       if (params.pageSize !== undefined)
         queryParams.append("pageSize", String(params.pageSize));
+      if (params.search) queryParams.append("search", params.search);
 
       const { data } = await apiClient.get(
         `${endpoints.officers.list}?${queryParams.toString()}`,
       );
       return data;
     } catch (error) {
-      console.log("Fetch officers failed:", error);
       throw error;
     }
   },
@@ -43,7 +44,6 @@ export const officerService = {
       const { data } = await apiClient.post(endpoints.officers.create, officer);
       return data;
     } catch (error) {
-      console.log("Create officer failed:", error);
       throw error;
     }
   },

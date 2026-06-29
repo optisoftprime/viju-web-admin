@@ -106,11 +106,7 @@ function LoadingQueueContent() {
       setError("Please upload a document before submitting");
       return;
     }
-    console.log("Submitting:", {
-      selectedItemId,
-      selectedStatus,
-      uploadedFile: uploadedFile.name,
-    });
+
     // Handle submission
     setUploadedFile(null);
     setSelectedStatus(null);

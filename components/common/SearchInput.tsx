@@ -58,7 +58,6 @@ export default function SearchInput({
 
     // Set new debounce timer
     debounceTimerRef.current = setTimeout(() => {
-      console.log("Search value:", value);
       onSearch?.(value);
     }, debounceDelay);
   };
@@ -76,7 +75,6 @@ export default function SearchInput({
     }
 
     // Trigger search callback immediately
-    console.log("Search value:", "");
     onSearch?.("");
   };
 

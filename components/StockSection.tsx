@@ -259,7 +259,6 @@ export default function StockSection({
   totalPages: externalTotalPages,
   onPageChange,
 }: StockSectionProps) {
-  // console.log({ catalogue, awaitingLoading });
   const [internalPage, setInternalPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -294,7 +293,6 @@ export default function StockSection({
     return [...catalogueStocks, ...awaitingLoadingStocks];
   }, [catalogue, awaitingLoading]);
 
-  console.log({ combinedData });
   // Use catalogue data if provided, otherwise use stocks
   const displayData = combinedData.length > 0 ? combinedData : stocks;
 

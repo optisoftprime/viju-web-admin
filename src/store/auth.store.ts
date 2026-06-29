@@ -118,7 +118,6 @@ export const useAuthStore = create<AuthStore>((set) => ({
         });
       }
     } catch (error) {
-      console.log("Failed to restore auth:", error);
       set({
         isLoading: false,
         hasInitialized: true,

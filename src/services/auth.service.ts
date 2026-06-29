@@ -24,7 +24,6 @@ export const authService = {
       const { data } = await apiClient.post(endpoints.auth.login, credentials);
       return data;
     } catch (error) {
-      console.log({ error });
       throw error;
     }
   },
@@ -40,7 +39,6 @@ export const authService = {
       );
       return data;
     } catch (error) {
-      console.log({ error });
       throw error;
     }
   },
@@ -53,7 +51,6 @@ export const authService = {
       const payload: LogoutRequest = { refresh_token: refreshToken };
       await apiClient.post(endpoints.auth.logout, payload);
     } catch (error) {
-      console.log({ error });
       throw error;
     }
   },
@@ -66,7 +63,6 @@ export const authService = {
       const { data } = await apiClient.post(endpoints.auth.refresh);
       return data;
     } catch (error) {
-      console.log({ error });
       throw error;
     }
   },
@@ -84,7 +80,6 @@ export const authService = {
       );
       return data;
     } catch (error) {
-      console.log({ error });
       throw error;
     }
   },
@@ -97,7 +92,6 @@ export const authService = {
       const { data } = await apiClient.post(endpoints.auth.verifyOTP, payload);
       return data;
     } catch (error) {
-      console.log({ error });
       throw error;
     }
   },
@@ -115,7 +109,6 @@ export const authService = {
       );
       return data;
     } catch (error) {
-      console.log({ error });
       throw error;
     }
   },

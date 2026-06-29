@@ -11,6 +11,7 @@ import {
   BroadcastHistoryItem,
   BroadcastDetail,
 } from "@/lib/api/types";
+import { toast } from "sonner";
 
 export const broadcastService = {
   /**
@@ -26,7 +27,9 @@ export const broadcastService = {
       );
       return data;
     } catch (error) {
-      console.log("Send regional broadcast failed:", error);
+      toast.error(
+        "Send regional broadcast failed: " + (error as Error).message,
+      );
       throw error;
     }
   },
@@ -44,7 +47,9 @@ export const broadcastService = {
       );
       return data;
     } catch (error) {
-      console.log("Send individual broadcast failed:", error);
+      toast.error(
+        "Send individual broadcast failed: " + (error as Error).message,
+      );
       throw error;
     }
   },
@@ -69,7 +74,9 @@ export const broadcastService = {
       );
       return data;
     } catch (error) {
-      console.log("Fetch broadcast history failed:", error);
+      toast.error(
+        "Fetch broadcast history failed: " + (error as Error).message,
+      );
       throw error;
     }
   },
@@ -84,7 +91,7 @@ export const broadcastService = {
       );
       return data;
     } catch (error) {
-      console.log("Fetch broadcast detail failed:", error);
+      toast.error("Fetch broadcast detail failed: " + (error as Error).message);
       throw error;
     }
   },

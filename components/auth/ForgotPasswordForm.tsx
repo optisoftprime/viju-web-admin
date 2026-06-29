@@ -5,6 +5,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Text, Input, Button } from "@/components/common";
 import { useForgotPassword } from "@/hooks/api/useAuth";
+import { toast } from "sonner";
 
 // Validation schema
 const forgotPasswordValidationSchema = yup.object({
@@ -41,7 +42,9 @@ export default function ForgotPasswordForm() {
       });
     } catch (error) {
       // Error is handled by the mutation's onError callback with toast
-      console.log("Forgot password submission error:", error);
+      toast.error(
+        "Forgot password submission error: " + (error as Error).message,
+      );
     }
   };
 

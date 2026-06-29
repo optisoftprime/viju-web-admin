@@ -5,9 +5,8 @@
 
 "use client";
 
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { officerCustomerService } from "@/services/officerCustomer.service";
-import { queryKeys } from "@/lib/api/queryKeys";
 import { SendTicketReplyRequest } from "@/lib/api/types";
 
 /**
@@ -86,13 +85,25 @@ export const useDistributorWaybills = (
 };
 
 /**
- * Get ticket thread for a distributor
+ * Get tickets assigned to the current officer
  */
-export const useTicketThread = (distributorId: string | null) => {
+export const useOfficerTickets = (page: number = 1, pageSize: number = 20) => {
   return useQuery({
-    queryKey: ["ticketThread", distributorId],
-    queryFn: () => officerCustomerService.getTicketThread(distributorId!),
-    enabled: !!distributorId,
+    queryKey: ["officerTickets", page, pageSize],
+    queryFn: () => officerCustomerService.getOfficerTickets(page, pageSize),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+};
+
+/**
+ * Get ticket thread for a ticket
+ */
+export const useTicketThread = (ticketId: string | null) => {
+  return useQuery({
+    queryKey: ["ticketThread", ticketId],
+    queryFn: () => officerCustomerService.getTicketThread(ticketId!),
+    enabled: !!ticketId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1,
   });
@@ -102,9 +113,33 @@ export const useTicketThread = (distributorId: string | null) => {
  * Send a reply to a ticket
  */
 export const useSendTicketReply = (ticketId: string) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (request: SendTicketReplyRequest) =>
       officerCustomerService.sendTicketReply(ticketId, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ticketThread", ticketId] });
+      queryClient.invalidateQueries({ queryKey: ["officerTickets"] });
+    },
+  });
+};
+
+/**
+ * Update a ticket's status
+ */
+export const useUpdateTicketStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ ticketId, status }: { ticketId: string; status: string }) =>
+      officerCustomerService.updateTicketStatus(ticketId, status),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["ticketThread", variables.ticketId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["officerTickets"] });
+    },
   });
 };
 

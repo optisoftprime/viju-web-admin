@@ -32,9 +32,11 @@ export const endpoints = {
   customers: {
     list: "/admin/customers",
     reassign: "/admin/customers/{id}/reassign",
+    export: "/admin/customers/export.csv",
   },
   audits: {
     tickets: "/admin/audit/tickets",
+    export: "/admin/audit/tickets/export.csv",
   },
   officers: {
     list: "/admin/officers",
@@ -53,7 +55,9 @@ export const endpoints = {
     stock: "/officers/customers/{id}/stock",
     waybills: "/officers/customers/{id}/waybills",
     tickets: "/tickets/{id}",
+    list: "/tickets/officer",
     sendReply: "/tickets/{id}/replies",
+    status: "/tickets/{id}/status",
   },
   chat: {
     history: "/chat/{otherUserId}",

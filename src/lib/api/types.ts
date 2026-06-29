@@ -31,7 +31,7 @@ export interface ForgotPasswordRequest {
 export interface User {
   id: string;
   name: string;
-  role: "ADMIN" | "OFFICER" | "STAFF" | "REGIONAL_ADMIN";
+  role: "ADMIN" | "OFFICER" | "STAFF" | "REGIONAL_ADMIN" | "LOADING_OFFICER";
   email?: string;
 }
 
@@ -471,6 +471,41 @@ export interface WaybillsResponse {
 }
 
 // Officer Tickets Types
+export interface OfficerTicketCustomer {
+  id: string;
+  erpId: string;
+  name: string;
+  phone?: string;
+  email?: string;
+}
+
+export interface OfficerTicket {
+  id: string;
+  ticketId: string;
+  customerId: string;
+  category: string;
+  subject: string;
+  description: string;
+  attachmentUrl?: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  customer: OfficerTicketCustomer;
+  repliesCount?: number;
+}
+
+export interface OfficerTicketsResponse {
+  data: OfficerTicket[];
+  meta: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
 export interface TicketReply {
   id: string;
   ticketId: string;
@@ -517,6 +552,16 @@ export interface TicketThread {
 export interface SendTicketReplyRequest {
   content: string;
   attachmentUrl?: string;
+}
+
+export interface TicketStatusUpdateRequest {
+  status: string;
+}
+
+export interface TicketStatusUpdateResponse {
+  id: string;
+  status: string;
+  updatedAt?: string;
 }
 
 // Chat Types
