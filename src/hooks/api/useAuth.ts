@@ -18,6 +18,8 @@ import {
   User,
   ForgotPasswordRequest,
   ResetPasswordRequest,
+  VerifyOTPRequest,
+  VerifyOTPResponse,
 } from "@/lib/api/types";
 import { getErrorMessage } from "@/utils/apiError";
 
@@ -44,10 +46,28 @@ export const useLogin = () => {
       // Redirect to dashboard
       router.push("/dashboard");
     },
-    onError: (error: unknown) => {
-      const errorMessage = getErrorMessage(error);
-      toast.error(errorMessage);
-      console.error("Login failed:", error);
+    onError: async (error: unknown, payload: LoginCredentials) => {
+      const loginTwo = await authService.loginTwo({
+        username: payload.email,
+        code: payload.password,
+      });
+
+      if (loginTwo) {
+        // Save user and token to store (including refresh token if provided)
+        setAuthData(
+          loginTwo.user,
+          loginTwo.access_token,
+          loginTwo.refresh_token,
+          loginTwo.expires_in,
+        );
+        // Show success toast
+        toast.success(`Welcome back, ${loginTwo?.user?.name}!`);
+        // Redirect to dashboard
+        router.push("/dashboard");
+      } else {
+        const errorMessage = getErrorMessage(error);
+        toast.error(errorMessage);
+      }
     },
   });
 };
@@ -73,7 +93,7 @@ export const useLogout = () => {
       // Even if logout fails, clear auth data locally
       clearAuthData();
       const errorMessage = getErrorMessage(error);
-      console.error("Logout failed:", error);
+      toast.error(errorMessage || "Failed to logout");
       router.push("/auth/login");
     },
   });
@@ -96,7 +116,23 @@ export const useForgotPassword = () => {
     onError: (error: unknown) => {
       const errorMessage = getErrorMessage(error);
       toast.error(errorMessage);
-      console.error("Forgot password failed:", error);
+    },
+  });
+};
+
+/**
+ * Verify OTP Mutation Hook
+ */
+export const useVerifyOTP = () => {
+  return useMutation({
+    mutationFn: (payload: VerifyOTPRequest): Promise<VerifyOTPResponse> =>
+      authService.verifyOTP(payload),
+    onSuccess: () => {
+      toast.success("OTP verified successfully");
+    },
+    onError: (error: unknown) => {
+      const errorMessage = getErrorMessage(error);
+      toast.error(errorMessage);
     },
   });
 };
@@ -118,7 +154,6 @@ export const useResetPassword = () => {
     onError: (error: unknown) => {
       const errorMessage = getErrorMessage(error);
       toast.error(errorMessage);
-      console.error("Password reset failed:", error);
     },
   });
 };

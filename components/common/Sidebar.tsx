@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import * as LucideIcons from "lucide-react";
 import Logo from "./Logo";
@@ -12,6 +13,7 @@ interface NavLinkItem {
   url: string;
   icon: string;
   isActive?: boolean;
+  secondaryLink?: string;
 }
 
 interface NavCategory {
@@ -41,14 +43,20 @@ const getIconComponent = (iconName: string) => {
 
 export default function Sidebar() {
   const { user } = useAuthStore();
+  // const user = {
+  //   role: "LOADING_OFFICER",
+  //   name: "John Ade",
+  // };
+  // const user = {
+  //   role: "REGIONAL_ADMIN",
+  //   name: "John Ade",
+  // };
+
+  // const { user } = useAuthStore();
+  const pathname = usePathname();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   // Log user info when component mounts or user changes
-  useEffect(() => {
-    if (user) {
-      console.log("Logged-in user:", user);
-    }
-  }, [user]);
 
   const sidebarNavigationData: NavCategory[] = [
     {
@@ -57,10 +65,8 @@ export default function Sidebar() {
       links: [
         {
           name: "Officer's Dashboard",
-          url: "/dashboard/officer",
-
+          url: "/dashboard",
           icon: "LayoutDashboard",
-          isActive: true,
         },
       ],
     },
@@ -70,12 +76,20 @@ export default function Sidebar() {
       links: [
         {
           name: "Regional Dashboard",
-          url: "/dashboard/regional",
+          url: "/dashboard",
           icon: "Building2",
         },
         { name: "Loading Request", url: "/requests/loading", icon: "Truck" },
-        { name: "Distributors", url: "/regional/distributors", icon: "Users" },
-        { name: "Officers", url: "/regional/officers", icon: "UserCheck" },
+        {
+          name: "Distributors",
+          url: "/regional-admin/distributors",
+          icon: "Users",
+        },
+        {
+          name: "Officers",
+          url: "/regional-admin/officers",
+          icon: "UserCheck",
+        },
       ],
     },
     {
@@ -93,14 +107,23 @@ export default function Sidebar() {
       category: "ADMINISTRATOR",
       type: "ADMIN",
       links: [
-        { name: "Org Dashboard", url: "/admin/dashboard", icon: "Globe" },
-        { name: "Broadcasts", url: "/admin/broadcasts", icon: "Megaphone" },
+        {
+          name: "Org Dashboard",
+          url: "/dashboard",
+          icon: "Globe",
+          secondaryLink: "/admin/distributors",
+        },
+        { name: "Broadcasts", url: "/broadcast", icon: "Megaphone" },
         {
           name: "Interaction Audits",
           url: "/admin/audits",
           icon: "History",
         },
-        { name: "Distributors", url: "/admin/distributors", icon: "Users" },
+        {
+          name: "Customer Reassignment",
+          url: "/admin/reassignment",
+          icon: "Users",
+        },
         { name: "Officers", url: "/admin/officers", icon: "UserCheck" },
         {
           name: "Product Flyers",
@@ -154,20 +177,24 @@ export default function Sidebar() {
               {category.category}
             </Text>
             <div className="flex flex-col gap-1">
-              {category.links.map((link: NavLinkItem, linkIndex: number) => (
-                <Link
-                  key={linkIndex}
-                  href={link.url}
-                  className={
-                    link.isActive
-                      ? "bg-white text-black rounded-lg p-3 font-semibold flex items-center gap-3 transition-colors"
-                      : "text-white hover:bg-white hover:text-black rounded-lg p-3 flex items-center gap-3 transition-colors"
-                  }
-                >
-                  {getIconComponent(link.icon)}
-                  <span className="text-sm">{link.name}</span>
-                </Link>
-              ))}
+              {category.links.map((link: NavLinkItem, linkIndex: number) => {
+                const isActive =
+                  pathname === link.url || pathname === link.secondaryLink;
+                return (
+                  <Link
+                    key={linkIndex}
+                    href={link.url}
+                    className={
+                      isActive
+                        ? "bg-white text-black rounded-lg p-3 font-semibold flex items-center gap-3 transition-colors"
+                        : "text-white hover:bg-white hover:text-black rounded-lg p-3 flex items-center gap-3 transition-colors"
+                    }
+                  >
+                    {getIconComponent(link.icon)}
+                    <span className="text-sm">{link.name}</span>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         ))}
@@ -191,7 +218,7 @@ export default function Sidebar() {
         </div>
         <button
           onClick={() => setIsLogoutModalOpen(true)}
-          className="w-full flex items-center gap-3 text-white hover:bg-orange-600/50 rounded-lg p-3 transition-colors text-sm"
+          className="w-full cursor-pointer flex items-center gap-3 text-white hover:bg-orange-600/50 rounded-lg p-3 transition-colors text-sm"
         >
           {getIconComponent("LogOut")}
 

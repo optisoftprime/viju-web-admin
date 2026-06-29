@@ -51,11 +51,11 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           onChange={(e) => onChange?.(e.target.value)}
           disabled={disabled}
           className={`
-            w-full px-4 py-2 rounded-lg
-            border-2 transition-colors
+            w-full px-4 py-2 rounded-md
+            border transition-colors
             focus:outline-none focus:ring-2 ring-orange
             resize-y
-            ${hasError ? "border-primary" : "border-muted"}
+            ${hasError ? "border-primary" : "border-muted/50"}
             ${disabled ? "opacity-50 cursor-not-allowed bg-gray-50" : ""}
             ${className}
           `.trim()}

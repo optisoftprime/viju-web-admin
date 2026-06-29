@@ -45,20 +45,24 @@ export const parseApiError = (error: unknown): ApiError => {
  * Get user-friendly error message
  */
 export const getErrorMessage = (error: unknown): string => {
-  const apiError = parseApiError(error);
+  const axiosError = error as AxiosError<any>;
+  const errMsg = axiosError?.response?.data?.message;
 
-  switch (apiError.statusCode) {
-    case 401:
-      return "Unauthorized. Please login again.";
-    case 403:
-      return "You do not have permission to perform this action.";
-    case 404:
-      return "Resource not found.";
-    case 422:
-      return apiError.message || "Validation error. Please check your input.";
-    case 500:
-      return "Server error. Please try again later.";
-    default:
-      return apiError.message || "An error occurred";
-  }
+  return errMsg;
 };
+
+// const apiError = parseApiError(error);
+// switch (apiError.statusCode) {
+//   case 401:
+//     return "Unauthorized. Please login again.";
+//   case 403:
+//     return "You do not have permission to perform this action.";
+//   case 404:
+//     return "Resource not found.";
+//   case 422:
+//     return apiError.message || "Validation error. Please check your input.";
+//   case 500:
+//     return "Server error. Please try again later.";
+//   default:
+//     return apiError.message || "An error occurred";
+// }

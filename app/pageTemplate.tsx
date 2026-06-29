@@ -216,19 +216,6 @@ export default function Home() {
               maxLength={200}
             />
 
-            <Select
-              label="Country"
-              name="country"
-              value={formData.country}
-              onChange={(value) => setFormData({ ...formData, country: value })}
-              options={[
-                { value: "us", label: "United States" },
-                { value: "uk", label: "United Kingdom" },
-                { value: "ca", label: "Canada" },
-                { value: "au", label: "Australia" },
-              ]}
-            />
-
             <Checkbox
               label="I agree to the terms and conditions"
               name="agree"
@@ -256,16 +243,6 @@ export default function Home() {
               name="required-textarea"
               error="This field is required"
               placeholder="Enter text..."
-            />
-
-            <Select
-              label="Invalid Selection"
-              name="invalid-select"
-              options={[
-                { value: "option1", label: "Option 1" },
-                { value: "option2", label: "Option 2" },
-              ]}
-              error="Please select a valid option"
             />
 
             <Checkbox
@@ -317,7 +294,7 @@ export default function Home() {
           <Table
             columns={tableColumns}
             data={tableData}
-            onRowClick={(row) => console.log("Row clicked:", row)}
+            onRowClick={(row) => {}}
           />
         </Card>
 

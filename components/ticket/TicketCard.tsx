@@ -1,59 +1,77 @@
 "use client";
 
-import { Text, Select, type SelectOption } from "@/components/common";
+import { Text } from "@/components/common";
 
 interface TicketCardProps {
   ticketId: string;
   title: string;
-  status?: "Open" | "In Progress" | "Awaiting Customer" | "Resolved";
+  status?: string;
   repliesUpdated?: number;
   dateUpdated?: string;
   onStatusChange?: (status: string) => void;
+  onSelect?: () => void;
+  isUpdatingStatus?: boolean;
 }
 
-const statusOptions: SelectOption[] = [
-  { label: "Open", value: "Open" },
-  { label: "In Progress", value: "In Progress" },
-  { label: "Awaiting Customer", value: "Awaiting Customer" },
-  { label: "Resolved", value: "Resolved" },
+const statusOptions = [
+  { label: "Open", value: "OPEN" },
+  { label: "In Progress", value: "IN_PROGRESS" },
+  { label: "Awaiting Customer", value: "AWAITING_CUSTOMER" },
+  { label: "Resolved", value: "RESOLVED" },
 ];
+
+const getStatusLabel = (status: string) => {
+  const option = statusOptions.find((item) => item.value === status);
+  return option?.label ?? status;
+};
 
 export default function TicketCard({
   ticketId,
   title,
-  status = "Open",
+  status = "OPEN",
   repliesUpdated = 0,
   dateUpdated = "",
   onStatusChange,
+  onSelect,
+  isUpdatingStatus = false,
 }: TicketCardProps) {
   return (
-    <div className="bg-[#F5F5F5] p-6 rounded-lg space-y-2 my-3">
-      {/* Title and Status Select */}
-      <div className="flex items-center justify-between w-full">
-        <Text variant="h3" weight="bold" color="foreground">
+    <div
+      className="bg-[#F5F5F5] p-6 rounded-lg space-y-3 my-3 cursor-pointer hover:shadow-sm transition-shadow"
+      onClick={onSelect}
+    >
+      <div className="flex items-center justify-between w-full gap-4">
+        <Text variant="small" weight="bold" color="foreground">
           {ticketId}
         </Text>
-        <div className="w-40">
-          <Select
-            label=""
-            name={`ticket-${ticketId}-status`}
-            options={statusOptions}
+        <div className="" onClick={(event) => event.stopPropagation()}>
+          <label className="sr-only" htmlFor={`ticket-status-${ticketId}`}>
+            Status
+          </label>
+          <select
+            id={`ticket-status-${ticketId}`}
             value={status}
-            onChange={onStatusChange}
-          />
+            onChange={(event) => onStatusChange?.(event.target.value)}
+            disabled={isUpdatingStatus}
+            className="w-full rounded-lg border border-[#D3D5D8] bg-white px-3 py-2 text-[12px] text-muted"
+          >
+            {statusOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
-      {/* Description/Title */}
-      <Text variant="h3" weight="medium" color="foreground">
+      <Text variant="caption" weight="medium" color="foreground">
         {title}
       </Text>
 
-      {/* Status Badges and Date */}
       <div className="flex items-center justify-between w-full">
         <div className="flex gap-2 items-center">
           <span className="flex items-center justify-center text-[12px] text-[#3F79FA] font-bold px-2 py-1 rounded-md bg-[#D3E0FF]">
-            Open
+            {getStatusLabel(status)}
           </span>
           <span className="flex items-center justify-center text-[12px] text-[#7F8DA1] font-bold px-2 py-1 rounded-md bg-[#DFE1E3]">
             {repliesUpdated} replies updated

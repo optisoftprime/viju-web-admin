@@ -47,8 +47,13 @@ export const dashboardService = {
   /**
    * Get officer customers list
    */
-  getOfficerCustomers: async (): Promise<OfficerCustomer[]> => {
-    const { data } = await apiClient.get(endpoints.dashboard.officerCustomers);
-    return data;
+  getOfficerCustomers: async (search?: string): Promise<OfficerCustomer[]> => {
+    const response = await apiClient.get(endpoints.dashboard.officerCustomers, {
+      params: {
+        ...(search ? { search } : {}),
+      },
+    });
+    const officerCustomers = response.data.data;
+    return officerCustomers;
   },
 };

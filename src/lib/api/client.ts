@@ -48,7 +48,7 @@ const refreshAccessToken = async (): Promise<string | null> => {
 
     return newAccessToken;
   } catch (error) {
-    console.error("Failed to refresh token:", error);
+    console.log("Failed to refresh token:", error);
     return null;
   }
 };
@@ -103,7 +103,11 @@ export const createAxiosInstance = (): AxiosInstance => {
               return instance(originalRequest);
             } else {
               // Refresh failed, redirect to login
-              if (typeof window !== "undefined") {
+              if (
+                statusCode === 401 &&
+                !originalRequest._retry &&
+                Cookie.get("access_token")
+              ) {
                 Cookie.remove("access_token");
                 Cookie.remove("refresh_token");
                 Cookie.remove("user");
@@ -130,7 +134,11 @@ export const createAxiosInstance = (): AxiosInstance => {
             return instance(originalRequest);
           } else {
             // Refresh failed, redirect to login
-            if (typeof window !== "undefined") {
+            if (
+              statusCode === 401 &&
+              !originalRequest._retry &&
+              Cookie.get("access_token")
+            ) {
               Cookie.remove("access_token");
               Cookie.remove("refresh_token");
               Cookie.remove("user");
@@ -140,7 +148,11 @@ export const createAxiosInstance = (): AxiosInstance => {
           }
         } catch (refreshError) {
           // Refresh failed, redirect to login
-          if (typeof window !== "undefined") {
+          if (
+            statusCode === 401 &&
+            !originalRequest._retry &&
+            Cookie.get("access_token")
+          ) {
             Cookie.remove("access_token");
             Cookie.remove("refresh_token");
             Cookie.remove("user");
@@ -152,12 +164,11 @@ export const createAxiosInstance = (): AxiosInstance => {
 
       // Handle 403 Forbidden
       if (statusCode === 403) {
-        console.error("Access forbidden");
       }
 
       // Log errors in development mode
       if (process.env.NODE_ENV === "development") {
-        console.error("API Error:", {
+        console.log("API Error:", {
           status: statusCode,
           message: error.response?.data?.message || error.message,
           data: error.response?.data,

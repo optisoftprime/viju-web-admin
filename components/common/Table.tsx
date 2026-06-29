@@ -37,6 +37,7 @@ const getStatusBadgeStyle = (
     };
   } else if (
     lowerStatus.includes("success") ||
+    lowerStatus.includes("assigned") ||
     lowerStatus.includes("completed")
   ) {
     return {

@@ -14,6 +14,7 @@ import {
   OfficerCustomer,
   RegionalAdminDashboardResponse,
   PendingLoadingRequest,
+  AdminDashboardStats,
 } from "@/lib/api/types";
 
 /**
@@ -54,17 +55,26 @@ export const useDashboardStats = () => {
  * For OFFICER: returns customers list
  * For REGIONAL_ADMIN: returns pending loading requests
  */
-export const useDashboardTableData = () => {
+interface DashboardTableParams {
+  search?: string;
+}
+
+export const useDashboardTableData = (params: DashboardTableParams = {}) => {
   const { user } = useAuthStore();
 
   const getTableData = async (): Promise<
-    OfficerCustomer[] | PendingLoadingRequest[] | RegionalAdminDashboardResponse
+    | OfficerCustomer[]
+    | PendingLoadingRequest[]
+    | AdminDashboardStats
+    | RegionalAdminDashboardResponse
   > => {
     if (!user) throw new Error("User not found");
 
     switch (user.role) {
       case "OFFICER":
-        return dashboardService.getOfficerCustomers();
+        return dashboardService.getOfficerCustomers(params.search);
+      case "ADMIN":
+        return dashboardService.getAdminDashboard();
       case "REGIONAL_ADMIN":
         return dashboardService.getRegionalDashboard("LAGOS");
       default:
@@ -73,7 +83,7 @@ export const useDashboardTableData = () => {
   };
 
   return useQuery({
-    queryKey: [queryKeys.all[0], "dashboardTable", user?.role],
+    queryKey: [queryKeys.all[0], "dashboardTable", user?.role, params.search],
     queryFn: getTableData,
     enabled:
       !!user && (user.role === "OFFICER" || user.role === "REGIONAL_ADMIN"),

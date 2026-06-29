@@ -19,20 +19,19 @@ export interface LoginCredentials {
   password: string;
 }
 
-export interface ForgotPasswordRequest {
-  identifier: string;
+export interface LoginTwoCredentials {
+  username: string;
+  code: string;
 }
 
-export interface ResetPasswordRequest {
+export interface ForgotPasswordRequest {
   identifier: string;
-  code: string;
-  newPassword: string;
 }
 
 export interface User {
   id: string;
   name: string;
-  role: "ADMIN" | "OFFICER" | "STAFF" | "REGIONAL_ADMIN";
+  role: "ADMIN" | "OFFICER" | "STAFF" | "REGIONAL_ADMIN" | "LOADING_OFFICER";
   email?: string;
 }
 
@@ -52,9 +51,20 @@ export interface AuthContextType {
 // Dashboard Stats Types
 export interface AdminDashboardStats {
   totalCustomers: number;
-  unReadMessage: number;
-  openTickets: number;
   totalOutstandingBalance: number;
+  activeOfficers: number;
+  openTickets: number;
+  unReadMessage: number;
+  byRegion: Array<{
+    region: {
+      name: string;
+      dist: number;
+    };
+    distributors: number;
+    walletBalance: number;
+    openTickets: number;
+    activeOfficers: number;
+  }>;
 }
 
 export interface OfficerDashboardStats {
@@ -115,4 +125,492 @@ export interface RegionalAdminDashboardResponse {
     activeOfficers: number;
   };
   pendingLoadingRequests: PendingLoadingRequest[];
+}
+
+// Broadcast Types
+export type BroadcastRegion = "LAGOS" | "SOUTH_WEST" | "SOUTH_EAST" | "NORTH";
+
+export interface BroadcastRegionalRequest {
+  regions: BroadcastRegion[];
+  message: string;
+}
+
+export interface BroadcastIndividualRequest {
+  customerId: string;
+  message: string;
+  deliveryAllowance?: number;
+}
+
+export interface BroadcastHistoryFilters {
+  type?: "REGIONAL" | "INDIVIDUAL";
+  region?: BroadcastRegion;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface BroadcastHistoryItem {
+  id: string;
+  type: "REGIONAL" | "INDIVIDUAL";
+  message: string;
+  regions?: BroadcastRegion[];
+  customerId?: string;
+  distributorName?: string;
+  deliveryAllowance?: number;
+  sentBy: string;
+  sentAt: string;
+}
+
+export interface BroadcastDetail {
+  id: string;
+  type: "REGIONAL" | "INDIVIDUAL";
+  message: string;
+  regions?: BroadcastRegion[];
+  customerId?: string;
+  distributorName?: string;
+  deliveryAllowance?: number;
+  sentBy: string;
+  sentAt: string;
+  status: string;
+}
+
+// Customer Types
+export interface Customer {
+  id: string;
+  name: string;
+  erpId?: string;
+  region?: BroadcastRegion;
+  phone?: string;
+  email?: string;
+}
+
+export interface CustomerListResponse {
+  content: Customer[];
+  number: number;
+  totalPages: number;
+  totalElements: number;
+  size: number;
+}
+
+// Audit Types
+export interface AuditTicketReply {
+  id: string;
+  ticketId: string;
+  senderType: "STAFF" | "CUSTOMER";
+  customerId?: string;
+  staffId?: string;
+  content: string;
+  attachmentUrl?: string;
+  createdAt: string;
+  staff?: {
+    id: string;
+    name: string;
+  };
+}
+
+export interface AuditTicketCustomer {
+  id: string;
+  name: string;
+  region: BroadcastRegion;
+}
+
+export interface AuditTicket {
+  id: string;
+  ticketId: string;
+  customerId: string;
+  category: string;
+  subject: string;
+  description: string;
+  attachmentUrl?: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  customer: AuditTicketCustomer;
+  replies: AuditTicketReply[];
+}
+
+export interface AuditTicketsListResponse {
+  data: AuditTicket[];
+  meta: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
+// Officer Types
+export interface Officer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  region: BroadcastRegion;
+  isActive: boolean;
+  _count?: {
+    customers: number;
+  };
+}
+
+export interface OfficersListResponse {
+  data: Officer[];
+  meta: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
+export interface CreateOfficerRequest {
+  name: string;
+  email: string;
+  phone: string;
+  region: BroadcastRegion;
+  password: string;
+}
+
+// Customer with Officer Assignments
+export interface CustomerWithOfficers {
+  id: string;
+  name: string;
+  erpId: string;
+  phone: string;
+  region: BroadcastRegion;
+  accountStatus: string;
+  outstandingBalance: number;
+  _count?: {
+    supportTickets: number;
+  };
+  officerAssignments?: Array<{
+    staff: {
+      id: string;
+      name: string;
+      email: string;
+    };
+  }>;
+}
+
+export interface CustomersListResponse {
+  data: CustomerWithOfficers[];
+  meta: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
+export interface ReassignCustomerRequest {
+  newOfficerId: string;
+}
+
+// Flyer Types
+export interface Flyer {
+  id: string;
+  name: string;
+  imageUrl: string;
+  sortOrder: number;
+  isActive: boolean;
+  createdById: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateFlyerRequest {
+  name: string;
+  imageUrl: string;
+}
+
+export interface UpdateFlyerRequest {
+  name?: string;
+  imageUrl?: string;
+  isActive?: boolean;
+}
+
+// Officer Customer Overview Types
+export interface AssignedOfficer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  isPrimary: boolean;
+}
+
+export interface DistributorOverview {
+  id: string;
+  name: string;
+  accountNumber: string;
+  phone: string;
+  email: string | null;
+  region: BroadcastRegion;
+  accountStatus: string;
+  walletBalance: number;
+  assignedOfficers: AssignedOfficer[];
+  lastUpdated: string;
+}
+
+// Officer Customer Orders Types
+export interface OrderItem {
+  id: string;
+  purchaseId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+export interface Order {
+  id: string;
+  erpId: string;
+  customerId: string;
+  orderDate: string;
+  totalItems: number;
+  totalValue: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  items: OrderItem[];
+}
+
+export interface OrdersResponse {
+  data: Order[];
+  meta: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
+// Officer Customer Invoices Types
+export interface PaymentHistory {
+  id: string;
+  erpId: string;
+  customerId: string;
+  date: string;
+  amount: number;
+  reference: string;
+  runningBalance: number;
+  createdAt: string;
+}
+
+export interface InvoicesResponse {
+  walletBalance: number;
+  invoices: Order[];
+  paymentHistory: PaymentHistory[];
+}
+
+// Officer Customer Stock Types
+export interface StockCatalogue {
+  id: string;
+  erpId: string;
+  productName: string;
+  quantity: number;
+  updatedAt: string;
+}
+
+export interface AwaitingLoading {
+  productName: string;
+  reserved: number;
+  loaded: number;
+  remaining: number;
+}
+
+export interface StockResponse {
+  catalogue: StockCatalogue[];
+  awaitingLoading: AwaitingLoading[];
+}
+
+// Officer Customer Waybills Types
+export interface Waybill {
+  id: string;
+  reference: string;
+  customerId: string;
+  region: BroadcastRegion;
+  linkedPurchaseId: string;
+  truckPlateNumber: string;
+  driverName: string;
+  driverPhone: string;
+  requestedLoadingDate: string;
+  quantityCartons: number;
+  destination: string;
+  termsAcceptedAt: string;
+  externalFormUrl: string;
+  status: string;
+  assignedOfficerId: string;
+  assignedAt: string;
+  assignedById: string;
+  loadingStartedAt?: string;
+  completedAt?: string;
+  waybillDocumentUrl?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WaybillsResponse {
+  data: Waybill[];
+  meta: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
+// Officer Tickets Types
+export interface OfficerTicketCustomer {
+  id: string;
+  erpId: string;
+  name: string;
+  phone?: string;
+  email?: string;
+}
+
+export interface OfficerTicket {
+  id: string;
+  ticketId: string;
+  customerId: string;
+  category: string;
+  subject: string;
+  description: string;
+  attachmentUrl?: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  customer: OfficerTicketCustomer;
+  repliesCount?: number;
+}
+
+export interface OfficerTicketsResponse {
+  data: OfficerTicket[];
+  meta: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
+export interface TicketReply {
+  id: string;
+  ticketId: string;
+  senderType: "CUSTOMER" | "STAFF";
+  customerId?: string;
+  staffId?: string;
+  content: string;
+  attachmentUrl?: string;
+  createdAt: string;
+}
+
+export interface TicketCustomer {
+  id: string;
+  erpId: string;
+  name: string;
+  phone: string;
+  email: string;
+  profilePhotoUrl?: string;
+  accountStatus: string;
+  outstandingBalance: number;
+  region: BroadcastRegion;
+  failedLoginAttempts: number;
+  lockedUntil?: string;
+  assignedOfficerId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TicketThread {
+  id: string;
+  ticketId: string;
+  customerId: string;
+  category: string;
+  subject: string;
+  description: string;
+  attachmentUrl?: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  replies: TicketReply[];
+  customer: TicketCustomer;
+}
+
+export interface SendTicketReplyRequest {
+  content: string;
+  attachmentUrl?: string;
+}
+
+export interface TicketStatusUpdateRequest {
+  status: string;
+}
+
+export interface TicketStatusUpdateResponse {
+  id: string;
+  status: string;
+  updatedAt?: string;
+}
+
+// Chat Types
+export interface ChatMessage {
+  id: string;
+  customerId: string;
+  staffId: string;
+  senderType: "STAFF" | "CUSTOMER";
+  content: string;
+  attachmentUrl?: string;
+  createdAt: string;
+  readAt?: string | null;
+}
+
+export interface SendMessageRequest {
+  content: string;
+  attachmentUrl?: string;
+}
+
+// File Upload Types
+export interface FileUploadResponse {
+  url: string;
+  key: string;
+  size: number;
+  mimeType: string;
+}
+
+// File Upload Types
+export interface FileUploadResponse {
+  url: string;
+  filename: string;
+  size: number;
+}
+
+// Password Reset Types
+export interface ForgotPasswordRequest {
+  identifier: string;
+}
+
+export interface VerifyOTPRequest {
+  identifier: string;
+  code: string;
+}
+
+export interface VerifyOTPResponse {
+  reset_token: string;
+}
+
+export interface ResetPasswordRequest {
+  reset_token: string;
+  newPassword: string;
 }

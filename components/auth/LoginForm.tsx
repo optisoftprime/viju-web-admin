@@ -6,14 +6,11 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Text, Input, Button } from "@/components/common";
 import { useLogin } from "@/hooks/api/useAuth";
-import { useState } from "react";
+import { toast } from "sonner";
 
 // Validation schema
 const loginValidationSchema = yup.object({
-  email: yup
-    .string()
-    .required("Email is required")
-    .email("Please enter a valid email address"),
+  email: yup.string().required("Email is required"),
   password: yup
     .string()
     .required("Password is required")
@@ -41,7 +38,7 @@ export default function LoginForm() {
       await loginMutation.mutateAsync(data);
     } catch (error) {
       // Error is handled by the mutation's onError callback with toast
-      console.error("Login submission error:", error);
+      // toast.error("Login submission error: " + (error as Error).message);
     }
   };
 

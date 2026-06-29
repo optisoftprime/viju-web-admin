@@ -9,20 +9,45 @@ import Pagination from "@/components/Pagination";
 import ChatUI from "@/components/chat/ChatUI";
 import TicketsUI from "@/components/ticket/TicketsUI";
 import AssignAccountOfficerModal from "@/components/AssignAccountOfficerModal";
+import AssignLoadingOfficerModal from "@/components/AssignLoadingOfficerModal";
+import LoadingOfficerSuccessModal from "@/components/LoadingOfficerSuccessModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import OverviewSection from "@/components/OverviewSection";
+import OrdersSection from "@/components/OrdersSection";
+import InvoicesSection from "@/components/InvoicesSection";
+import StockSection from "@/components/StockSection";
+import WaybillsSection from "@/components/WaybillsSection";
+import arrowRight from "@/assets/icons/arrow-right.svg";
 import {
   useDashboardStats,
   useDashboardTableData,
 } from "@/hooks/api/useDashboard";
-import { useAuthStore } from "@/store/auth.store";
+import {
+  useDistributorOverview,
+  useDistributorOrders,
+  useDistributorInvoices,
+  useDistributorStock,
+  useDistributorWaybills,
+} from "@/hooks/api/useOfficerCustomer";
 import {
   AdminDashboardStats,
   OfficerDashboardStats,
   OfficerCustomer,
   PendingLoadingRequest,
   RegionalAdminDashboardResponse,
+  DistributorOverview,
+  Order,
+  StockResponse,
+  WaybillsResponse,
 } from "@/lib/api/types";
 import userIcon from "@/assets/icons/usersblack.svg";
+import { TextExtremeEnd } from "@/components/common/TextExtremeEnd";
+import { formatDateTime, formatToNaira } from "@/src/utils/formatter";
+import Image from "next/image";
+import { useAuthStore } from "@/src/store/auth.store";
+import { useRouter } from "next/navigation";
+import LoadingOfficer from "@/components/loadingOfficer/LoadingOfficer";
+import ExportRecord from "@/components/ExportRecord";
 
 // Interface for distributor data structure
 interface Distributor {
@@ -35,6 +60,25 @@ interface Distributor {
   lastContact: string;
   status: string;
   action: string;
+}
+
+interface AdminDashboardCard {
+  region: {
+    name: string;
+    dist: number;
+  };
+  distributors: number;
+  walletBalance: number;
+  openTickets: number;
+  activeOfficers: number;
+}
+
+interface AdminDashboardSummary {
+  totalCustomers: number;
+  totalOutstandingBalance: number;
+  activeOfficers: number;
+  openTickets: number;
+  unReadMessage: number;
 }
 
 // Table columns definition
@@ -73,6 +117,65 @@ const tableColumns = [
   },
 ];
 
+const officerTableColumns = [
+  {
+    key: "name" as const,
+    title: "DISTRIBUTOR",
+  },
+  {
+    key: "account" as const,
+    title: "ACCOUNT#",
+  },
+  {
+    key: "balance" as const,
+    title: "BALANCE",
+  },
+  {
+    key: "lastPurchase" as const,
+    title: "LAST PURCHASE",
+  },
+  {
+    key: "openTickets" as const,
+    title: "OPEN TICKET",
+  },
+  {
+    key: "lastContact" as const,
+    title: "LAST CONTACT",
+  },
+];
+
+// Table columns for loading requests (REGIONAL_ADMIN)
+const loadingRequestTableColumns = [
+  {
+    key: "name" as const,
+    title: "DISTRIBUTOR",
+  },
+  {
+    key: "account" as const,
+    title: "ORDER",
+  },
+  {
+    key: "lastPurchase" as const,
+    title: "LOADING DATE",
+  },
+  {
+    key: "lastContact" as const,
+    title: "VEHICLE",
+  },
+  {
+    key: "balance" as const,
+    title: "QTY",
+  },
+  {
+    key: "status" as const,
+    title: "STATUS",
+  },
+  {
+    key: "action" as const,
+    title: "ACTION",
+  },
+];
+
 // Mock distributor data for admin users (fallback)
 const mockDistributorData: Distributor[] = [
   {
@@ -99,7 +202,133 @@ const mockDistributorData: Distributor[] = [
   },
 ];
 
+// Mock loading requests for regional admin
+const mockLoadingRequests: Distributor[] = [
+  {
+    id: "1",
+    name: "Bello & Sons LTD",
+    account: "ORD-00294",
+    balance: "320 Cartons",
+    lastPurchase: "Today, 14:00",
+    openTickets: 0,
+    lastContact: "LAG-234-XY",
+    status: "Pending",
+    action: "Assign Officer",
+  },
+  {
+    id: "2",
+    name: "Bello & Sons LTD",
+    account: "ORD-00294",
+    balance: "320 Cartons",
+    lastPurchase: "Today, 14:00",
+    openTickets: 0,
+    lastContact: "LAG-234-XY",
+    status: "Pending",
+    action: "Assign Officer",
+  },
+  {
+    id: "3",
+    name: "Bello & Sons LTD",
+    account: "ORD-00294",
+    balance: "320 Cartons",
+    lastPurchase: "Today, 14:00",
+    openTickets: 0,
+    lastContact: "LAG-234-XY",
+    status: "Assigned",
+    action: "Ifeanyi Okon",
+  },
+  {
+    id: "4",
+    name: "Bello & Sons LTD",
+    account: "ORD-00294",
+    balance: "320 Cartons",
+    lastPurchase: "Today, 14:00",
+    openTickets: 0,
+    lastContact: "LAG-234-XY",
+    status: "Pending",
+    action: "Assign Officer",
+  },
+  {
+    id: "5",
+    name: "Bello & Sons LTD",
+    account: "ORD-00294",
+    balance: "320 Cartons",
+    lastPurchase: "Today, 14:00",
+    openTickets: 0,
+    lastContact: "LAG-234-XY",
+    status: "Assigned",
+    action: "Ifeanyi Okon",
+  },
+  {
+    id: "6",
+    name: "Bello & Sons LTD",
+    account: "ORD-00294",
+    balance: "320 Cartons",
+    lastPurchase: "Today, 14:00",
+    openTickets: 0,
+    lastContact: "LAG-234-XY",
+    status: "Pending",
+    action: "Assign Officer",
+  },
+  {
+    id: "7",
+    name: "Bello & Sons LTD",
+    account: "ORD-00294",
+    balance: "320 Cartons",
+    lastPurchase: "Today, 14:00",
+    openTickets: 0,
+    lastContact: "LAG-234-XY",
+    status: "Assigned",
+    action: "View",
+  },
+  {
+    id: "8",
+    name: "Bello & Sons LTD",
+    account: "ORD-00294",
+    balance: "320 Cartons",
+    lastPurchase: "Today, 14:00",
+    openTickets: 0,
+    lastContact: "LAG-234-XY",
+    status: "Assigned",
+    action: "View",
+  },
+  {
+    id: "9",
+    name: "Bello & Sons LTD",
+    account: "ORD-00294",
+    balance: "320 Cartons",
+    lastPurchase: "Today, 14:00",
+    openTickets: 0,
+    lastContact: "LAG-234-XY",
+    status: "Assigned",
+    action: "View",
+  },
+  {
+    id: "10",
+    name: "Bello & Sons LTD",
+    account: "ORD-00294",
+    balance: "320 Cartons",
+    lastPurchase: "Today, 14:00",
+    openTickets: 0,
+    lastContact: "LAG-234-XY",
+    status: "In progress",
+    action: "View",
+  },
+  {
+    id: "11",
+    name: "Bello & Sons LTD",
+    account: "ORD-00294",
+    balance: "320 Cartons",
+    lastPurchase: "Today, 14:00",
+    openTickets: 0,
+    lastContact: "LAG-234-XY",
+    status: "Assigned",
+    action: "View",
+  },
+];
+
 function DashboardContent() {
+  const router = useRouter();
   // State for active tab filter
   const [selectedTab, setSelectedTab] = useState("all");
 
@@ -110,13 +339,33 @@ function DashboardContent() {
   const [selectedDistributor, setSelectedDistributor] =
     useState<Distributor | null>(null);
 
+  // State for selected distributor ID (for API calls)
+  const [selectedDistributorId, setSelectedDistributorId] = useState<
+    string | null
+  >(null);
+
+  // State for orders pagination
+  const [orderPage, setOrderPage] = useState(1);
+
+  // State for waybills pagination
+  const [waybillPage, setWaybillPage] = useState(1);
+
   // State for assign officer modal
   const [isAssignOfficerModalOpen, setIsAssignOfficerModalOpen] =
+    useState(false);
+
+  // State for assign loading officer modal
+  const [isAssignLoadingOfficerModalOpen, setIsAssignLoadingOfficerModalOpen] =
+    useState(false);
+
+  // State for loading officer success modal
+  const [isLoadingOfficerSuccessOpen, setIsLoadingOfficerSuccessOpen] =
     useState(false);
 
   // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch dashboard stats
   const {
@@ -128,8 +377,35 @@ function DashboardContent() {
     data: tableData,
     isLoading: tableLoading,
     error: tableError,
-  } = useDashboardTableData();
+  } = useDashboardTableData({ search: searchTerm || undefined });
   const { user } = useAuthStore();
+
+  // Fetch officer customer data (Overview, Orders, Invoices, Stock)
+  const {
+    data: overviewData,
+    isLoading: overviewLoading,
+    error: overviewError,
+  } = useDistributorOverview(selectedDistributorId);
+  const {
+    data: ordersData,
+    isLoading: ordersLoading,
+    error: ordersError,
+  } = useDistributorOrders(selectedDistributorId, orderPage);
+  const {
+    data: invoicesData,
+    isLoading: invoicesLoading,
+    error: invoicesError,
+  } = useDistributorInvoices(selectedDistributorId);
+  const {
+    data: stockData,
+    isLoading: stockLoading,
+    error: stockError,
+  } = useDistributorStock(selectedDistributorId);
+  const {
+    data: waybillsData,
+    isLoading: waybillsLoading,
+    error: waybillsError,
+  } = useDistributorWaybills(selectedDistributorId, waybillPage);
 
   // Helper function to format large numbers
   const formatNumber = (num: number) => {
@@ -171,6 +447,26 @@ function DashboardContent() {
     }));
   };
 
+  // function to Map admin data to card format
+  const mapAdminDashboardDataToCard = (
+    adminStats: AdminDashboardStats,
+  ): AdminDashboardCard[] => {
+    return adminStats?.byRegion.map((stat) => ({
+      region: stat.region,
+      distributors: stat.distributors,
+      walletBalance: stat.walletBalance,
+      openTickets: stat.openTickets,
+      activeOfficers: stat.activeOfficers,
+    }));
+  };
+
+  const adminCardData = useMemo(() => {
+    if (user?.role === "ADMIN" && dashboardStats) {
+      return mapAdminDashboardDataToCard(dashboardStats as AdminDashboardStats);
+    }
+    return [];
+  }, [dashboardStats]);
+
   // Map pending loading requests to table format
   const mapPendingLoadingRequestsToTable = (
     requests: PendingLoadingRequest[],
@@ -189,32 +485,44 @@ function DashboardContent() {
   };
 
   // Transform table data based on role
-  const transformedTableData: Distributor[] = useMemo(() => {
-    if (!tableData) return mockDistributorData;
+  const transformedTableData: Distributor[] | AdminDashboardCard[] =
+    useMemo(() => {
+      // if (!tableData && user?.role !== ("REGIONAL_ADMIN" as any))
+      //   return mockDistributorData;
 
-    if (user?.role === "OFFICER" && Array.isArray(tableData)) {
-      return mapOfficerCustomersToTable(tableData as OfficerCustomer[]);
-    }
+      if ((user?.role as any) === "REGIONAL_ADMIN") {
+        // For REGIONAL_ADMIN, use mock data
+        return mockLoadingRequests;
+      }
 
-    if (
-      user?.role === "REGIONAL_ADMIN" &&
-      "pendingLoadingRequests" in tableData
-    ) {
-      const regionalData = tableData as RegionalAdminDashboardResponse;
-      return mapPendingLoadingRequestsToTable(
-        regionalData.pendingLoadingRequests,
-      );
-    }
+      if (user?.role === "OFFICER" && Array.isArray(tableData)) {
+        return mapOfficerCustomersToTable(tableData as OfficerCustomer[]);
+      }
 
-    return mockDistributorData;
-  }, [tableData, user?.role]);
+      if (user?.role === "ADMIN") {
+        return mapAdminDashboardDataToCard(tableData as AdminDashboardStats);
+      }
+
+      if (
+        (user?.role as any) === "REGIONAL_ADMIN" &&
+        tableData &&
+        "pendingLoadingRequests" in tableData
+      ) {
+        const regionalData = tableData as RegionalAdminDashboardResponse;
+        return mapPendingLoadingRequestsToTable(
+          regionalData.pendingLoadingRequests,
+        );
+      }
+
+      return mockDistributorData;
+    }, [tableData, user?.role]);
 
   // Calculate pagination
-  const totalItems = transformedTableData.length;
+  const totalItems = transformedTableData?.length || 0;
   const paginatedData = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    return transformedTableData.slice(startIndex, endIndex);
+    return transformedTableData?.slice(startIndex, endIndex) || [];
   }, [transformedTableData, currentPage]);
 
   // Determine stats display based on user role
@@ -298,7 +606,7 @@ function DashboardContent() {
     }
 
     // REGIONAL_ADMIN stats from API response
-    if (user?.role === "REGIONAL_ADMIN") {
+    if ((user?.role as any) === "REGIONAL_ADMIN") {
       if (!tableData || !("summary" in tableData)) {
         return (
           <>
@@ -357,17 +665,15 @@ function DashboardContent() {
    * Can be extended to filter the distributor data
    */
   const handleSearch = (value: string) => {
-    // Search logic can be implemented here
-    // For now, the SearchInput handles the debounce and logging
+    setSearchTerm(value);
+    setCurrentPage(1);
   };
 
   /**
    * Handle action button click on table rows
    * Shows what action was clicked (View, Edit, Delete, etc.)
    */
-  const handleActionClick = (action: string, row: Distributor) => {
-    console.log(`Action: ${action}`, row);
-  };
+  const handleActionClick = (action: string, row: Distributor) => {};
 
   /**
    * Handle previous page button click
@@ -396,192 +702,486 @@ function DashboardContent() {
     name: string;
     role: string;
   }) => {
-    console.log("Officer assigned:", officer);
     // Can add additional logic here to update the distributor's assigned officer
   };
 
+  /**
+   * Handle loading officer assignment
+   */
+  const handleLoadingOfficerAssigned = (officer: {
+    id: string;
+    name: string;
+    role: string;
+  }) => {
+    setIsLoadingOfficerSuccessOpen(true);
+  };
+
+  const handleDistributorSelect = (distributor: Distributor) => {
+    setSelectedDistributor(distributor);
+    setSelectedDistributorId(distributor.id);
+    setSelectedDetailTab("Overview"); // Reset to Overview tab when a new distributor is selected
+    setOrderPage(1); // Reset order page
+    setWaybillPage(1); // Reset waybill page
+  };
   return (
     <MainLayout>
-      <div className="p-4 space-y-6 overflow-y-auto h-screen bg-milkwhite/90">
-        {/* Page Header Component */}
-        <PageHeader
-          title="Good Morning,"
-          subtitle="Welcome back to the Viju Account Officer Portal"
-        />
-
-        {/* Stats Cards Grid */}
-        <div className="grid grid-cols-4 gap-4">{renderStats()}</div>
-
-        {/* Distributor List Card */}
-        <Card border={false}>
-          {/* Tabs and Search Bar Section */}
-          <div className="">
-            {/* Tab Buttons */}
-            <div className="flex items-center space-x-6">
-              <Button
-                variant={selectedTab === "all" ? "primary" : "outline"}
-                onClick={() => setSelectedTab("all")}
-                className={
-                  selectedTab === "all"
-                    ? "bg-primary text-white border border-primary"
-                    : "bg-white border border-muted/30 hover:border-primary hover:bg-primary hover:text-white"
-                }
-              >
-                All
-              </Button>
-              <Button
-                variant={selectedTab === "overdue" ? "primary" : "outline"}
-                onClick={() => setSelectedTab("overdue")}
-                className={`whitespace-nowrap ${
-                  selectedTab === "overdue"
-                    ? "bg-primary text-white border border-primary"
-                    : "bg-white border border-muted/30 hover:border-primary hover:bg-primary hover:text-white"
-                }`}
-              >
-                Overdue Balances
-              </Button>
-              <Button
-                variant={selectedTab === "active" ? "primary" : "outline"}
-                onClick={() => setSelectedTab("active")}
-                className={`whitespace-nowrap ${
-                  selectedTab === "active"
-                    ? "bg-primary text-white border border-primary"
-                    : "bg-white border border-muted/30 hover:border-primary hover:bg-primary hover:text-white"
-                }`}
-              >
-                Active Ticket
-              </Button>
-              {/* Search Input Component */}
-              <SearchInput
-                placeholder="Search name or account"
-                onSearch={handleSearch}
-                debounceDelay={500}
-                fullWidth={true}
+      <div className="px-4 pt-4 pb-30 space-y-6 overflow-y-auto h-screen bg-milkwhite/90">
+        {(user?.role as any) !== "LOADING_OFFICER" && (
+          <>
+            {/* Page Header Component */}
+            <div className="flex items-center justify-between ">
+              <PageHeader
+                title="Good Morning,"
+                subtitle="Welcome back to the Viju Account Officer Portal"
               />
+
+              <ExportRecord />
             </div>
-          </div>
+            {/* Stats Cards Grid */}
+            <div className="grid grid-cols-4 gap-4">{renderStats()}</div>
+          </>
+        )}
 
-          {/* Data Table */}
-          <div className="overflow-x-auto mt-6">
-            {tableLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <Text variant="caption" color="muted">
-                  Loading table data...
-                </Text>
-              </div>
-            ) : tableError ? (
-              <div className="flex items-center justify-center h-64">
-                <Text variant="caption" color="muted">
-                  Error loading table data
-                </Text>
-              </div>
-            ) : (
-              <Table
-                columns={tableColumns}
-                data={paginatedData}
-                onRowClick={setSelectedDistributor}
-                onActionClick={handleActionClick}
-              />
-            )}
-          </div>
-
-          {/* Pagination Component */}
-          <Pagination
-            currentPage={currentPage}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            onPrevious={handlePreviousPage}
-            onNext={handleNextPage}
-          />
-        </Card>
-
-        {/* Distributor Details Section */}
-        {selectedDistributor ? (
-          <Card border={false}>
-            <div className=" pt-6 space-y-4 pb-12">
-              {/* Distributor Header */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <Text variant="h3" weight="bold">
-                    {selectedDistributor.name}
-                  </Text>
-                  <Text variant="small" color="muted">
-                    Assigned to Emeka Nwokocha • last updated 2026-05-18 10:18
-                    AM
-                  </Text>
-                </div>
-                <Button
-                  variant="primary"
-                  onClick={() => setIsAssignOfficerModalOpen(true)}
+        {user?.role === "ADMIN" && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-14">
+            {adminCardData?.map((stat, i) => (
+              <div
+                key={i}
+                className="p-4 rounded border border-muted/60 bg-white space-y-2"
+              >
+                <TextExtremeEnd
+                  left={stat.region.name}
+                  leftVariant="body"
+                  leftColor="foreground"
+                  leftWeight="bold"
+                  right={`Dist - ${stat.region.dist}`}
+                />
+                <TextExtremeEnd
+                  left="Wallet"
+                  right={formatToNaira(stat.walletBalance)}
+                />
+                <TextExtremeEnd left="Tickets" right={stat.openTickets} />
+                <TextExtremeEnd left="Officers" right={stat.activeOfficers} />
+                <div
+                  onClick={() => {
+                    router.push(`/admin/distributors`);
+                  }}
+                  className="flex gap-1 mt-3 items-center text-orange"
                 >
-                  Assign Officer
-                </Button>
+                  <Text
+                    variant="small"
+                    color="primary"
+                    weight="medium"
+                    className="underline cursor-pointer"
+                  >
+                    View Details
+                  </Text>
+                  <Image
+                    src={arrowRight}
+                    alt="Arrow Right"
+                    width={30}
+                    height={30}
+                    className="w-2.5 h-2.5 mt-1"
+                  />
+                </div>
               </div>
-
-              {/* Detail Tabs Navigation */}
-              <div className="grid grid-cols-7 gap-2 pt-4">
-                {[
-                  "Overview",
-                  "Orders",
-                  "Invoices",
-                  "Stock",
-                  "Chat",
-                  "Tickets",
-                  "Waybills",
-                ].map((tab) => (
+            ))}
+          </div>
+        )}
+        {user?.role === "OFFICER" && (
+          <div>
+            {/* Distributor List Card */}
+            <Card border={false}>
+              {/* Tabs and Search Bar Section */}
+              <div className="">
+                {/* Tab Buttons */}
+                <div className="flex items-center space-x-6">
                   <Button
-                    key={tab}
+                    variant={selectedTab === "all" ? "primary" : "outline"}
+                    onClick={() => setSelectedTab("all")}
+                    className={
+                      selectedTab === "all"
+                        ? "bg-primary text-white border border-primary"
+                        : "bg-white border border-muted/30 hover:border-primary hover:bg-primary hover:text-white"
+                    }
+                  >
+                    All
+                  </Button>
+                  <Button
                     variant={selectedTab === "overdue" ? "primary" : "outline"}
-                    onClick={() => setSelectedDetailTab(tab)}
-                    className={`whitespace-nowrap w-max ${
-                      selectedDetailTab === tab
+                    onClick={() => setSelectedTab("overdue")}
+                    className={`whitespace-nowrap ${
+                      selectedTab === "overdue"
                         ? "bg-primary text-white border border-primary"
                         : "bg-white border border-muted/30 hover:border-primary hover:bg-primary hover:text-white"
                     }`}
                   >
-                    {tab}
+                    Overdue Balances
                   </Button>
-                ))}
+                  <Button
+                    variant={selectedTab === "active" ? "primary" : "outline"}
+                    onClick={() => setSelectedTab("active")}
+                    className={`whitespace-nowrap ${
+                      selectedTab === "active"
+                        ? "bg-primary text-white border border-primary"
+                        : "bg-white border border-muted/30 hover:border-primary hover:bg-primary hover:text-white"
+                    }`}
+                  >
+                    Active Ticket
+                  </Button>
+                  {/* Search Input Component */}
+                  <SearchInput
+                    placeholder="Search name or account"
+                    onSearch={handleSearch}
+                    debounceDelay={500}
+                    fullWidth={true}
+                  />
+                </div>
               </div>
 
-              {/* Detail Tab Content */}
-              <div className="min-h-100 overflow-y-auto mt-4">
-                {selectedDetailTab === "Chat" && (
-                  <ChatUI
-                    profileName={selectedDistributor.name}
-                    profileStatus="Online"
+              {/* Data Table */}
+              <div className="overflow-x-auto mt-6">
+                {tableLoading ? (
+                  <div className="flex items-center justify-center h-64">
+                    <Text variant="caption" color="muted">
+                      Loading table data...
+                    </Text>
+                  </div>
+                ) : tableError ? (
+                  <div className="flex items-center justify-center h-64">
+                    <Text variant="caption" color="muted">
+                      Error loading table data
+                    </Text>
+                  </div>
+                ) : (
+                  <Table
+                    columns={officerTableColumns}
+                    data={paginatedData}
+                    onRowClick={handleDistributorSelect}
+                    onActionClick={handleActionClick}
                   />
                 )}
-                {selectedDetailTab === "Tickets" && <TicketsUI />}
-                {/* {selectedDetailTab === "Stock" && <StockUI />} */}
-                {selectedDetailTab !== "Chat" &&
-                  selectedDetailTab !== "Tickets" && (
-                    <div className="flex items-center justify-center h-full">
-                      <Text variant="caption" color="muted">
-                        {selectedDetailTab} tab content coming soon
+              </div>
+
+              {/* Pagination Component */}
+              <Pagination
+                currentPage={currentPage}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPrevious={handlePreviousPage}
+                onNext={handleNextPage}
+              />
+            </Card>
+
+            {/* Distributor Details Section */}
+            {selectedDistributor ? (
+              <Card border={false}>
+                <div className=" pt-6 space-y-4 pb-12">
+                  {/* Distributor Header */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Text variant="h3" weight="bold">
+                        {selectedDistributor.name}
+                      </Text>
+                      <Text variant="small" color="muted">
+                        Assigned to {user?.name} • last updated{" "}
+                        {selectedDistributor.lastContact}
                       </Text>
                     </div>
-                  )}
-              </div>
-            </div>
-          </Card>
-        ) : (
-          <Card>
-            <div className="p-6 flex items-center justify-center min-h-[200px]">
-              <Text variant="caption" color="muted">
-                No customer selected
-              </Text>
-            </div>
-          </Card>
+                    {/* <Button
+                      variant="primary"
+                      onClick={() => setIsAssignOfficerModalOpen(true)}
+                    >
+                      Assign Officer
+                    </Button> */}
+                  </div>
+
+                  {/* Detail Tabs Navigation */}
+                  <div className="grid grid-cols-7 gap-2 pt-4">
+                    {[
+                      "Overview",
+                      "Orders",
+                      "Invoices",
+                      "Stock",
+                      "Chat",
+                      "Tickets",
+                      "Waybills",
+                    ].map((tab) => (
+                      <Button
+                        key={tab}
+                        variant={
+                          selectedTab === "overdue" ? "primary" : "outline"
+                        }
+                        onClick={() => setSelectedDetailTab(tab)}
+                        className={`whitespace-nowrap w-max ${
+                          selectedDetailTab === tab
+                            ? "bg-primary text-white hover:text-primary border border-primary"
+                            : "bg-white border border-muted/30 hover:border-primary hover:bg-primary hover:text-white"
+                        }`}
+                      >
+                        {tab}
+                      </Button>
+                    ))}
+                  </div>
+
+                  {/* Detail Tab Content */}
+                  <div className="min-h-100 overflow-y-auto mt-4">
+                    {selectedDetailTab === "Overview" &&
+                      (overviewLoading ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            Loading overview...
+                          </Text>
+                        </div>
+                      ) : overviewError ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            Error loading overview. Please try again.
+                          </Text>
+                        </div>
+                      ) : overviewData ? (
+                        <OverviewSection
+                          distributorName={overviewData.name}
+                          phoneNumber={overviewData.phone || "N/A"}
+                          emailAddress={overviewData.email || "N/A"}
+                          region={overviewData.region}
+                          accountOfficer={
+                            overviewData.assignedOfficers?.[0]?.name || "N/A"
+                          }
+                          accountBalance={formatCurrency(
+                            overviewData.walletBalance,
+                          )}
+                          stockBalance="420 Cartons"
+                          lastActivity={formatDate(overviewData.lastUpdated)}
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            No overview data available
+                          </Text>
+                        </div>
+                      ))}
+                    {selectedDetailTab === "Orders" &&
+                      (ordersLoading ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            Loading orders...
+                          </Text>
+                        </div>
+                      ) : ordersError ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            Error loading orders. Please try again.
+                          </Text>
+                        </div>
+                      ) : ordersData && ordersData.data.length > 0 ? (
+                        <OrdersSection
+                          orders={ordersData.data}
+                          currentPage={orderPage}
+                          totalPages={ordersData.meta.totalPages}
+                          onPageChange={setOrderPage}
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            No orders found
+                          </Text>
+                        </div>
+                      ))}
+                    {selectedDetailTab === "Invoices" &&
+                      (invoicesLoading ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            Loading invoices...
+                          </Text>
+                        </div>
+                      ) : invoicesError ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            Error loading invoices. Please try again.
+                          </Text>
+                        </div>
+                      ) : invoicesData && invoicesData.invoices.length > 0 ? (
+                        <InvoicesSection
+                          invoices={invoicesData.invoices}
+                          paymentHistory={invoicesData.paymentHistory}
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            No invoices found
+                          </Text>
+                        </div>
+                      ))}
+                    {selectedDetailTab === "Stock" &&
+                      (stockLoading ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            Loading stock...
+                          </Text>
+                        </div>
+                      ) : stockError ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            Error loading stock. Please try again.
+                          </Text>
+                        </div>
+                      ) : stockData ? (
+                        <StockSection
+                          currentPage={currentPage}
+                          catalogue={stockData.catalogue}
+                          awaitingLoading={stockData.awaitingLoading}
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            No stock data available
+                          </Text>
+                        </div>
+                      ))}
+                    {selectedDetailTab === "Chat" && (
+                      <ChatUI
+                        profileName={selectedDistributor.name}
+                        profileStatus="Online"
+                        distributorId={selectedDistributorId}
+                      />
+                    )}
+                    {selectedDetailTab === "Tickets" && (
+                      <TicketsUI
+                        distributorId={selectedDistributorId}
+                        distributorName={selectedDistributor?.name}
+                      />
+                    )}
+                    {selectedDetailTab === "Waybills" &&
+                      (waybillsLoading ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            Loading waybills...
+                          </Text>
+                        </div>
+                      ) : waybillsError ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            Error loading waybills. Please try again.
+                          </Text>
+                        </div>
+                      ) : waybillsData && waybillsData.data.length > 0 ? (
+                        <WaybillsSection
+                          waybills={waybillsData.data}
+                          currentPage={waybillPage}
+                          totalPages={waybillsData.meta.totalPages}
+                          onPageChange={setWaybillPage}
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-64">
+                          <Text variant="caption" color="muted">
+                            No waybills found
+                          </Text>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </Card>
+            ) : (
+              <Card>
+                <div className="p-6 flex items-center justify-center min-h-50">
+                  <Text variant="caption" color="muted">
+                    No customer selected
+                  </Text>
+                </div>
+              </Card>
+            )}
+
+            {/* Assign Account Officer Modal */}
+            <AssignAccountOfficerModal
+              isOpen={isAssignOfficerModalOpen}
+              onClose={() => setIsAssignOfficerModalOpen(false)}
+              onConfirm={handleOfficerAssigned}
+              distributorName={selectedDistributor?.name}
+            />
+          </div>
         )}
 
-        {/* Assign Account Officer Modal */}
-        <AssignAccountOfficerModal
-          isOpen={isAssignOfficerModalOpen}
-          onClose={() => setIsAssignOfficerModalOpen(false)}
-          onConfirm={handleOfficerAssigned}
-          distributorName={selectedDistributor?.name}
-        />
+        {(user?.role as any) === "REGIONAL_ADMIN" && (
+          <div className="pb-30">
+            <Card border={false}>
+              <div className="flex justify-between px-2 items-center">
+                {/* Tab Buttons */}
+                <PageHeader
+                  title="Pending Loading Request"
+                  subtitle="Assign each request to a loading or warehouse officer in ypour region"
+                />
+                <Text variant="body" weight="bold" color="muted">
+                  View All
+                </Text>
+              </div>
+
+              {/* Data Table */}
+              <div className="overflow-x-auto mt-6">
+                {tableLoading ? (
+                  <div className="flex items-center justify-center h-64">
+                    <Text variant="caption" color="muted">
+                      Loading table data...
+                    </Text>
+                  </div>
+                ) : tableError ? (
+                  <div className="flex items-center justify-center h-64">
+                    <Text variant="caption" color="muted">
+                      Error loading table data
+                    </Text>
+                  </div>
+                ) : (
+                  <Table
+                    columns={loadingRequestTableColumns}
+                    data={paginatedData}
+                    onRowClick={(row) => {
+                      if (row.action === "Assign Officer") {
+                        setIsAssignLoadingOfficerModalOpen(true);
+                      }
+                    }}
+                    onActionClick={(action, row) => {
+                      if (action === "Assign Officer") {
+                        setIsAssignLoadingOfficerModalOpen(true);
+                      }
+                    }}
+                  />
+                )}
+              </div>
+
+              {/* Pagination Component */}
+              <Pagination
+                currentPage={currentPage}
+                totalItems={mockLoadingRequests.length}
+                itemsPerPage={itemsPerPage}
+                onPrevious={handlePreviousPage}
+                onNext={handleNextPage}
+              />
+            </Card>
+
+            {/* Assign Loading Officer Modal */}
+            <AssignLoadingOfficerModal
+              isOpen={isAssignLoadingOfficerModalOpen}
+              onClose={() => setIsAssignLoadingOfficerModalOpen(false)}
+              onConfirm={handleLoadingOfficerAssigned}
+              truckName="LAG-234-XY"
+              driver="John Dare"
+              date="Today, 14:00"
+              qty="320 Cartons"
+              region="Lagos"
+            />
+
+            {/* Loading Officer Success Modal */}
+            <LoadingOfficerSuccessModal
+              isOpen={isLoadingOfficerSuccessOpen}
+              onClose={() => {
+                setIsLoadingOfficerSuccessOpen(false);
+                setIsAssignLoadingOfficerModalOpen(false);
+              }}
+            />
+          </div>
+        )}
+
+        {(user?.role as any) === "LOADING_OFFICER" && <LoadingOfficer />}
       </div>
     </MainLayout>
   );

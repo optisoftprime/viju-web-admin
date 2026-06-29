@@ -2,7 +2,16 @@ import React from "react";
 
 export interface TextProps {
   variant: "h1" | "h2" | "h3" | "body" | "small" | "caption" | "thinnote";
-  color?: "foreground" | "muted" | "primary" | "secondary" | "white";
+  color?:
+    | "foreground"
+    | "muted"
+    | "orange"
+    | "success"
+    | "statusgreen"
+    | "statuslightblue"
+    | "primary"
+    | "secondary"
+    | "white";
   weight?: "thin" | "normal" | "medium" | "semibold" | "bold" | "extrabold";
   children: React.ReactNode;
   className?: string;
@@ -33,6 +42,10 @@ const colorMap = {
   primary: "text-primary",
   secondary: "text-secondary",
   white: "text-white",
+  orange: "text-orange",
+  success: "text-success",
+  statuslightblue: "text-statuslightblue",
+  statusgreen: "text-statusgreen",
 };
 
 const defaultWeights: Record<TextProps["variant"], TextProps["weight"]> = {
