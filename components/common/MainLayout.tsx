@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
 
@@ -15,15 +15,21 @@ export default function MainLayout({
   pageTitle = "Dashboard",
   notificationCount = 0,
 }: MainLayoutProps) {
+  const [showSidebar, setShowSidebar] = useState(false);
   return (
-    <div className="fixed grid grid-cols-[22%_78%]  w-full">
+    <div className="fixed z-10 grid grid-cols-1 md:grid-cols-[22%_78%]  w-full ">
       {/* Sidebar - 20% */}
-      <Sidebar />
+      <Sidebar showSidebar={showSidebar} />
 
       {/* Right Section - 80% */}
       <div className="">
         {/* Navbar - Fixed at top */}
-        <Navbar pageTitle={pageTitle} notificationCount={notificationCount} />
+        <Navbar
+          showSidebar={showSidebar}
+          setShowSidebar={setShowSidebar}
+          pageTitle={pageTitle}
+          notificationCount={notificationCount}
+        />
 
         {/* Main Content Area */}
         <main className="pt-20 overflow-y-auto bg-milkwhite">{children}</main>

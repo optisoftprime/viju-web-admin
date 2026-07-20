@@ -179,7 +179,7 @@ function RegionalTable({ isAdmin = false, region }: RegionalTablePageProps) {
         <Card border={false}>
           <div className="">
             {/* Tab Buttons */}
-            <div className="flex items-center space-x-4 flex-wrap">
+            <div className="flex items-center space-x-4 md:grid grid-cols-5 gap-2 overflow-x-auto md:gap-4">
               {[
                 { value: "all-regions", label: "All Regions" },
                 { value: "lagos", label: "Lagos" },
@@ -194,11 +194,14 @@ function RegionalTable({ isAdmin = false, region }: RegionalTablePageProps) {
                     setSelectedTab(tab.value);
                     setCurrentPage(1);
                   }}
-                  className={
-                    selectedTab === tab.value
-                      ? "bg-linear-to-r from-primary via-orange to-primary text-white border-0"
-                      : "bg-white border border-muted/30 text-muted hover:border-primary hover:bg-primary hover:text-white"
-                  }
+                  className={`
+                    whitespace-nowrap
+                    ${
+                      selectedTab === tab.value
+                        ? "bg-linear-to-r from-primary via-orange to-primary text-white border-0"
+                        : "bg-white border border-muted/30 text-muted hover:border-primary hover:bg-primary hover:text-white"
+                    }
+                  `}
                 >
                   {tab.label}
                 </Button>

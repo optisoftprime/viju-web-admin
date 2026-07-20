@@ -41,7 +41,7 @@ const getIconComponent = (iconName: string) => {
   return Icon ? <Icon className="w-5 h-5" /> : null;
 };
 
-export default function Sidebar() {
+export default function Sidebar({ showSidebar }: { showSidebar: boolean }) {
   const { user } = useAuthStore();
   // const user = {
   //   role: "LOADING_OFFICER",
@@ -137,9 +137,11 @@ export default function Sidebar() {
   const navigationData: NavCategory[] = sidebarNavigationData;
 
   return (
-    <aside className="bg-primary p-6 max-h-screen overflow-y-auto">
+    <aside
+      className={`${showSidebar ? "absolute" : "hidden md:static md:block"}  bg-primary z-20 p-6 min-h-screen overflow-y-auto`}
+    >
       {/* Brand Identity Section */}
-      <div className="flex items-center gap-2 mb-6">
+      <div className="flex z-20 items-center gap-2 mb-6">
         <Logo width="w-10" height="h-10" />
         <div className="flex flex-col">
           <Text variant="h3" weight="bold" color="white">
