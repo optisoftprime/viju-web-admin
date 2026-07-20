@@ -36,7 +36,6 @@ export default function PreviewFlyerModal({
     if (!flyer) return;
     setIsDeactivating(true);
     try {
-      console.log("Deactivating flyer:", flyer);
       // Simulate API call
       setTimeout(() => {
         setIsDeactivating(false);
@@ -45,7 +44,6 @@ export default function PreviewFlyerModal({
       }, 500);
     } catch (error) {
       setIsDeactivating(false);
-      console.error("Error deactivating flyer:", error);
     }
   };
 

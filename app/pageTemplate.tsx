@@ -294,7 +294,7 @@ export default function Home() {
           <Table
             columns={tableColumns}
             data={tableData}
-            onRowClick={(row) => console.log("Row clicked:", row)}
+            onRowClick={(row) => {}}
           />
         </Card>
 

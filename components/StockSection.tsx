@@ -259,7 +259,6 @@ export default function StockSection({
   totalPages: externalTotalPages,
   onPageChange,
 }: StockSectionProps) {
-  // console.log({ catalogue, awaitingLoading });
   const [internalPage, setInternalPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -267,10 +266,33 @@ export default function StockSection({
     if (catalogue.length === 0 && awaitingLoading.length === 0) {
       return mockStocks;
     }
-    return [...catalogue, ...awaitingLoading];
+
+    // Transform catalogue items to Stock format
+    const catalogueStocks: Stock[] = catalogue.map((item: any) => ({
+      id: item.id || item.erpId,
+      product: item.productName,
+      stockBalance: `${item.quantity || 0} Cartons`,
+      reservedStock: "0",
+      awaitingLoading: "0",
+      lastStockUpdate: item.updatedAt || new Date().toISOString(),
+      status: "Available" as const,
+    }));
+
+    // Transform awaitingLoading items to Stock format
+    const awaitingLoadingStocks: Stock[] = awaitingLoading.map((item: any) => ({
+      id: `awaiting-${item.productName}`,
+      product: item.productName,
+      stockBalance: `${item.loaded || 0} Cartons`,
+      reservedStock: String(item.reserved || 0),
+      awaitingLoading: String(item.remaining || 0),
+      lastStockUpdate: new Date().toISOString(),
+      status:
+        item.remaining > 0 ? ("Low Stock" as const) : ("Available" as const),
+    }));
+
+    return [...catalogueStocks, ...awaitingLoadingStocks];
   }, [catalogue, awaitingLoading]);
 
-  console.log({ combinedData });
   // Use catalogue data if provided, otherwise use stocks
   const displayData = combinedData.length > 0 ? combinedData : stocks;
 

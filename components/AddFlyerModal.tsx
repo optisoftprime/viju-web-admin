@@ -57,7 +57,6 @@ export default function AddFlyerModal({
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setFormData({ ...formData, name: value });
-    console.log("Form values:", { ...formData, name: value });
 
     // Clear error if field is filled
     if (value.trim()) {
@@ -93,10 +92,7 @@ export default function AddFlyerModal({
         const result = reader.result as string;
         setFormData({ ...formData, imageUrl: result });
         setImagePreview(result);
-        console.log("Form values:", {
-          ...formData,
-          imageUrl: "base64_image_data",
-        });
+
         setErrors({ ...errors, imageUrl: undefined });
       };
       reader.readAsDataURL(file);
@@ -137,10 +133,7 @@ export default function AddFlyerModal({
         const result = reader.result as string;
         setFormData({ ...formData, imageUrl: result });
         setImagePreview(result);
-        console.log("Form values:", {
-          ...formData,
-          imageUrl: "base64_image_data",
-        });
+
         setErrors({ ...errors, imageUrl: undefined });
       };
       reader.readAsDataURL(file);

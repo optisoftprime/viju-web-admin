@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Text } from "@/components/common";
+import { Waybill as APIWaybill } from "@/src/lib/api/types";
 
 interface Waybill {
   id: string;
@@ -16,7 +17,10 @@ interface Waybill {
 }
 
 interface WaybillsSectionProps {
-  waybills?: Waybill[];
+  waybills?: Waybill[] | APIWaybill[];
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
 }
 
 // Mock waybills data
@@ -294,18 +298,60 @@ const getStatusBadge = (
   };
 };
 
+// Helper function to map API Waybill to component Waybill format
+const mapAPIWaybillToWaybill = (apiWaybill: APIWaybill): Waybill => {
+  return {
+    id: apiWaybill.id,
+    waybill: apiWaybill.reference,
+    linkedOrderId: apiWaybill.linkedPurchaseId,
+    product: "Product", // Not available in API response
+    quantity: `${apiWaybill.quantityCartons} Cartons`,
+    loadingDate: new Date(apiWaybill.requestedLoadingDate).toLocaleDateString(
+      "en-NG",
+    ),
+    destination: apiWaybill.destination,
+    driverVehicle: `${apiWaybill.driverName} ${apiWaybill.truckPlateNumber}`,
+    status:
+      apiWaybill.status === "Completed" ||
+      apiWaybill.status === "In Progress" ||
+      apiWaybill.status === "Pending Assign..."
+        ? (apiWaybill.status as any)
+        : "In Progress",
+  };
+};
+
 export default function WaybillsSection({
   waybills = mockWaybills,
+  currentPage: externalCurrentPage,
+  totalPages: externalTotalPages,
+  onPageChange,
 }: WaybillsSectionProps) {
-  const [currentPage, setCurrentPage] = useState(1);
+  const [internalPage, setInternalPage] = useState(1);
   const itemsPerPage = 10;
+
+  // Convert API waybills to component waybills if needed
+  const mappedWaybills = useMemo(() => {
+    return waybills.map((waybill) => {
+      // Check if it's an API waybill (has linkedPurchaseId property)
+      if ("linkedPurchaseId" in waybill) {
+        return mapAPIWaybillToWaybill(waybill as APIWaybill);
+      }
+      return waybill as Waybill;
+    });
+  }, [waybills]);
+
+  // Use external pagination if provided, otherwise use internal
+  const currentPage = externalCurrentPage ?? internalPage;
+  const totalPages =
+    externalTotalPages ?? Math.ceil(mappedWaybills.length / itemsPerPage);
+  const handlePageChange = onPageChange ?? setInternalPage;
 
   const paginatedWaybills = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return waybills.slice(startIndex, startIndex + itemsPerPage);
-  }, [waybills, currentPage]);
+    return mappedWaybills.slice(startIndex, startIndex + itemsPerPage);
+  }, [mappedWaybills, currentPage]);
 
-  const totalItems = waybills.length;
+  const totalItems = mappedWaybills.length;
 
   return (
     <div className="space-y-4">
@@ -315,28 +361,28 @@ export default function WaybillsSection({
           {/* Table Header */}
           <thead>
             <tr>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 WAYBILL
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 LINKED ORDER ID
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 PRODUCT
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 QUANTITY
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 LOADING DATE
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 DESTINATION
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 DRIVER/VEHICLE
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 STATUS
               </th>
             </tr>
@@ -379,7 +425,7 @@ export default function WaybillsSection({
                         backgroundColor: statusBadge.bgColor,
                         color: statusBadge.textColor,
                       }}
-                      className="px-3 py-1 rounded-full text-sm font-semibold inline-block"
+                      className="px-3 py-1 whitespace-nowrap rounded-full text-sm font-semibold inline-block"
                     >
                       {statusBadge.text}
                     </span>
@@ -392,7 +438,7 @@ export default function WaybillsSection({
       </div>
 
       {/* Pagination */}
-      {waybills.length > itemsPerPage && (
+      {mappedWaybills.length > itemsPerPage && (
         <div className="flex justify-between items-center mt-6">
           <Text variant="small" color="muted">
             Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
@@ -400,7 +446,7 @@ export default function WaybillsSection({
           </Text>
           <div className="flex gap-2">
             <button
-              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
               className="px-4 py-2 border border-muted/20 rounded-lg text-sm font-medium text-muted hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -408,11 +454,9 @@ export default function WaybillsSection({
             </button>
             <button
               onClick={() =>
-                setCurrentPage((prev) =>
-                  Math.min(Math.ceil(totalItems / itemsPerPage), prev + 1),
-                )
+                handlePageChange(Math.min(totalPages, currentPage + 1))
               }
-              disabled={currentPage === Math.ceil(totalItems / itemsPerPage)}
+              disabled={currentPage === totalPages}
               className="px-4 py-2 border border-muted/20 rounded-lg text-sm font-medium text-muted hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next

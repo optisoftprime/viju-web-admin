@@ -81,7 +81,6 @@ export default function AddAccountOfficerModal({
   const handleGeneratePassword = () => {
     const newPassword = generatePassword();
     setValue("temporaryPassword", newPassword);
-    console.log("Generated password:", newPassword);
   };
 
   const onSubmit = async (data: FormData) => {
@@ -95,14 +94,12 @@ export default function AddAccountOfficerModal({
         password: data.temporaryPassword,
       });
 
-      console.log("Officer created:", data);
       reset();
       setIsSubmitting(false);
       onSuccess?.();
       onClose();
     } catch (error) {
       setIsSubmitting(false);
-      console.error("Error creating officer:", error);
     }
   };
 

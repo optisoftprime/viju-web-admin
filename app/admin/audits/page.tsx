@@ -7,7 +7,9 @@ import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuditTickets } from "@/hooks/api/useAudit";
+import { auditService } from "@/services/audit.service";
 import { BroadcastRegion } from "@/lib/api/types";
+import ExportRecord from "@/components/ExportRecord";
 
 // Table columns definition
 const tableColumns = [
@@ -127,14 +129,47 @@ function InteractionAuditContent() {
    */
   const handleStartDateChange = (date: string) => {
     setStartDate(date);
-    console.log("Start date changed:", date);
+
     setCurrentPage(1);
   };
 
   const handleEndDateChange = (date: string) => {
     setEndDate(date);
-    console.log("End date changed:", date);
+
     setCurrentPage(1);
+  };
+
+  const downloadCsvFile = (blob: Blob, filename: string) => {
+    const url = window.URL.createObjectURL(
+      new Blob([blob], { type: "text/csv;charset=utf-8;" }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleExport = async () => {
+    try {
+      const csvBlob = await auditService.exportTickets({
+        page: currentPage,
+        pageSize: itemsPerPage,
+        region: selectedRegion
+          ? (selectedRegion as BroadcastRegion)
+          : undefined,
+        customerName: customerName || undefined,
+        officerName: officerName || undefined,
+        keyword: keyword || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+      });
+      downloadCsvFile(csvBlob, "viju-audit-tickets.csv");
+    } catch (error) {
+      console.error("Audit export failed", error);
+    }
   };
 
   /**
@@ -159,10 +194,13 @@ function InteractionAuditContent() {
     <MainLayout>
       <div className="p-4 space-y-6 overflow-y-auto h-screen bg-milkwhite/90">
         {/* Page Header Component */}
-        <PageHeader
-          title="Interaction Audits"
-          subtitle="Monitor and track all system interactions"
-        />
+        <div className="flex items-center justify-between">
+          <PageHeader
+            title="Interaction Audits"
+            subtitle="Monitor and track all system interactions"
+          />
+          <ExportRecord onClick={handleExport} />
+        </div>
 
         {/* Audit Logs Card */}
         <Card border={false}>

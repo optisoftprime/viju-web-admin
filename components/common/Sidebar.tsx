@@ -13,6 +13,7 @@ interface NavLinkItem {
   url: string;
   icon: string;
   isActive?: boolean;
+  secondaryLink?: string;
 }
 
 interface NavCategory {
@@ -40,7 +41,7 @@ const getIconComponent = (iconName: string) => {
   return Icon ? <Icon className="w-5 h-5" /> : null;
 };
 
-export default function Sidebar() {
+export default function Sidebar({ showSidebar }: { showSidebar: boolean }) {
   const { user } = useAuthStore();
   // const user = {
   //   role: "LOADING_OFFICER",
@@ -56,11 +57,6 @@ export default function Sidebar() {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   // Log user info when component mounts or user changes
-  useEffect(() => {
-    if (user) {
-      console.log("Logged-in user:", user);
-    }
-  }, [user]);
 
   const sidebarNavigationData: NavCategory[] = [
     {
@@ -111,7 +107,12 @@ export default function Sidebar() {
       category: "ADMINISTRATOR",
       type: "ADMIN",
       links: [
-        { name: "Org Dashboard", url: "/dashboard", icon: "Globe" },
+        {
+          name: "Org Dashboard",
+          url: "/dashboard",
+          icon: "Globe",
+          secondaryLink: "/admin/distributors",
+        },
         { name: "Broadcasts", url: "/broadcast", icon: "Megaphone" },
         {
           name: "Interaction Audits",
@@ -136,9 +137,11 @@ export default function Sidebar() {
   const navigationData: NavCategory[] = sidebarNavigationData;
 
   return (
-    <aside className="bg-primary p-6 max-h-screen overflow-y-auto">
+    <aside
+      className={`${showSidebar ? "absolute" : "hidden md:static md:block"}  bg-primary z-20 p-6 min-h-screen overflow-y-auto`}
+    >
       {/* Brand Identity Section */}
-      <div className="flex items-center gap-2 mb-6">
+      <div className="flex z-20 items-center gap-2 mb-6">
         <Logo width="w-10" height="h-10" />
         <div className="flex flex-col">
           <Text variant="h3" weight="bold" color="white">
@@ -177,7 +180,8 @@ export default function Sidebar() {
             </Text>
             <div className="flex flex-col gap-1">
               {category.links.map((link: NavLinkItem, linkIndex: number) => {
-                const isActive = pathname === link.url;
+                const isActive =
+                  pathname === link.url || pathname === link.secondaryLink;
                 return (
                   <Link
                     key={linkIndex}
@@ -216,7 +220,7 @@ export default function Sidebar() {
         </div>
         <button
           onClick={() => setIsLogoutModalOpen(true)}
-          className="w-full flex items-center gap-3 text-white hover:bg-orange-600/50 rounded-lg p-3 transition-colors text-sm"
+          className="w-full cursor-pointer flex items-center gap-3 text-white hover:bg-orange-600/50 rounded-lg p-3 transition-colors text-sm"
         >
           {getIconComponent("LogOut")}
 

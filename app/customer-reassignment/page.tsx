@@ -199,6 +199,7 @@ const regions = [
 function CustomerReassignmentContent() {
   // State for active region filter
   const [selectedRegion, setSelectedRegion] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
 
   // State for reassign modal
   const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
@@ -214,13 +215,24 @@ function CustomerReassignmentContent() {
    * Filter customers by selected region
    */
   const filteredCustomers = useMemo(() => {
-    if (selectedRegion === "all") {
-      return mockCustomerData;
+    const regionFiltered =
+      selectedRegion === "all"
+        ? mockCustomerData
+        : mockCustomerData.filter(
+            (customer) => customer.region === selectedRegion,
+          );
+
+    if (!searchTerm.trim()) {
+      return regionFiltered;
     }
-    return mockCustomerData.filter(
-      (customer) => customer.region === selectedRegion,
+
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    return regionFiltered.filter(
+      (customer) =>
+        customer.name.toLowerCase().includes(normalizedSearch) ||
+        customer.account.toLowerCase().includes(normalizedSearch),
     );
-  }, [selectedRegion]);
+  }, [selectedRegion, searchTerm]);
 
   /**
    * Calculate pagination
@@ -244,15 +256,14 @@ function CustomerReassignmentContent() {
    * Handle search input from SearchInput component
    */
   const handleSearch = (value: string) => {
-    // Search logic can be implemented here
-    console.log("Search value:", value);
+    setSearchTerm(value);
+    setCurrentPage(1);
   };
 
   /**
    * Handle action button click on table rows
    */
   const handleActionClick = (action: string, row: Customer) => {
-    console.log(`Action: ${action}`, row);
     if (action.includes("Reassign")) {
       setSelectedCustomer(row);
       setIsReassignModalOpen(true);
@@ -286,7 +297,6 @@ function CustomerReassignmentContent() {
     name: string;
     role: string;
   }) => {
-    console.log("Officer assigned:", officer);
     setIsReassignModalOpen(false);
     setSelectedCustomer(null);
   };

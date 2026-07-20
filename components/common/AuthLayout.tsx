@@ -12,9 +12,9 @@ export default function AuthLayout({
   rightChildren,
 }: AuthLayoutProps) {
   return (
-    <div className="grid grid-cols-2 min-h-screen">
+    <div className="grid grid-cols-1 md:grid-cols-2 min-h-screen">
       {/* Left Side - Gradient Background with Branding */}
-      <div className="bg-linear-to-b from-primary via-orange to-primary h-full min-h-screen flex items-center justify-center">
+      <div className="bg-linear-to-b from-primary via-orange to-primary  md:h-full md:min-h-screen flex items-center justify-center">
         {leftChildren}
       </div>
 

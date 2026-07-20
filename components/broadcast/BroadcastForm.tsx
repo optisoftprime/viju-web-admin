@@ -16,6 +16,7 @@ import {
   useBroadcastIndividual,
   useInfiniteCustomers,
 } from "@/hooks/api/useBroadcast";
+import { toast } from "sonner";
 
 interface BroadcastFormData {
   broadcastType: "regional" | "individual";
@@ -165,7 +166,7 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
       }
     } catch (error) {
       // Error is handled by the mutation's onError callback with toast
-      console.error("Broadcast submission error:", error);
+      toast.error("Broadcast submission error: " + (error as Error).message);
     }
   };
 

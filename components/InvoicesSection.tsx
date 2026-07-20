@@ -325,25 +325,25 @@ export default function InvoicesSection({
           {/* Table Header */}
           <thead>
             <tr>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 INVOICE NO
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 WALLET BALANCE
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 INVOICE DATE
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 INVOICE AMOUNT
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 AMOUNT PAID
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 OUTSTANDING AMOUNT
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 PAYMENT STATUS
               </th>
             </tr>

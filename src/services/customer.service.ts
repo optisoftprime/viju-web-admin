@@ -38,7 +38,6 @@ export const customerService = {
       );
       return data;
     } catch (error) {
-      console.error("Fetch customers failed:", error);
       throw error;
     }
   },
@@ -63,7 +62,32 @@ export const customerService = {
       );
       return data;
     } catch (error) {
-      console.error("Fetch customers for reassignment failed:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Export filtered customers list as CSV
+   */
+  exportCustomers: async (params: GetCustomersParams = {}): Promise<Blob> => {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.page !== undefined)
+        queryParams.append("page", String(params.page));
+      if (params.pageSize !== undefined)
+        queryParams.append("pageSize", String(params.pageSize));
+      if (params.region) queryParams.append("region", params.region);
+      if (params.search) queryParams.append("search", params.search);
+
+      const { data } = await apiClient.get(
+        `${endpoints.customers.export}?${queryParams.toString()}`,
+        {
+          responseType: "blob",
+        },
+      );
+
+      return data;
+    } catch (error) {
       throw error;
     }
   },
@@ -80,7 +104,6 @@ export const customerService = {
       const { data } = await apiClient.patch(url, request);
       return data;
     } catch (error) {
-      console.error("Reassign customer failed:", error);
       throw error;
     }
   },

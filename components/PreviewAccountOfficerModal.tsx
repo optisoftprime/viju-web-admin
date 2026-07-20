@@ -37,7 +37,6 @@ export default function PreviewAccountOfficerModal({
     if (!officer) return;
     setIsDeactivating(true);
     try {
-      console.log("Deactivating officer:", officer);
       // Simulate API call
       setTimeout(() => {
         setIsDeactivating(false);
@@ -46,7 +45,6 @@ export default function PreviewAccountOfficerModal({
       }, 500);
     } catch (error) {
       setIsDeactivating(false);
-      console.error("Error deactivating officer:", error);
     }
   };
 

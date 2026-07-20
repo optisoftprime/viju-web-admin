@@ -121,7 +121,6 @@ function LoadingRequestPageContent() {
    * Handle action button click
    */
   const handleActionClick = (action: string, row: LoadingRequest) => {
-    console.log(`Action: ${action}`, row);
     if (row.status === "Pending") {
       setIsAssignLoadingOfficerModalOpen(true);
     }
@@ -154,7 +153,6 @@ function LoadingRequestPageContent() {
     name: string;
     role: string;
   }) => {
-    console.log("Loading officer assigned:", officer);
     setIsLoadingOfficerSuccessOpen(true);
   };
 

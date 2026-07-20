@@ -7,6 +7,7 @@ import * as yup from "yup";
 import Image from "next/image";
 import { Text, Input, Button, Modal } from "@/components/common";
 import verifiedMark from "@/assets/images/verifiedmark.png";
+import { toast } from "sonner";
 
 // Validation schema
 const resetPasswordValidationSchema = yup.object({
@@ -38,7 +39,6 @@ export default function ResetPasswordForm() {
   const formValues = watch();
 
   const onSubmit = (data: ResetPasswordFormInputs) => {
-    console.log("Reset Password Form Submitted:", data);
     // Show success modal
     setIsSuccessModalOpen(true);
   };
