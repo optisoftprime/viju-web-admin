@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { ChevronDown } from "lucide-react";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -59,11 +60,16 @@ const validationSchema = yup.object().shape({
     .string()
     .required("Message is required")
     .max(200, "Message must not exceed 200 characters") as any,
+  // Optional: an empty field (or 0) means "no allowance", so only reject
+  // negative values - `positive()` here used to block every submission
   allowance: yup
     .number()
-    .positive("Allowance must be a positive number")
+    .transform((value, originalValue) =>
+      originalValue === "" || originalValue === null ? 0 : value,
+    )
+    .min(0, "Allowance cannot be a negative number")
     .typeError("Allowance must be a number")
-    .optional() as any,
+    .default(0) as any,
 }) as any;
 
 export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
@@ -72,7 +78,15 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
   );
   const [messageLength, setMessageLength] = useState(0);
   const [customerSearch, setCustomerSearch] = useState("");
+  // Kept separately so the chosen distributor stays readable after the
+  // search box is cleared and the option list reloads
+  const [selectedCustomer, setSelectedCustomer] = useState<{
+    label: string;
+    value: string;
+  } | null>(null);
+  const [isCustomerListOpen, setIsCustomerListOpen] = useState(false);
   const scrollListenerRef = useRef<HTMLDivElement>(null);
+  const customerFieldRef = useRef<HTMLDivElement>(null);
 
   const regionalMutation = useBroadcastRegional();
   const individualMutation = useBroadcastIndividual();
@@ -125,7 +139,30 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
       scrollElement.addEventListener("scroll", handleScroll);
       return () => scrollElement.removeEventListener("scroll", handleScroll);
     }
-  }, [hasMoreCustomers, isFetchingMoreCustomers, fetchNextCustomers]);
+  }, [
+    hasMoreCustomers,
+    isFetchingMoreCustomers,
+    fetchNextCustomers,
+    // the scrollable list only exists while the dropdown is open
+    isCustomerListOpen,
+  ]);
+
+  // Close the distributor dropdown when clicking outside of it
+  useEffect(() => {
+    if (!isCustomerListOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        customerFieldRef.current &&
+        !customerFieldRef.current.contains(event.target as Node)
+      ) {
+        setIsCustomerListOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isCustomerListOpen]);
 
   const handleTypeChange = (type: "regional" | "individual") => {
     setBroadcastType(type);
@@ -138,6 +175,8 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
     });
     setMessageLength(0);
     setCustomerSearch("");
+    setSelectedCustomer(null);
+    setIsCustomerListOpen(false);
   };
 
   const onFormSubmit = async (data: BroadcastFormData) => {
@@ -149,25 +188,49 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
           message: data.message,
         });
       } else {
-        // Send individual broadcast
+        // Send individual broadcast - deliveryAllowance is optional and only
+        // meaningful when > 0, so it is left out entirely otherwise
+        const allowance = Number(data.allowance);
         await individualMutation.mutateAsync({
           customerId: data.distributor,
           message: data.message,
-          deliveryAllowance:
-            data.allowance && data.allowance > 0 ? Number(data.allowance) : 0,
+          ...(allowance > 0 ? { deliveryAllowance: allowance } : {}),
         });
       }
-      // Reset form on success
-      reset();
+      // Reset form on success, keeping the tab the user is working on
+      // (a bare reset() would flip broadcastType back to "individual")
+      reset({
+        broadcastType: data.broadcastType,
+        regions: [],
+        distributor: "",
+        message: "",
+        allowance: 0,
+      });
       setMessageLength(0);
       setCustomerSearch("");
+      setSelectedCustomer(null);
+      setIsCustomerListOpen(false);
       if (onSubmit) {
         onSubmit(data);
       }
-    } catch (error) {
-      // Error is handled by the mutation's onError callback with toast
-      toast.error("Broadcast submission error: " + (error as Error).message);
+    } catch {
+      // Error is already surfaced by the mutation's onError toast;
+      // caught here so the form keeps its values for a retry
     }
+  };
+
+  /**
+   * Surface validation errors instead of letting the submit button
+   * silently do nothing
+   */
+  const onFormInvalid = (formErrors: Record<string, any>) => {
+    const firstError = Object.values(formErrors).find(
+      (error) => error?.message,
+    );
+    toast.error(
+      (firstError?.message as string) ||
+        "Please complete the form before sending",
+    );
   };
 
   const isLoading =
@@ -194,85 +257,131 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
       </div>
 
       {/* Form Content */}
-      <form onSubmit={handleSubmit(onFormSubmit)} className="p-4 space-y-6">
+      <form
+        onSubmit={handleSubmit(onFormSubmit, onFormInvalid)}
+        className="p-4 space-y-6"
+      >
         {/* Regions / Distributor Field */}
         {broadcastType === "individual" ? (
           <Controller
             name="distributor"
             control={control}
-            render={({ field }) => (
-              <div className="space-y-2">
-                <Text
-                  variant="small"
-                  weight="bold"
-                  color="foreground"
-                  className="block"
-                >
-                  Target Distributor
-                </Text>
-                <div
-                  ref={scrollListenerRef}
-                  className="border border-[#E5E7EB] rounded-md p-2 h-40 overflow-y-auto"
-                >
-                  <input
-                    type="text"
-                    placeholder="Search distributor..."
-                    value={customerSearch}
-                    onChange={(e) => setCustomerSearch(e.target.value)}
-                    className="w-full p-2 border border-[#E5E7EB] rounded-md mb-2 outline-none"
-                    disabled={isLoading}
-                  />
-                  {isLoadingCustomers && (
-                    <Text variant="caption" color="muted" className="block p-2">
-                      Loading customers...
-                    </Text>
-                  )}
-                  {customerOptions.length === 0 && !isLoadingCustomers && (
-                    <Text variant="caption" color="muted" className="block p-2">
-                      No customers found
-                    </Text>
-                  )}
-                  {customerOptions.map((option: any) => (
-                    <div
-                      key={option.value}
-                      onClick={() => {
-                        field.onChange(option.value);
-                        setCustomerSearch("");
-                      }}
-                      className="p-2 cursor-pointer hover:bg-[#F0F5F9] rounded-md text-sm"
+            render={({ field }) => {
+              const selectedLabel =
+                selectedCustomer?.value === field.value
+                  ? selectedCustomer.label
+                  : customerOptions.find(
+                      (opt: any) => opt.value === field.value,
+                    )?.label || field.value;
+
+              return (
+                <div ref={customerFieldRef} className="space-y-2 relative">
+                  <Text
+                    variant="small"
+                    weight="bold"
+                    color="foreground"
+                    className="block"
+                  >
+                    Target Distributor
+                  </Text>
+
+                  {/* Trigger - shows the current selection, opens the list */}
+                  <div
+                    onClick={() =>
+                      !isLoading && setIsCustomerListOpen((prev) => !prev)
+                    }
+                    className={`w-full border rounded-md px-3 py-2.5 flex items-center justify-between gap-2 ${
+                      errors.distributor ? "border-red-500" : "border-[#E5E7EB]"
+                    } ${isLoading ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
+                  >
+                    <Text
+                      variant="small"
+                      color={selectedLabel ? "foreground" : "muted"}
+                      className="truncate"
                     >
-                      {option.label}
+                      {selectedLabel || "Select distributor"}
+                    </Text>
+                    <ChevronDown
+                      className={`w-4 h-4 text-muted shrink-0 transition-transform ${
+                        isCustomerListOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </div>
+
+                  {isCustomerListOpen && (
+                    <div className="absolute z-50 mt-1 w-full border border-[#E5E7EB] rounded-md bg-white shadow-lg">
+                      <div className="p-2 border-b border-[#E5E7EB]">
+                        <input
+                          autoFocus
+                          type="text"
+                          placeholder="Search distributor..."
+                          value={customerSearch}
+                          onChange={(e) => setCustomerSearch(e.target.value)}
+                          className="w-full p-2 border border-[#E5E7EB] rounded-md outline-none text-sm"
+                        />
+                      </div>
+                      <div
+                        ref={scrollListenerRef}
+                        className="max-h-52 overflow-y-auto p-2"
+                      >
+                        {isLoadingCustomers && (
+                          <Text
+                            variant="caption"
+                            color="muted"
+                            className="block p-2"
+                          >
+                            Loading customers...
+                          </Text>
+                        )}
+                        {customerOptions.length === 0 &&
+                          !isLoadingCustomers && (
+                            <Text
+                              variant="caption"
+                              color="muted"
+                              className="block p-2"
+                            >
+                              No customers found
+                            </Text>
+                          )}
+                        {customerOptions.map((option: any) => (
+                          <div
+                            key={option.value}
+                            onClick={() => {
+                              field.onChange(option.value);
+                              setSelectedCustomer(option);
+                              setCustomerSearch("");
+                              setIsCustomerListOpen(false);
+                            }}
+                            className="p-2 cursor-pointer hover:bg-[#F0F5F9] rounded-md text-sm"
+                          >
+                            {option.label}
+                          </div>
+                        ))}
+                        {isFetchingMoreCustomers && (
+                          <Text
+                            variant="caption"
+                            color="muted"
+                            className="block p-2 text-center"
+                          >
+                            Loading more...
+                          </Text>
+                        )}
+                      </div>
                     </div>
-                  ))}
-                  {isFetchingMoreCustomers && (
+                  )}
+
+                  {errors.distributor && (
                     <Text
                       variant="caption"
-                      color="muted"
-                      className="block p-2 text-center"
+                      color="primary"
+                      className="text-red-500"
                     >
-                      Loading more...
+                      {errors.distributor.message}
                     </Text>
                   )}
                 </div>
-                {field.value && (
-                  <Text variant="small" color="foreground" className="mt-2">
-                    Selected:{" "}
-                    {customerOptions.find(
-                      (opt: any) => opt.value === field.value,
-                    )?.label || field.value}
-                  </Text>
-                )}
-                {errors.distributor && (
-                  <Text
-                    variant="caption"
-                    color="primary"
-                    className="text-red-500"
-                  >
-                    {errors.distributor.message}
-                  </Text>
-                )}
-              </div>
-            )}
+              );
+            }}
           />
         ) : (
           <MultiSelectField
@@ -332,17 +441,24 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
             name="allowance"
             control={control}
             render={({ field }) => (
-              <div className="w-[140px] h-10 bg-[#F3F4F6] rounded-md flex items-center px-3 gap-2">
-                <span className="text-[#374151] font-medium">₦</span>
-                <input
-                  {...field}
-                  type="number"
-                  min="0"
-                  placeholder="enter amount"
-                  onChange={(e) => field.onChange(e.target.value || 0)}
-                  disabled={isLoading}
-                  className="bg-transparent outline-none w-full text-right text-[#111827] disabled:opacity-60"
-                />
+              <div className="w-[140px]">
+                <div className="h-10 bg-[#F3F4F6] rounded-md flex items-center px-3 gap-2">
+                  <span className="text-[#374151] font-medium">₦</span>
+                  <input
+                    {...field}
+                    type="number"
+                    min="0"
+                    placeholder="enter amount"
+                    onChange={(e) => field.onChange(e.target.value || 0)}
+                    disabled={isLoading}
+                    className="bg-transparent outline-none w-full text-right text-[#111827] disabled:opacity-60"
+                  />
+                </div>
+                {errors.allowance && (
+                  <Text variant="caption" className="text-red-500 mt-1 block">
+                    {errors.allowance.message}
+                  </Text>
+                )}
               </div>
             )}
           />
@@ -358,12 +474,12 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
           <Button
             type="submit"
             variant="orange"
-            size="sm"
+            size="xs"
             gradient={true}
-            className="w-35 h-10"
+            className="px-4 py-2"
             disabled={isLoading}
           >
-            {isLoading ? "Sending..." : "Send Broadcast"}
+            {isLoading ? "Sending..." : "Send Message"}
           </Button>
         </div>
       </form>

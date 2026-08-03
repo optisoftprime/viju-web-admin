@@ -86,6 +86,7 @@ function LoadingQueueContent() {
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isShowingDetails, setIsShowingDetails] = useState<boolean>(false);
   const { user } = useAuthStore();
 
   const selectedItem = selectedItemId
@@ -135,15 +136,17 @@ function LoadingQueueContent() {
         />
 
         {/* Main Grid Layout */}
-        <div className="grid grid-cols-[30%_70%] gap-6">
+        <div className="md:grid grid-cols-[30%_70%] gap-6">
           {/* Left Column - Assigned List */}
-          <div className="space-y-4">
+          <div
+            className={`space-y-4 ${isShowingDetails ? "md:block hidden" : "block"}`}
+          >
             <Text variant="body" weight="bold" color="foreground">
               Assigned to you
             </Text>
 
             {mockLoadingQueue.length > 0 ? (
-              <div className="space-y-3">
+              <div className={`space-y-3 `}>
                 {mockLoadingQueue.map((item) => (
                   <div
                     key={item.id}
@@ -153,6 +156,7 @@ function LoadingQueueContent() {
                         : "border-muted hover:border-primary/50"
                     }`}
                     onClick={() => {
+                      setIsShowingDetails(true);
                       setSelectedItemId(item.id);
                       setSelectedStatus(null);
                       setUploadedFile(null);
@@ -210,11 +214,13 @@ function LoadingQueueContent() {
           </div>
 
           {/* Right Column - Detail View */}
-          <div className="space-y-4">
+          <div
+            className={`space-y-4 ${isShowingDetails ? "block" : "hidden md:block"} `}
+          >
             {selectedDetail && selectedItem ? (
               <>
                 {/* Header Section */}
-                <Card border={false}>
+                <Card border={false} className={``}>
                   <div className="flex items-start justify-between pb-4 border-b">
                     <div>
                       <Text variant="body" weight="bold" color="foreground">

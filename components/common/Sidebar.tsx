@@ -7,6 +7,8 @@ import Logo from "./Logo";
 import { Text } from "./Text";
 import LogoutModal from "./LogoutModal";
 import { useAuthStore } from "@/store/auth.store";
+import { getPortalName } from "@/src/utils/greeting";
+import { formatRegion } from "@/src/utils/formatter";
 
 interface NavLinkItem {
   name: string;
@@ -41,7 +43,7 @@ const getIconComponent = (iconName: string) => {
   return Icon ? <Icon className="w-5 h-5" /> : null;
 };
 
-export default function Sidebar() {
+export default function Sidebar({ showSidebar }: { showSidebar: boolean }) {
   const { user } = useAuthStore();
   // const user = {
   //   role: "LOADING_OFFICER",
@@ -55,6 +57,15 @@ export default function Sidebar() {
   // const { user } = useAuthStore();
   const pathname = usePathname();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+  // An admin works across the whole organisation; every other role is scoped
+  // to the region on their staff record
+  const regionLabel =
+    user?.role === "ADMIN"
+      ? "All Regions"
+      : user?.region
+        ? `${formatRegion(user.region)} Region`
+        : "LAGOS REGION";
 
   // Log user info when component mounts or user changes
 
@@ -137,32 +148,36 @@ export default function Sidebar() {
   const navigationData: NavCategory[] = sidebarNavigationData;
 
   return (
-    <aside className="bg-primary p-6 max-h-screen overflow-y-auto">
+    <aside
+      className={`${showSidebar ? "absolute" : "hidden md:static md:block"}  bg-primary z-20 p-6 min-h-screen overflow-y-auto`}
+    >
       {/* Brand Identity Section */}
-      <div className="flex items-center gap-2 mb-6">
+      <div className="flex z-20 items-center gap-2 mb-6">
         <Logo width="w-10" height="h-10" />
         <div className="flex flex-col">
           <Text variant="h3" weight="bold" color="white">
             Viju
           </Text>
           <Text variant="caption" weight="medium" color="white">
-            Account Officer Portal
+            {getPortalName(user?.role)}
           </Text>
         </div>
       </div>
 
-      {/* Region Status Badge */}
-      <div className="flex items-center justify-between gap-1 rounded-lg p-3 bg-orange mb-12">
-        <div className="flex items-center gap-1">
+      {/* Region Status Badge - hidden when the account carries no region */}
+      {regionLabel && (
+        <div className="flex items-center gap-1 rounded-lg p-3 bg-orange mb-12">
           <span className="w-2 h-2 bg-success rounded-full"></span>
-          <Text variant="caption" weight="medium" color="white">
-            LAGOS REGION
+          <Text
+            variant="caption"
+            weight="medium"
+            color="white"
+            className="uppercase"
+          >
+            {regionLabel}
           </Text>
         </div>
-        <Text variant="thinnote" weight="normal" color="white">
-          VJ-RM-01
-        </Text>
-      </div>
+      )}
 
       {/* Navigation Links Section */}
       <nav className="flex-1 overflow-y-auto space-y-2">

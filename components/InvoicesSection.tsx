@@ -325,25 +325,25 @@ export default function InvoicesSection({
           {/* Table Header */}
           <thead>
             <tr>
-              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 INVOICE NO
               </th>
-              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 WALLET BALANCE
               </th>
-              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 INVOICE DATE
               </th>
-              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 INVOICE AMOUNT
               </th>
-              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 AMOUNT PAID
               </th>
-              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 OUTSTANDING AMOUNT
               </th>
-              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 PAYMENT STATUS
               </th>
             </tr>
@@ -359,22 +359,22 @@ export default function InvoicesSection({
 
               return (
                 <tr key={invoice.id} className={`${bgColor} ${borderClass}`}>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
+                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
                     {invoice.invoiceNo}
                   </td>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
+                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
                     {invoice.walletBalance}
                   </td>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
+                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
                     {formatDateTime(invoice.invoiceDate)}
                   </td>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
+                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
                     {invoice.invoiceAmount}
                   </td>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
+                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
                     {invoice.amountPaid}
                   </td>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
+                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
                     {invoice.outstandingAmount}
                   </td>
                   <td className="text-left text-[14px] font-medium text-muted p-2">

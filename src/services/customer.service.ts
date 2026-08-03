@@ -5,7 +5,6 @@
 
 import { apiClient, endpoints } from "@/lib/api";
 import {
-  CustomerListResponse,
   CustomersListResponse,
   ReassignCustomerRequest,
 } from "@/lib/api/types";
@@ -23,7 +22,7 @@ export const customerService = {
    */
   getCustomers: async (
     params: GetCustomersParams,
-  ): Promise<CustomerListResponse> => {
+  ): Promise<CustomersListResponse> => {
     try {
       const queryParams = new URLSearchParams();
       if (params.page !== undefined)

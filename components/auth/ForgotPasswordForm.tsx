@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -53,6 +55,15 @@ export default function ForgotPasswordForm() {
   return (
     <div className="flex items-center justify-center h-full px-8 py-12">
       <div className="w-full max-w-md">
+        {/* Back Navigation */}
+        <Link
+          href="/auth/login"
+          className="inline-flex items-center gap-2 text-sm text-muted hover:text-primary transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Login
+        </Link>
+
         {/* Header */}
         <div className="mt-8">
           <Text variant="h3" weight="bold" color="foreground">

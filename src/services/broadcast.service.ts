@@ -8,91 +8,67 @@ import {
   BroadcastRegionalRequest,
   BroadcastIndividualRequest,
   BroadcastHistoryFilters,
-  BroadcastHistoryItem,
+  BroadcastHistoryResponse,
+  Broadcast,
   BroadcastDetail,
 } from "@/lib/api/types";
-import { toast } from "sonner";
 
 export const broadcastService = {
   /**
    * Send regional broadcast
+   * Responds 201 with the created broadcast record
    */
   sendRegionalBroadcast: async (
     payload: BroadcastRegionalRequest,
-  ): Promise<{ message: string; id: string }> => {
-    try {
-      const { data } = await apiClient.post(
-        endpoints.broadcasts.sendRegional,
-        payload,
-      );
-      return data;
-    } catch (error) {
-      toast.error(
-        "Send regional broadcast failed: " + (error as Error).message,
-      );
-      throw error;
-    }
+  ): Promise<Broadcast> => {
+    const { data } = await apiClient.post(
+      endpoints.broadcasts.sendRegional,
+      payload,
+    );
+    return data;
   },
 
   /**
    * Send individual broadcast
+   * Responds 201 with the created broadcast record
    */
   sendIndividualBroadcast: async (
     payload: BroadcastIndividualRequest,
-  ): Promise<{ message: string; id: string }> => {
-    try {
-      const { data } = await apiClient.post(
-        endpoints.broadcasts.sendIndividual,
-        payload,
-      );
-      return data;
-    } catch (error) {
-      toast.error(
-        "Send individual broadcast failed: " + (error as Error).message,
-      );
-      throw error;
-    }
+  ): Promise<Broadcast> => {
+    const { data } = await apiClient.post(
+      endpoints.broadcasts.sendIndividual,
+      payload,
+    );
+    return data;
   },
 
   /**
    * Fetch broadcast history with filters
+   * Responds with { data, meta }, newest first
    */
   getBroadcastHistory: async (
     filters: BroadcastHistoryFilters,
-  ): Promise<{ items: BroadcastHistoryItem[]; total: number }> => {
-    try {
-      const params = new URLSearchParams();
-      if (filters.type) params.append("type", filters.type);
-      if (filters.region) params.append("region", filters.region);
-      if (filters.startDate) params.append("startDate", filters.startDate);
-      if (filters.endDate) params.append("endDate", filters.endDate);
-      if (filters.page) params.append("page", String(filters.page));
-      if (filters.pageSize) params.append("pageSize", String(filters.pageSize));
-
-      const { data } = await apiClient.get(
-        `${endpoints.broadcasts.history}?${params.toString()}`,
-      );
-      return data;
-    } catch (error) {
-      toast.error(
-        "Fetch broadcast history failed: " + (error as Error).message,
-      );
-      throw error;
-    }
+  ): Promise<BroadcastHistoryResponse> => {
+    const { data } = await apiClient.get(endpoints.broadcasts.history, {
+      params: {
+        page: filters.page ?? 1,
+        pageSize: filters.pageSize ?? 20,
+        ...(filters.type ? { type: filters.type } : {}),
+        ...(filters.region ? { region: filters.region } : {}),
+        ...(filters.startDate ? { startDate: filters.startDate } : {}),
+        ...(filters.endDate ? { endDate: filters.endDate } : {}),
+      },
+    });
+    return data;
   },
 
   /**
    * Get broadcast detail by ID
    */
   getBroadcastDetail: async (id: string): Promise<BroadcastDetail> => {
-    try {
-      const { data } = await apiClient.get(
-        `${endpoints.broadcasts.detail}/${id}`,
-      );
-      return data;
-    } catch (error) {
-      toast.error("Fetch broadcast detail failed: " + (error as Error).message);
-      throw error;
-    }
+    const { data } = await apiClient.get(
+      `${endpoints.broadcasts.detail}/${id}`,
+    );
+    return data;
   },
 };

@@ -315,7 +315,7 @@ function CustomerReassignmentContent() {
           {/* Tabs and Search Bar Section */}
           <div className="">
             {/* Region Filter Tabs */}
-            <div className="flex items-center space-x-6 flex-wrap gap-4">
+            <div className="flex items-center space-x-6 overflow-x-auto gap-4">
               {regions.map((region) => (
                 <Button
                   key={region.value}

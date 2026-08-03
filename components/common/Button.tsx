@@ -14,9 +14,9 @@ export interface ButtonProps {
 }
 
 const sizeMap = {
-  xs: "px-3 py-1.5 text-xs",
-  sm: "px-3 py-1.5 text-sm",
-  md: "px-4 py-2 text-base",
+  xs: "md:px-3 md:py-1.5 px-1 py-1 text-xs",
+  sm: "md:px-3 md:py-1.5 px-2 py-1 text-sm",
+  md: "md:px-4 md:py-2 px-2 py-1 text-base",
   lg: "px-6 py-3 text-lg",
 };
 

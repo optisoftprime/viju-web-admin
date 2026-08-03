@@ -48,7 +48,16 @@ const refreshAccessToken = async (): Promise<string | null> => {
 
     return newAccessToken;
   } catch (error) {
-    console.log("Failed to refresh token:", error);
+    if (
+      axios.isAxiosError(error) &&
+      error?.response?.data?.message === "Invalid or expired refresh token."
+    ) {
+      Cookie.remove("access_token");
+      Cookie.remove("refresh_token");
+      Cookie.remove("user");
+      window.location.href = "/auth/login";
+    }
+
     return null;
   }
 };

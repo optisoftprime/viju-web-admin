@@ -361,28 +361,28 @@ export default function WaybillsSection({
           {/* Table Header */}
           <thead>
             <tr>
-              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 WAYBILL
               </th>
-              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 LINKED ORDER ID
               </th>
-              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 PRODUCT
               </th>
-              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 QUANTITY
               </th>
-              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 LOADING DATE
               </th>
-              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 DESTINATION
               </th>
-              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 DRIVER/VEHICLE
               </th>
-              <th className="text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 STATUS
               </th>
             </tr>
@@ -398,25 +398,25 @@ export default function WaybillsSection({
 
               return (
                 <tr key={waybill.id} className={`${bgColor} ${borderClass}`}>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
+                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
                     {waybill.waybill}
                   </td>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
+                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
                     {waybill.linkedOrderId}
                   </td>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
+                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
                     {waybill.product}
                   </td>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
+                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
                     {waybill.quantity}
                   </td>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
+                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
                     {waybill.loadingDate}
                   </td>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
+                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
                     {waybill.destination}
                   </td>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
+                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
                     {waybill.driverVehicle}
                   </td>
                   <td className="text-left text-[14px] font-medium text-muted p-2">

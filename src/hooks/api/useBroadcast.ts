@@ -5,28 +5,39 @@
 
 "use client";
 
-import { useMutation, useQuery, useInfiniteQuery } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useInfiniteQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { toast } from "sonner";
 import { broadcastService } from "@/services/broadcast.service";
 import { customerService } from "@/services/customer.service";
-import { queryKeys } from "@/lib/api/queryKeys";
 import {
   BroadcastRegionalRequest,
   BroadcastIndividualRequest,
   BroadcastHistoryFilters,
-  Customer,
 } from "@/lib/api/types";
 import { getErrorMessage } from "@/utils/apiError";
+
+// Shared key prefix so a sent broadcast refreshes the history list
+const broadcastHistoryKey = ["broadcasts.history"];
 
 /**
  * Send Regional Broadcast Mutation Hook
  */
 export const useBroadcastRegional = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (payload: BroadcastRegionalRequest) =>
       broadcastService.sendRegionalBroadcast(payload),
-    onSuccess: () => {
-      toast.success("Regional broadcast sent successfully");
+    onSuccess: (broadcast) => {
+      toast.success(
+        `Regional broadcast sent to ${broadcast.deliveredCount} distributor(s)`,
+      );
+      queryClient.invalidateQueries({ queryKey: broadcastHistoryKey });
     },
     onError: (error: unknown) => {
       const errorMessage = getErrorMessage(error);
@@ -39,11 +50,18 @@ export const useBroadcastRegional = () => {
  * Send Individual Broadcast Mutation Hook
  */
 export const useBroadcastIndividual = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (payload: BroadcastIndividualRequest) =>
       broadcastService.sendIndividualBroadcast(payload),
-    onSuccess: () => {
-      toast.success("Individual broadcast sent successfully");
+    onSuccess: (broadcast) => {
+      toast.success(
+        broadcast.deliveryAllowance
+          ? "Broadcast sent and delivery allowance credited"
+          : "Individual broadcast sent successfully",
+      );
+      queryClient.invalidateQueries({ queryKey: broadcastHistoryKey });
     },
     onError: (error: unknown) => {
       const errorMessage = getErrorMessage(error);
@@ -57,7 +75,7 @@ export const useBroadcastIndividual = () => {
  */
 export const useBroadcastHistory = (filters: BroadcastHistoryFilters) => {
   return useQuery({
-    queryKey: ["broadcasts.history", filters],
+    queryKey: [...broadcastHistoryKey, filters],
     queryFn: () => broadcastService.getBroadcastHistory(filters),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -78,6 +96,8 @@ export const useBroadcastDetail = (id: string | null) => {
 /**
  * Get Customers with Infinite Query Hook
  * Auto-fetches more customers as user scrolls
+ *
+ * GET /admin/customers is 1-indexed and responds with { data, meta }
  */
 export const useInfiniteCustomers = (search: string = "", region?: string) => {
   return useInfiniteQuery({
@@ -90,15 +110,14 @@ export const useInfiniteCustomers = (search: string = "", region?: string) => {
         region: region || undefined,
       });
     },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage: any) => {
-      return lastPage.number + 1 < lastPage.totalPages
-        ? lastPage.number + 1
-        : undefined;
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const { page, totalPages } = lastPage.meta;
+      return page < totalPages ? page + 1 : undefined;
     },
-    select: (data: any) =>
-      data.pages.flatMap((page: any) =>
-        page.content.map((customer: any) => ({
+    select: (data) =>
+      data.pages.flatMap((page) =>
+        (page.data ?? []).map((customer) => ({
           label: customer.name,
           value: customer.id,
         })),

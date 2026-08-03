@@ -43,6 +43,7 @@ import {
 import userIcon from "@/assets/icons/usersblack.svg";
 import { TextExtremeEnd } from "@/components/common/TextExtremeEnd";
 import { formatDateTime, formatToNaira } from "@/src/utils/formatter";
+import { useGreeting, getPortalName } from "@/src/utils/greeting";
 import Image from "next/image";
 import { useAuthStore } from "@/src/store/auth.store";
 import { useRouter } from "next/navigation";
@@ -379,6 +380,11 @@ function DashboardContent() {
     error: tableError,
   } = useDashboardTableData({ search: searchTerm || undefined });
   const { user } = useAuthStore();
+
+  // Greeting that follows the viewer's local time of day
+  const greeting = useGreeting();
+  const firstName = user?.name?.trim().split(" ")[0];
+  const portalName = getPortalName(user?.role);
 
   // Fetch officer customer data (Overview, Orders, Invoices, Stock)
   const {
@@ -731,14 +737,16 @@ function DashboardContent() {
             {/* Page Header Component */}
             <div className="flex items-center justify-between ">
               <PageHeader
-                title="Good Morning,"
-                subtitle="Welcome back to the Viju Account Officer Portal"
+                title={firstName ? `${greeting}, ${firstName}` : greeting}
+                subtitle={`Welcome back to the Viju ${portalName}`}
               />
 
               <ExportRecord />
             </div>
             {/* Stats Cards Grid */}
-            <div className="grid grid-cols-4 gap-4">{renderStats()}</div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 ">
+              {renderStats()}
+            </div>
           </>
         )}
 
@@ -788,14 +796,16 @@ function DashboardContent() {
             ))}
           </div>
         )}
+
+        {/* for the account officer   */}
         {user?.role === "OFFICER" && (
           <div>
             {/* Distributor List Card */}
             <Card border={false}>
               {/* Tabs and Search Bar Section */}
-              <div className="">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between overflow-x-auto space-y-4 md:space-y-0">
                 {/* Tab Buttons */}
-                <div className="flex items-center space-x-6">
+                <div className="flex items-center space-x-2 max-w-md md:max-w-none md:space-x-6 ">
                   <Button
                     variant={selectedTab === "all" ? "primary" : "outline"}
                     onClick={() => setSelectedTab("all")}
@@ -829,14 +839,14 @@ function DashboardContent() {
                   >
                     Active Ticket
                   </Button>
-                  {/* Search Input Component */}
-                  <SearchInput
-                    placeholder="Search name or account"
-                    onSearch={handleSearch}
-                    debounceDelay={500}
-                    fullWidth={true}
-                  />
                 </div>
+                {/* Search Input Component */}
+                <SearchInput
+                  placeholder="Search name or account"
+                  onSearch={handleSearch}
+                  debounceDelay={500}
+                  fullWidth={true}
+                />
               </div>
 
               {/* Data Table */}
@@ -897,7 +907,7 @@ function DashboardContent() {
                   </div>
 
                   {/* Detail Tabs Navigation */}
-                  <div className="grid grid-cols-7 gap-2 pt-4">
+                  <div className="flex items-center md:grid grid-cols-7 gap-2 pt-4 overflow-x-auto w-full">
                     {[
                       "Overview",
                       "Orders",
@@ -913,7 +923,7 @@ function DashboardContent() {
                           selectedTab === "overdue" ? "primary" : "outline"
                         }
                         onClick={() => setSelectedDetailTab(tab)}
-                        className={`whitespace-nowrap w-max ${
+                        className={`whitespace-nowrap md:w-max  ${
                           selectedDetailTab === tab
                             ? "bg-primary text-white hover:text-primary border border-primary"
                             : "bg-white border border-muted/30 hover:border-primary hover:bg-primary hover:text-white"

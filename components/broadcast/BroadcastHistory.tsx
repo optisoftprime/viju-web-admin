@@ -8,60 +8,44 @@ import {
   useBroadcastDetail,
 } from "@/hooks/api/useBroadcast";
 import { Modal } from "@/components/common/Modal";
-import { BroadcastDetail as BroadcastDetailType } from "@/lib/api/types";
+import { BroadcastHistoryItem, BroadcastRegion } from "@/lib/api/types";
+import { formatRegion } from "@/src/utils/formatter";
 
-interface BroadcastHistoryItem {
-  id: number;
-  code: string;
-  target: string;
-  message: string;
-  allowance?: number;
-  sentBy: string;
-  time: string;
-}
+const formatRegions = (regions: BroadcastRegion[]) =>
+  regions.map(formatRegion).join(", ");
 
-interface BroadcastHistoryProps {
-  items?: BroadcastHistoryItem[];
-}
+/**
+ * Who the broadcast went to - the regions for a regional broadcast,
+ * the distributor for an individual one
+ */
+const buildBroadcastTarget = (item: BroadcastHistoryItem) => {
+  if (item.type === "REGIONAL") {
+    return item.targetRegions?.length
+      ? formatRegions(item.targetRegions)
+      : "All regions";
+  }
+  return item.targetCustomer?.name || "Distributor";
+};
 
-const mockBroadcastHistory: BroadcastHistoryItem[] = [
-  {
-    id: 1,
-    code: "BR-104-Individual",
-    target: "Alhaji Bello & Sons Ltd",
-    message: "Delivery allowance credited for Q1 loyalty programme",
-    allowance: 80000,
-    sentBy: "O. Adesanya",
-    time: "Today, 10:14",
-  },
-  {
-    id: 2,
-    code: "BR-104-Regional",
-    target: "North South",
-    message: "New stock of Viju Chocolate available from Monday",
-    sentBy: "O. Adesanya",
-    time: "Today, 10:14",
-  },
-  {
-    id: 3,
-    code: "BR-104-Individual",
-    target: "Alhaji Bello & Sons Ltd",
-    message: "Delivery allowance credited for Q1 loyalty programme",
-    allowance: 80000,
-    sentBy: "O. Adesanya",
-    time: "Today, 10:14",
-  },
-  {
-    id: 4,
-    code: "BR-104-Regional",
-    target: "North South",
-    message: "New stock of Viju Chocolate available from Monday",
-    sentBy: "O. Adesanya",
-    time: "Today, 10:14",
-  },
-];
+const formatSentAt = (sentAt: string) => {
+  const date = new Date(sentAt);
+  if (isNaN(date.getTime())) return sentAt;
 
-export function BroadcastHistory({ items }: BroadcastHistoryProps) {
+  const time = date.toLocaleTimeString("en-NG", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const isToday = new Date().toDateString() === date.toDateString();
+  if (isToday) return `Today, ${time}`;
+
+  return `${date.toLocaleDateString("en-NG", {
+    day: "2-digit",
+    month: "short",
+  })}, ${time}`;
+};
+
+export function BroadcastHistory() {
   const [selectedBroadcastId, setSelectedBroadcastId] = useState<string | null>(
     null,
   );
@@ -81,8 +65,7 @@ export function BroadcastHistory({ items }: BroadcastHistoryProps) {
   const { data: broadcastDetail, isLoading: isDetailLoading } =
     useBroadcastDetail(isDetailModalOpen ? selectedBroadcastId : null);
 
-  // Use provided items or fall back to mock data if API call fails or no data
-  const displayItems = items || mockBroadcastHistory;
+  const broadcasts: BroadcastHistoryItem[] = historyData?.data ?? [];
 
   const handleViewDetail = (broadcastId: string) => {
     setSelectedBroadcastId(broadcastId);
@@ -121,24 +104,30 @@ export function BroadcastHistory({ items }: BroadcastHistoryProps) {
             color="muted"
             className="text-center py-8 text-red-500"
           >
-            Failed to load broadcast history. Showing recent broadcasts.
+            Failed to load broadcast history. Please try again.
+          </Text>
+        )}
+
+        {!isHistoryLoading && !historyError && broadcasts.length === 0 && (
+          <Text variant="caption" color="muted" className="text-center py-8">
+            No broadcast has been sent yet.
           </Text>
         )}
 
         <div className="space-y-4">
-          {displayItems.map((item) => (
+          {broadcasts.map((item) => (
             <div
               key={item.id}
-              onClick={() => handleViewDetail(String(item.id))}
+              onClick={() => handleViewDetail(item.id)}
               className="cursor-pointer hover:opacity-80 transition-opacity"
             >
               <BroadcastHistoryCard
-                code={item.code}
-                target={item.target}
+                code={item.reference}
+                target={buildBroadcastTarget(item)}
                 message={item.message}
-                allowance={item.allowance}
-                sentBy={item.sentBy}
-                time={item.time}
+                allowance={item.deliveryAllowance ?? undefined}
+                sentBy={item.sentBy?.name || "Viju Admin"}
+                time={formatSentAt(item.sentAt)}
               />
             </div>
           ))}
@@ -160,10 +149,21 @@ export function BroadcastHistory({ items }: BroadcastHistoryProps) {
             <div className="space-y-4">
               <div>
                 <Text variant="small" weight="bold" color="foreground">
+                  Reference
+                </Text>
+                <Text variant="caption" color="muted">
+                  {broadcastDetail.reference}
+                </Text>
+              </div>
+
+              <div>
+                <Text variant="small" weight="bold" color="foreground">
                   Type
                 </Text>
                 <Text variant="caption" color="muted">
-                  {broadcastDetail.type}
+                  {broadcastDetail.type === "REGIONAL"
+                    ? "Regional"
+                    : "Individual"}
                 </Text>
               </div>
 
@@ -176,30 +176,29 @@ export function BroadcastHistory({ items }: BroadcastHistoryProps) {
                 </Text>
               </div>
 
-              {broadcastDetail.regions &&
-                broadcastDetail.regions.length > 0 && (
-                  <div>
-                    <Text variant="small" weight="bold" color="foreground">
-                      Regions
-                    </Text>
-                    <Text variant="caption" color="muted">
-                      {broadcastDetail.regions.join(", ")}
-                    </Text>
-                  </div>
-                )}
+              {broadcastDetail.targetRegions?.length > 0 && (
+                <div>
+                  <Text variant="small" weight="bold" color="foreground">
+                    Regions
+                  </Text>
+                  <Text variant="caption" color="muted">
+                    {formatRegions(broadcastDetail.targetRegions)}
+                  </Text>
+                </div>
+              )}
 
-              {broadcastDetail.distributorName && (
+              {broadcastDetail.targetCustomer && (
                 <div>
                   <Text variant="small" weight="bold" color="foreground">
                     Distributor
                   </Text>
                   <Text variant="caption" color="muted">
-                    {broadcastDetail.distributorName}
+                    {broadcastDetail.targetCustomer.name}
                   </Text>
                 </div>
               )}
 
-              {broadcastDetail.deliveryAllowance &&
+              {!!broadcastDetail.deliveryAllowance &&
                 broadcastDetail.deliveryAllowance > 0 && (
                   <div>
                     <Text variant="small" weight="bold" color="foreground">
@@ -207,16 +206,33 @@ export function BroadcastHistory({ items }: BroadcastHistoryProps) {
                     </Text>
                     <Text variant="caption" color="muted">
                       {formatCurrency(broadcastDetail.deliveryAllowance)}
+                      {broadcastDetail.allowancePayment
+                        ? ` • credited ${new Date(
+                            broadcastDetail.allowancePayment.date,
+                          ).toLocaleString()}`
+                        : ""}
                     </Text>
                   </div>
                 )}
 
               <div>
                 <Text variant="small" weight="bold" color="foreground">
+                  Delivered To
+                </Text>
+                <Text variant="caption" color="muted">
+                  {broadcastDetail.deliveredCount}{" "}
+                  {broadcastDetail.deliveredCount === 1
+                    ? "distributor"
+                    : "distributors"}
+                </Text>
+              </div>
+
+              <div>
+                <Text variant="small" weight="bold" color="foreground">
                   Sent By
                 </Text>
                 <Text variant="caption" color="muted">
-                  {broadcastDetail.sentBy}
+                  {broadcastDetail.sentBy?.name || "Viju Admin"}
                 </Text>
               </div>
 
@@ -226,15 +242,6 @@ export function BroadcastHistory({ items }: BroadcastHistoryProps) {
                 </Text>
                 <Text variant="caption" color="muted">
                   {new Date(broadcastDetail.sentAt).toLocaleString()}
-                </Text>
-              </div>
-
-              <div>
-                <Text variant="small" weight="bold" color="foreground">
-                  Status
-                </Text>
-                <Text variant="caption" color="muted">
-                  {broadcastDetail.status}
                 </Text>
               </div>
             </div>

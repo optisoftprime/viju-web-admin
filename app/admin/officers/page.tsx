@@ -191,16 +191,18 @@ function AccountOfficersContent() {
           <Button
             variant="primary"
             onClick={handleNewOfficer}
-            className="bg-linear-to-r from-primary via-orange to-primary flex items-center gap-2"
+            className="bg-linear-to-r from-primary via-orange to-primary flex items-center gap-1 p-1 md:gap-2"
           >
             <Image
               src={plus}
               width={50}
               height={50}
-              className="w-2.5 h-2.5"
+              className="w-1.5 h-1.5 md:w-2.5 md:h-2.5"
               alt="plus icon"
             />
-            <span>New Officer</span>
+            <span className="whitespace-nowrap md:whitespace-normal text-[12px] font-medium md:text-[14px]">
+              New Officer
+            </span>
           </Button>
         </div>
 

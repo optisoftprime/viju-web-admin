@@ -123,7 +123,7 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps<any>>(
               {columns.map((column) => (
                 <th
                   key={String(column.key)}
-                  className="text-[13px] font-bold text-muted p-3 text-left bg-[#F0F5F9]"
+                  className="whitespace-nowrap text-[13px] font-bold text-muted p-3 text-left bg-[#F0F5F9]"
                 >
                   {column.title}
                 </th>
@@ -209,7 +209,7 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps<any>>(
                       return (
                         <td
                           key={String(column.key)}
-                          className="text-left text-[13px] font-medium text-muted p-2"
+                          className="whitespace-nowrap text-left text-[13px] font-medium text-muted p-2"
                         >
                           {column.render
                             ? column.render(value, row)
