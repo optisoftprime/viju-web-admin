@@ -43,6 +43,7 @@ import {
 import userIcon from "@/assets/icons/usersblack.svg";
 import { TextExtremeEnd } from "@/components/common/TextExtremeEnd";
 import { formatDateTime, formatToNaira } from "@/src/utils/formatter";
+import { useGreeting, getPortalName } from "@/src/utils/greeting";
 import Image from "next/image";
 import { useAuthStore } from "@/src/store/auth.store";
 import { useRouter } from "next/navigation";
@@ -379,6 +380,11 @@ function DashboardContent() {
     error: tableError,
   } = useDashboardTableData({ search: searchTerm || undefined });
   const { user } = useAuthStore();
+
+  // Greeting that follows the viewer's local time of day
+  const greeting = useGreeting();
+  const firstName = user?.name?.trim().split(" ")[0];
+  const portalName = getPortalName(user?.role);
 
   // Fetch officer customer data (Overview, Orders, Invoices, Stock)
   const {
@@ -731,8 +737,8 @@ function DashboardContent() {
             {/* Page Header Component */}
             <div className="flex items-center justify-between ">
               <PageHeader
-                title="Good Morning,"
-                subtitle="Welcome back to the Viju Account Officer Portal"
+                title={firstName ? `${greeting}, ${firstName}` : greeting}
+                subtitle={`Welcome back to the Viju ${portalName}`}
               />
 
               <ExportRecord />

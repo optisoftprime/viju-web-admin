@@ -317,22 +317,22 @@ export default function StockSection({
           {/* Table Header */}
           <thead>
             <tr>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 PRODUCT
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 STOCK BALANCE
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 RESERVED STOCK
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 AWAITING LOADING
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 LAST STOCK UPDATE
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 STATUS
               </th>
             </tr>

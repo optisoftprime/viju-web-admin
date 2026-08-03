@@ -7,6 +7,8 @@ import Logo from "./Logo";
 import { Text } from "./Text";
 import LogoutModal from "./LogoutModal";
 import { useAuthStore } from "@/store/auth.store";
+import { getPortalName } from "@/src/utils/greeting";
+import { formatRegion } from "@/src/utils/formatter";
 
 interface NavLinkItem {
   name: string;
@@ -55,6 +57,15 @@ export default function Sidebar({ showSidebar }: { showSidebar: boolean }) {
   // const { user } = useAuthStore();
   const pathname = usePathname();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+  // An admin works across the whole organisation; every other role is scoped
+  // to the region on their staff record
+  const regionLabel =
+    user?.role === "ADMIN"
+      ? "All Regions"
+      : user?.region
+        ? `${formatRegion(user.region)} Region`
+        : "LAGOS REGION";
 
   // Log user info when component mounts or user changes
 
@@ -148,23 +159,25 @@ export default function Sidebar({ showSidebar }: { showSidebar: boolean }) {
             Viju
           </Text>
           <Text variant="caption" weight="medium" color="white">
-            Account Officer Portal
+            {getPortalName(user?.role)}
           </Text>
         </div>
       </div>
 
-      {/* Region Status Badge */}
-      <div className="flex items-center justify-between gap-1 rounded-lg p-3 bg-orange mb-12">
-        <div className="flex items-center gap-1">
+      {/* Region Status Badge - hidden when the account carries no region */}
+      {regionLabel && (
+        <div className="flex items-center gap-1 rounded-lg p-3 bg-orange mb-12">
           <span className="w-2 h-2 bg-success rounded-full"></span>
-          <Text variant="caption" weight="medium" color="white">
-            LAGOS REGION
+          <Text
+            variant="caption"
+            weight="medium"
+            color="white"
+            className="uppercase"
+          >
+            {regionLabel}
           </Text>
         </div>
-        <Text variant="thinnote" weight="normal" color="white">
-          VJ-RM-01
-        </Text>
-      </div>
+      )}
 
       {/* Navigation Links Section */}
       <nav className="flex-1 overflow-y-auto space-y-2">

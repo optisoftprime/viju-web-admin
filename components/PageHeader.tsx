@@ -29,7 +29,7 @@ export default function PageHeader({ title, subtitle }: PageHeaderProps) {
       </Text>
 
       {/* Subtitle */}
-      <Text variant="caption" color="muted">
+      <Text variant="caption" color="muted" className="max-w-xs md:max-w-full">
         {subtitle}
       </Text>
     </div>

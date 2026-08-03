@@ -303,22 +303,22 @@ export default function OrdersSection({
           {/* Table Header */}
           <thead>
             <tr>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 ORDER ID
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 ORDER DATE
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 PRODUCT
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 QUANTITY
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 TOTAL VALUE
               </th>
-              <th className="text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
+              <th className="whitespace-nowrap text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
                 STATUS
               </th>
             </tr>
@@ -334,19 +334,19 @@ export default function OrdersSection({
 
               return (
                 <tr key={order.id} className={`${bgColor} ${borderClass}`}>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
+                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
                     {order.orderId}
                   </td>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
+                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
                     {formatDateTime(order.orderDate)}
                   </td>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
+                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
                     {order.product}
                   </td>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
+                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
                     {order.quantity}
                   </td>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
+                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
                     {order.totalValue}
                   </td>
                   <td className="text-left text-[14px] font-medium text-muted p-2">

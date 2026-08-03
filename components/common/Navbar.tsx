@@ -21,7 +21,7 @@ interface NavbarProps {
 
 /**
  * Navbar Component
- * Displays the top navigation bar with page title, search input, role switcher, and notification bell
+ * Displays the top navigation bar with page title, search input, account menu, and notification bell
  * This component is fixed to the top of the page and spans the full width except for the sidebar
  *
  * @param {NavbarProps} props - Component props
@@ -70,30 +70,25 @@ export default function Navbar({
         />
       </div> */}
 
-      {/* Right Section - Role Switcher & Notifications */}
+      {/* Right Section - Account Menu & Notifications */}
       <div className="flex items-center gap-6">
-        {/* Role Switcher - Allows viewing as different roles */}
+        {/* Account Menu - Shows the signed in user and exposes log out */}
         <div
           onClick={() => setShowLogoutButton((p) => !p)}
-          className="relative rounded-md cursor-pointer px-4 py-2 border border-muted/20 space-y-2 hover:bg-gray-50 transition-colors"
+          className="relative hidden md:block rounded-md cursor-pointer px-4 py-2 border border-muted/20 space-y-2 hover:bg-gray-50 transition-colors"
         >
-          <div className="hidden md:flex items-center gap-2 text-sm text-muted font-medium">
-            <span className="text-xs">Viewing as:</span>{" "}
+          <div className="flex items-center gap-2 text-sm text-muted font-medium">
+            <span className="w-6 h-6 bg-primary text-white rounded-full flex uppercase text-[11px] font-bold items-center justify-center">
+              {user?.name?.charAt(0) || "U"}
+            </span>
             <span className="text-black text-[13px] font-semibold">
-              {user?.role === "OFFICER"
-                ? "Account Officer"
-                : user?.role === "ADMIN"
-                  ? "Administrator"
-                  : user?.role === "LOADING_OFFICER"
-                    ? "Loading Officer"
-                    : "Admin"}
+              {user?.name || "User"}
             </span>
             {showLogoutButton ? (
               <ChevronDown className="w-4 h-4 rotate-180" />
             ) : (
               <ChevronDown className="w-4 h-4" />
             )}
-            {/* <ChevronDown className="w-4 h-4" /> */}
           </div>
           {/* toggle logout  */}
           {showLogoutButton && (
@@ -124,7 +119,7 @@ export default function Navbar({
 
         <Menu
           onClick={() => setShowSidebar((prev) => !prev)}
-          className="cursor-pointer w-6 h-6 text-primary"
+          className="md:hidden cursor-pointer w-6 h-6 text-primary"
         />
       </div>
 

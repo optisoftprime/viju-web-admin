@@ -148,11 +148,11 @@ export default function FlyerPage() {
       <MainLayout>
         <div className="h-screen overflow-y-auto space-y-6 px-4 pt-4 pb-30">
           {/* Page Header with Add Button */}
-          <div className="flex items-center justify-between">
+          <div className="grid grid-cols-1 md:flex items-center justify-between">
             {/* Information Banner */}
-            <div className="bg-blue-400/20 border border-blue-400/20 rounded-lg p-2 max-w-xl">
+            <div className="bg-blue-400/20 border border-blue-400/20 rounded-lg p-2 md:max-w-xl">
               <Text variant="caption" color="statuslightblue" weight="medium">
-                <span className="text-statuslightblue">
+                <span className="text-statuslightblue ">
                   These cards appear in the scrollable flyer on the distributor
                   mobile home screen. Reorder by drag. Deactivated cards are
                   hidden from the app.
@@ -163,7 +163,7 @@ export default function FlyerPage() {
             <Button
               variant="primary"
               onClick={handleAddFlyerClick}
-              className="bg-linear-to-r from-primary via-orange to-primary text-[12px]"
+              className="bg-linear-to-r from-primary via-orange to-primary text-[12px] mt-4 md:mt-0 font-medium p-1"
             >
               + Add Flyer
             </Button>

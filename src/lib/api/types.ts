@@ -11,6 +11,7 @@ export interface AuthResponse {
     id: string;
     name: string;
     role: "ADMIN" | "OFFICER" | "STAFF" | "REGIONAL_ADMIN";
+    region?: BroadcastRegion;
   };
 }
 
@@ -33,6 +34,9 @@ export interface User {
   name: string;
   role: "ADMIN" | "OFFICER" | "STAFF" | "REGIONAL_ADMIN" | "LOADING_OFFICER";
   email?: string;
+  // Staff region - absent for org-wide admins and for tokens issued before
+  // the login response started returning it
+  region?: BroadcastRegion;
 }
 
 export interface ApiErrorResponse {
@@ -150,29 +154,65 @@ export interface BroadcastHistoryFilters {
   pageSize?: number;
 }
 
-export interface BroadcastHistoryItem {
+export type BroadcastType = "REGIONAL" | "INDIVIDUAL";
+
+/**
+ * Broadcast record as returned by POST /admin/broadcasts/{regional,individual}
+ */
+export interface Broadcast {
   id: string;
-  type: "REGIONAL" | "INDIVIDUAL";
+  reference: string;
+  type: BroadcastType;
   message: string;
-  regions?: BroadcastRegion[];
-  customerId?: string;
-  distributorName?: string;
-  deliveryAllowance?: number;
-  sentBy: string;
+  targetRegions: BroadcastRegion[];
+  targetCustomerId: string | null;
+  deliveryAllowance: number | null;
+  allowancePaymentId: string | null;
+  sentById: string;
   sentAt: string;
+  deliveredCount: number;
+  createdAt: string;
 }
 
-export interface BroadcastDetail {
+/**
+ * Broadcast record with the relations the history/detail endpoints expand
+ */
+export interface BroadcastHistoryItem extends Broadcast {
+  sentBy: {
+    name: string;
+    email: string;
+  } | null;
+  targetCustomer: {
+    id: string;
+    name: string;
+  } | null;
+}
+
+export interface BroadcastHistoryResponse {
+  data: BroadcastHistoryItem[];
+  meta: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
+export interface BroadcastAllowancePayment {
   id: string;
-  type: "REGIONAL" | "INDIVIDUAL";
-  message: string;
-  regions?: BroadcastRegion[];
-  customerId?: string;
-  distributorName?: string;
-  deliveryAllowance?: number;
-  sentBy: string;
-  sentAt: string;
-  status: string;
+  erpId: string | null;
+  customerId: string;
+  date: string;
+  amount: number;
+  reference: string;
+  runningBalance: number;
+  createdAt: string;
+}
+
+export interface BroadcastDetail extends BroadcastHistoryItem {
+  allowancePayment?: BroadcastAllowancePayment | null;
 }
 
 // Customer Types
@@ -183,14 +223,6 @@ export interface Customer {
   region?: BroadcastRegion;
   phone?: string;
   email?: string;
-}
-
-export interface CustomerListResponse {
-  content: Customer[];
-  number: number;
-  totalPages: number;
-  totalElements: number;
-  size: number;
 }
 
 // Audit Types

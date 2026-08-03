@@ -11,6 +11,15 @@ export const formatToNaira = (value: number | string): string => {
   }).format(numberValue);
 };
 
+/**
+ * Region enum to readable label: "SOUTH_WEST" -> "South West"
+ */
+export const formatRegion = (region: string): string =>
+  region
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+
 export const formatDateTime = (isoDate: string): string => {
   const date = new Date(isoDate);
 
