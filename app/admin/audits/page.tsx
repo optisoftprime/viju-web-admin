@@ -139,6 +139,22 @@ function InteractionAuditContent() {
     setCurrentPage(1);
   };
 
+  // Only a date selection surfaces the clear button
+  const hasDateFilter = Boolean(startDate || endDate);
+
+  /**
+   * Clear the search inputs and the date range
+   * Clearing re-keys the query, which refetches the unfiltered list
+   */
+  const handleClearFilters = () => {
+    setCustomerName("");
+    setOfficerName("");
+    setKeyword("");
+    setStartDate("");
+    setEndDate("");
+    setCurrentPage(1);
+  };
+
   const downloadCsvFile = (blob: Blob, filename: string) => {
     const url = window.URL.createObjectURL(
       new Blob([blob], { type: "text/csv;charset=utf-8;" }),
@@ -192,14 +208,14 @@ function InteractionAuditContent() {
 
   return (
     <MainLayout>
-      <div className="p-4 space-y-6 overflow-y-auto h-screen bg-milkwhite/90">
+      <div className="px-4 pt-4 pb-20 space-y-6 overflow-y-auto h-screen bg-milkwhite/90">
         {/* Page Header Component */}
         <div className="flex items-center justify-between">
           <PageHeader
             title="Interaction Audits"
             subtitle="Monitor and track all system interactions"
           />
-          <ExportRecord onClick={handleExport} />
+          {/* <ExportRecord onClick={handleExport} /> */}
         </div>
 
         {/* Audit Logs Card */}
@@ -261,7 +277,7 @@ function InteractionAuditContent() {
             </div>
 
             {/* Row 3: Date Filters */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <input
                 type="date"
                 value={startDate}
@@ -277,6 +293,33 @@ function InteractionAuditContent() {
                 className="px-3 py-2 border border-muted/30 rounded-lg text-sm"
                 placeholder="End date"
               />
+
+              {/* Shown once a date is picked; clears the dates and search inputs */}
+              {hasDateFilter && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClearFilters}
+                  className="flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  <svg
+                    className="h-3.5 w-3.5"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                  Clear Filters
+                </Button>
+              )}
             </div>
           </div>
 

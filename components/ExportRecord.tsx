@@ -7,13 +7,16 @@ import { Text } from "./common";
 
 interface ExportRecordProps {
   onClick?: () => void;
+  isLoading?: boolean;
 }
 
-const ExportRecord = ({ onClick }: ExportRecordProps) => {
+const ExportRecord = ({ onClick, isLoading = false }: ExportRecordProps) => {
   return (
     <div
-      className="flex gap-2 items-center justify-center h-full px-5 cursor-pointer py-2 rounded-xl border border-muted/30 bg-white"
-      onClick={onClick}
+      className={`flex gap-2 items-center justify-center h-full px-5 py-2 rounded-xl border border-muted/30 bg-white ${
+        isLoading ? "opacity-60 pointer-events-none" : "cursor-pointer"
+      }`}
+      onClick={isLoading ? undefined : onClick}
     >
       <Image
         src={exportIcon}
@@ -23,7 +26,7 @@ const ExportRecord = ({ onClick }: ExportRecordProps) => {
         className="w-3 h-3"
       />
       <Text variant="small" weight="semibold" color="foreground">
-        Export
+        {isLoading ? "Exporting..." : "Export"}
       </Text>
       <Image
         src={arrowDown}

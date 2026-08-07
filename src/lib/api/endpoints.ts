@@ -41,6 +41,7 @@ export const endpoints = {
   officers: {
     list: "/admin/officers",
     create: "/admin/officers",
+    reassignCustomers: "/admin/officers/{id}/reassign-customers",
   },
   flyers: {
     list: "/admin/product-flyers",
@@ -62,6 +63,11 @@ export const endpoints = {
   chat: {
     history: "/chat/{otherUserId}",
     sendMessage: "/chat/{receiverId}",
+  },
+  notifications: {
+    list: "/notifications/me",
+    readAll: "/notifications/me/read-all",
+    read: "/notifications/{id}/read",
   },
   uploads: {
     file: "/uploads",

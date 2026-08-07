@@ -44,4 +44,23 @@ export const queryKeys = {
     all: ["flyers"],
     list: ["flyers", "list"],
   },
+  notifications: {
+    all: ["notifications"],
+    list: (params: Record<string, unknown>) => [
+      "notifications",
+      "list",
+      params,
+    ],
+  },
 };
+
+/**
+ * Caches holding officer <-> customer assignment data.
+ * Invalidated together after any assignment or reassignment so every
+ * surface (customer lists, officer lists, dashboards) reflects the change.
+ */
+export const assignmentQueryKeys = [
+  queryKeys.customers.all,
+  queryKeys.officers.all,
+  queryKeys.all, // dashboard stats and tables are keyed under ["query", ...]
+];

@@ -6,9 +6,14 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { officerService } from "@/services/officer.service";
-import { queryKeys } from "@/lib/api/queryKeys";
-import { CreateOfficerRequest } from "@/lib/api/types";
+import { queryKeys, assignmentQueryKeys } from "@/lib/api/queryKeys";
+import { getErrorMessage } from "@/utils/apiError";
+import {
+  CreateOfficerRequest,
+  ReassignOfficerCustomersRequest,
+} from "@/lib/api/types";
 
 interface GetOfficersParams {
   page?: number;
@@ -49,6 +54,33 @@ export const useCreateOfficer = () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.officers.all,
       });
+    },
+  });
+};
+
+/**
+ * Move every customer of the source officer to a new officer
+ * PATCH /admin/officers/{id}/reassign-customers
+ */
+export const useReassignOfficerCustomers = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      officerId,
+      request,
+    }: {
+      officerId: string;
+      request: ReassignOfficerCustomersRequest;
+    }) => officerService.reassignCustomers(officerId, request),
+    onSuccess: () => {
+      // Refresh every surface that shows officer <-> customer assignments
+      assignmentQueryKeys.forEach((queryKey) =>
+        queryClient.invalidateQueries({ queryKey }),
+      );
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error) || "Failed to reassign customers");
     },
   });
 };

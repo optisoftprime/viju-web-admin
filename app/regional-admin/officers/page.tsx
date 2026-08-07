@@ -107,8 +107,8 @@ function RegionalAdminOfficersContent() {
       <div className="px-4 pt-4 space-y-3 pb-30 overflow-y-auto h-screen bg-milkwhite/90">
         {/* Page Header Component */}
         <PageHeader
-          title="Officers"
-          subtitle="View all loading officers in your region"
+          title="Account Officers"
+          subtitle="View all account officers in your region"
         />
 
         {/* Officers Card */}

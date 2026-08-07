@@ -6,8 +6,10 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { customerService } from "@/services/customer.service";
-import { queryKeys } from "@/lib/api/queryKeys";
+import { queryKeys, assignmentQueryKeys } from "@/lib/api/queryKeys";
+import { getErrorMessage } from "@/utils/apiError";
 import {
   CustomersListResponse,
   ReassignCustomerRequest,
@@ -21,17 +23,16 @@ interface GetCustomersParams {
 }
 
 /**
- * Get Customers for reassignment with optional filters
+ * List customers with optional region filter and name/erpId search
+ * GET /admin/customers
  */
-export const useCustomersForReassignment = (
-  params: GetCustomersParams = {},
-) => {
+export const useCustomers = (params: GetCustomersParams = {}) => {
   return useQuery({
     queryKey: queryKeys.customers.customersList(
       params as Record<string, unknown>,
     ),
     queryFn: () =>
-      customerService.getCustomersForReassignment({
+      customerService.getCustomers({
         page: params.page ?? 1,
         pageSize: params.pageSize ?? 20,
         region: params.region,
@@ -43,7 +44,14 @@ export const useCustomersForReassignment = (
 };
 
 /**
- * Reassign Customer to a new officer
+ * Same list, kept so existing callers keep working
+ * @deprecated Use useCustomers
+ */
+export const useCustomersForReassignment = useCustomers;
+
+/**
+ * Assign / reassign a single customer to an officer
+ * PATCH /admin/customers/{id}/reassign
  */
 export const useReassignCustomer = () => {
   const queryClient = useQueryClient();
@@ -57,10 +65,13 @@ export const useReassignCustomer = () => {
       request: ReassignCustomerRequest;
     }) => customerService.reassignCustomer(customerId, request),
     onSuccess: () => {
-      // Invalidate the customers list to refresh after reassignment
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.customers.all,
-      });
+      // Refresh every surface that shows officer <-> customer assignments
+      assignmentQueryKeys.forEach((queryKey) =>
+        queryClient.invalidateQueries({ queryKey }),
+      );
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error) || "Failed to assign officer");
     },
   });
 };

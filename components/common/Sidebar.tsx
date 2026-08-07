@@ -227,7 +227,9 @@ export default function Sidebar({ showSidebar }: { showSidebar: boolean }) {
               {user?.name || "User"}
             </span>
             <span className="text-xs text-white capitalize">
-              {user?.role?.toLowerCase() || "Staff"}
+              {user?.role?.toLowerCase() === "officer"
+                ? "Account Officer"
+                : user?.role?.toLowerCase() || "Staff"}
             </span>
           </div>
         </div>

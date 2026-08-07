@@ -108,6 +108,23 @@ export interface OfficerCustomer {
   lastContactDate: string;
 }
 
+/**
+ * Officer dashboard tab filter (UI-level value)
+ * Translated to the endpoint's boolean flags before the request is sent
+ */
+export type OfficerCustomerFilter = "all" | "activeTickets" | "overdue";
+
+/**
+ * Query params supported by GET /officers/customers
+ */
+export interface OfficerCustomersParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  overdue?: boolean;
+  activeTickets?: boolean;
+}
+
 export interface PendingLoadingRequest {
   id: string;
   reference: string;
@@ -215,6 +232,38 @@ export interface BroadcastDetail extends BroadcastHistoryItem {
   allowancePayment?: BroadcastAllowancePayment | null;
 }
 
+// Notification Types
+/**
+ * Named AppNotification so it does not shadow the DOM `Notification` global
+ */
+export interface AppNotification {
+  id: string;
+  customerId: string | null;
+  staffId: string | null;
+  content: string;
+  isRead: boolean;
+  type: string;
+  createdAt: string;
+}
+
+export interface NotificationsResponse {
+  unread: number;
+  data: AppNotification[];
+  meta: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
+export interface NotificationsParams {
+  page?: number;
+  pageSize?: number;
+}
+
 // Customer Types
 export interface Customer {
   id: string;
@@ -282,6 +331,8 @@ export interface Officer {
   phone: string;
   region: BroadcastRegion;
   isActive: boolean;
+  // Not in the documented response sample - optional until confirmed
+  createdAt?: string;
   _count?: {
     customers: number;
   };
@@ -342,6 +393,28 @@ export interface CustomersListResponse {
 
 export interface ReassignCustomerRequest {
   newOfficerId: string;
+}
+
+/**
+ * PATCH /admin/customers/{id}/reassign
+ * Moves a single customer to a new officer
+ */
+export interface ReassignCustomerResponse {
+  message: string;
+}
+
+/**
+ * PATCH /admin/officers/{id}/reassign-customers
+ * Moves every customer of the source officer to a new officer
+ */
+export interface ReassignOfficerCustomersRequest {
+  newOfficerId: string;
+}
+
+export interface ReassignOfficerCustomersResponse {
+  reassigned: number;
+  fromOfficerId: string;
+  toOfficerId: string;
 }
 
 // Flyer Types

@@ -15,6 +15,7 @@ import {
   RegionalAdminDashboardResponse,
   PendingLoadingRequest,
   AdminDashboardStats,
+  OfficerCustomerFilter,
 } from "@/lib/api/types";
 
 /**
@@ -57,6 +58,8 @@ export const useDashboardStats = () => {
  */
 interface DashboardTableParams {
   search?: string;
+  /** OFFICER only - tab filter sent to /officers/customers as boolean flags */
+  filter?: OfficerCustomerFilter;
 }
 
 export const useDashboardTableData = (params: DashboardTableParams = {}) => {
@@ -72,7 +75,12 @@ export const useDashboardTableData = (params: DashboardTableParams = {}) => {
 
     switch (user.role) {
       case "OFFICER":
-        return dashboardService.getOfficerCustomers(params.search);
+        // "all" leaves both flags false, so neither is sent
+        return dashboardService.getOfficerCustomers({
+          search: params.search,
+          overdue: params.filter === "overdue",
+          activeTickets: params.filter === "activeTickets",
+        });
       case "ADMIN":
         return dashboardService.getAdminDashboard();
       case "REGIONAL_ADMIN":
@@ -83,7 +91,13 @@ export const useDashboardTableData = (params: DashboardTableParams = {}) => {
   };
 
   return useQuery({
-    queryKey: [queryKeys.all[0], "dashboardTable", user?.role, params.search],
+    queryKey: [
+      queryKeys.all[0],
+      "dashboardTable",
+      user?.role,
+      params.search,
+      params.filter,
+    ],
     queryFn: getTableData,
     enabled:
       !!user && (user.role === "OFFICER" || user.role === "REGIONAL_ADMIN"),

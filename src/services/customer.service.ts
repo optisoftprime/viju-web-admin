@@ -43,27 +43,11 @@ export const customerService = {
 
   /**
    * Get list of customers for reassignment with optional filters
+   * @deprecated Same endpoint as getCustomers - kept for existing callers
    */
   getCustomersForReassignment: async (
     params: GetCustomersParams,
-  ): Promise<CustomersListResponse> => {
-    try {
-      const queryParams = new URLSearchParams();
-      if (params.page !== undefined)
-        queryParams.append("page", String(params.page));
-      if (params.pageSize !== undefined)
-        queryParams.append("pageSize", String(params.pageSize));
-      if (params.region) queryParams.append("region", params.region);
-      if (params.search) queryParams.append("search", params.search);
-
-      const { data } = await apiClient.get(
-        `${endpoints.customers.list}?${queryParams.toString()}`,
-      );
-      return data;
-    } catch (error) {
-      throw error;
-    }
-  },
+  ): Promise<CustomersListResponse> => customerService.getCustomers(params),
 
   /**
    * Export filtered customers list as CSV
