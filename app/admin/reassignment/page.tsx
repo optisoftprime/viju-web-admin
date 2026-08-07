@@ -6,9 +6,11 @@ import { Card, Button, Table } from "@/components/common";
 import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
 import AssignAccountOfficerModal from "@/components/AssignAccountOfficerModal";
+import SuccessModal from "@/components/SuccessModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { toast } from "sonner";
 import { useCustomersForReassignment } from "@/hooks/api/useCustomer";
-import { useReassignCustomer } from "@/hooks/api/useCustomer";
+import { useReassignOfficerCustomers } from "@/hooks/api/useOfficer";
 import { customerService } from "@/services/customer.service";
 import { BroadcastRegion } from "@/lib/api/types";
 import ExportRecord from "@/components/ExportRecord";
@@ -25,6 +27,9 @@ interface CustomerTableRow {
   stock: string;
   tickets: number;
   action: string;
+  /** Current (source) officer - the reassignment moves this officer's book */
+  currentOfficerId?: string;
+  currentOfficerName?: string;
 }
 
 // Table columns definition
@@ -88,6 +93,17 @@ function CustomerReassignmentContent() {
   const [selectedCustomer, setSelectedCustomer] =
     useState<CustomerTableRow | null>(null);
 
+  // State for the post-reassignment success modal
+  const [successModal, setSuccessModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+  });
+
   // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
@@ -104,8 +120,8 @@ function CustomerReassignmentContent() {
     search: searchTerm || undefined,
   });
 
-  // Reassign customer mutation
-  const reassignMutation = useReassignCustomer();
+  // Reassign every customer of the source officer to a new officer
+  const reassignMutation = useReassignOfficerCustomers();
 
   /**
    * Transform API response to table format
@@ -124,6 +140,8 @@ function CustomerReassignmentContent() {
       stock: `₦${customer.outstandingBalance?.toLocaleString() || "0"}`,
       tickets: customer._count?.supportTickets || 0,
       action: "Reassign Officer",
+      currentOfficerId: customer.officerAssignments?.[0]?.staff?.id,
+      currentOfficerName: customer.officerAssignments?.[0]?.staff?.name,
     }));
   }, [customersData?.data]);
 
@@ -203,29 +221,56 @@ function CustomerReassignmentContent() {
   };
 
   /**
-   * Handle officer assignment
+   * Move the source officer's customers to the selected officer
+   * PATCH /admin/officers/{id}/reassign-customers
    */
   const handleOfficerAssigned = (officer: {
     id: string;
     name: string;
     role: string;
   }) => {
-    if (selectedCustomer) {
-      reassignMutation.mutate(
-        {
-          customerId: selectedCustomer.id,
-          request: {
-            newOfficerId: officer.id,
-          },
-        },
-        {
-          onSuccess: () => {
-            setIsReassignModalOpen(false);
-            setSelectedCustomer(null);
-          },
-        },
+    if (!selectedCustomer) return;
+
+    const currentOfficerId = selectedCustomer.currentOfficerId;
+
+    // This endpoint moves a source officer's book - it needs one to move from
+    if (!currentOfficerId) {
+      toast.error(
+        `${selectedCustomer.name} has no account officer yet. Assign one from the Distributors page.`,
       );
+      return;
     }
+
+    if (currentOfficerId === officer.id) {
+      toast.error(`${officer.name} is already the account officer.`);
+      return;
+    }
+
+    // Captured up front - selectedCustomer is cleared before the modal renders
+    const currentOfficerName =
+      selectedCustomer.currentOfficerName || "the previous officer";
+
+    reassignMutation.mutate(
+      {
+        officerId: currentOfficerId,
+        request: {
+          newOfficerId: officer.id,
+        },
+      },
+      {
+        onSuccess: (data) => {
+          setIsReassignModalOpen(false);
+          setSelectedCustomer(null);
+          setSuccessModal({
+            isOpen: true,
+            title: "Reassignment Successful",
+            message: `${data.reassigned} customer${
+              data.reassigned === 1 ? "" : "s"
+            } moved from ${currentOfficerName} to ${officer.name}.`,
+          });
+        },
+      },
+    );
   };
 
   return (
@@ -237,7 +282,7 @@ function CustomerReassignmentContent() {
             title="Customer Reassignment"
             subtitle="Reassign account officers to customers"
           />
-          <ExportRecord onClick={handleExport} />
+          {/* <ExportRecord onClick={handleExport} /> */}
         </div>
 
         {/* Customer List Card */}
@@ -319,7 +364,29 @@ function CustomerReassignmentContent() {
             setSelectedCustomer(null);
           }}
           onConfirm={handleOfficerAssigned}
+          isSubmitting={reassignMutation.isPending}
           distributorName={selectedCustomer?.name}
+          distributorData={{
+            distributor: selectedCustomer?.name || "N/A",
+            phoneNumber: selectedCustomer?.phoneNo || "N/A",
+            account: selectedCustomer?.account || "N/A",
+            region: selectedCustomer?.region || "N/A",
+            officers: selectedCustomer?.officers || "Unassigned",
+            wallet: selectedCustomer?.wallet || "N/A",
+            stock: selectedCustomer?.stock || "N/A",
+            ticket: String(selectedCustomer?.tickets ?? 0),
+          }}
+        />
+
+        {/* Success Modal - shown after a successful reassignment */}
+        <SuccessModal
+          isOpen={successModal.isOpen}
+          onClose={() =>
+            setSuccessModal({ isOpen: false, title: "", message: "" })
+          }
+          title={successModal.title}
+          message={successModal.message}
+          buttonText="Continue"
         />
       </div>
     </MainLayout>

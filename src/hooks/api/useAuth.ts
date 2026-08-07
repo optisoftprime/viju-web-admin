@@ -51,6 +51,7 @@ export const useLogin = () => {
         username: payload.email,
         code: payload.password,
       });
+      console.log({ loginTwo, error });
 
       if (loginTwo) {
         // Save user and token to store (including refresh token if provided)

@@ -1,68 +1,39 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { X } from "lucide-react";
-import { Text, Button } from "@/components/common";
+import { Text } from "@/components/common";
 import NotificationItem from "@/components/NotificationItem";
-
-interface Notification {
-  id: string;
-  title: string;
-  timestamp: string;
-  isRead: boolean;
-  isActionable: boolean;
-}
+import {
+  useNotifications,
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+} from "@/hooks/api/useNotification";
+import { AppNotification } from "@/lib/api/types";
+import { formatRelativeTime } from "@/src/utils/formatter";
+import { getErrorMessage } from "@/src/utils/apiError";
+import { toast } from "sonner";
 
 interface NotificationSidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-// Mock notification data
-const mockNotifications: Notification[] = [
-  {
-    id: "1",
-    title: "New officer account created: Olamide Adewale",
-    timestamp: "3hrs ago",
-    isRead: false,
-    isActionable: false,
-  },
-  {
-    id: "2",
-    title: "Customer reassigned: John Akpan Ademola Caleb Johnson",
-    timestamp: "Yesterday",
-    isRead: false,
-    isActionable: true,
-  },
-  {
-    id: "3",
-    title: "New broadcast message sent to Lagos region",
-    timestamp: "2 days ago",
-    isRead: true,
-    isActionable: false,
-  },
-  {
-    id: "4",
-    title: "Flyer updated: New product promotion",
-    timestamp: "3 days ago",
-    isRead: true,
-    isActionable: false,
-  },
-  {
-    id: "5",
-    title: "System maintenance completed successfully",
-    timestamp: "1 week ago",
-    isRead: true,
-    isActionable: false,
-  },
-];
-
 export default function NotificationSidebar({
   isOpen,
   onClose,
 }: NotificationSidebarProps) {
-  const [notifications, setNotifications] =
-    useState<Notification[]>(mockNotifications);
+  const {
+    data: notificationsData,
+    isLoading,
+    error,
+  } = useNotifications({ page: 1, pageSize: 20 });
+
+  const markAllReadMutation = useMarkAllNotificationsRead();
+  const markReadMutation = useMarkNotificationRead();
+
+  const notifications: AppNotification[] = notificationsData?.data ?? [];
+  const unreadCount = notificationsData?.unread ?? 0;
 
   // Handle ESC key to close sidebar
   useEffect(() => {
@@ -81,21 +52,22 @@ export default function NotificationSidebar({
     };
   }, [isOpen, onClose]);
 
+  // Surface a fetch failure on a toast while the panel is open
+  useEffect(() => {
+    if (isOpen && error) {
+      toast.error(getErrorMessage(error) || "Failed to load notifications");
+    }
+  }, [isOpen, error]);
+
   const handleMarkAllRead = () => {
-    setNotifications(
-      notifications.map((notif) => ({
-        ...notif,
-        isRead: true,
-      })),
-    );
+    if (unreadCount === 0 || markAllReadMutation.isPending) return;
+    markAllReadMutation.mutate();
   };
 
-  const handleNotificationClick = (id: string) => {
-    setNotifications(
-      notifications.map((notif) =>
-        notif.id === id ? { ...notif, isRead: true } : notif,
-      ),
-    );
+  const handleNotificationClick = (notification: AppNotification) => {
+    // Already read notifications do not need another round trip
+    if (notification.isRead) return;
+    markReadMutation.mutate(notification.id);
   };
 
   // Don't render if sidebar is closed
@@ -113,17 +85,25 @@ export default function NotificationSidebar({
       <div className="fixed top-0 right-0 h-screen w-auto md:w-96 bg-white shadow-2xl z-50 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-muted/20">
-          <Text variant="h3" weight="bold">
-            Notifications
-          </Text>
+          <div className="flex items-center gap-2">
+            <Text variant="h3" weight="bold">
+              Notifications
+            </Text>
+            {unreadCount > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                {unreadCount}
+              </span>
+            )}
+          </div>
 
           <div className="flex items-center gap-4">
             {/* Mark All Read */}
             <button
               onClick={handleMarkAllRead}
-              className="text-statusblue hover:text-statusblue/80 text-sm font-medium transition-colors"
+              disabled={unreadCount === 0 || markAllReadMutation.isPending}
+              className="text-statusblue hover:text-statusblue/80 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Mark all read
+              {markAllReadMutation.isPending ? "Marking..." : "Mark all read"}
             </button>
 
             {/* Close Button */}
@@ -139,22 +119,33 @@ export default function NotificationSidebar({
 
         {/* Notifications List */}
         <div className="flex-1 overflow-y-auto">
-          {notifications.length > 0 ? (
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <Text variant="body" color="muted">
+                Loading notifications...
+              </Text>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center h-full px-6">
+              <Text variant="body" color="muted" className="text-center">
+                Could not load your notifications. Please try again.
+              </Text>
+            </div>
+          ) : notifications.length > 0 ? (
             notifications.map((notification) => (
               <NotificationItem
                 key={notification.id}
                 id={notification.id}
-                title={notification.title}
-                timestamp={notification.timestamp}
+                title={notification.content?.trim() || "New notification"}
+                timestamp={formatRelativeTime(notification.createdAt)}
                 isRead={notification.isRead}
-                isActionable={notification.isActionable}
-                onClick={() => handleNotificationClick(notification.id)}
+                onClick={() => handleNotificationClick(notification)}
               />
             ))
           ) : (
             <div className="flex items-center justify-center h-full">
               <Text variant="body" color="muted">
-                No notifications
+                You have no notifications yet
               </Text>
             </div>
           )}

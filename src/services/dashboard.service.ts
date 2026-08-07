@@ -8,6 +8,7 @@ import {
   OfficerDashboardStats,
   RegionalDashboardStats,
   OfficerCustomer,
+  OfficerCustomersParams,
   RegionalAdminDashboardResponse,
 } from "@/lib/api/types";
 
@@ -46,11 +47,19 @@ export const dashboardService = {
 
   /**
    * Get officer customers list
+   * Only truthy flags are sent, so the "All" tab omits both filters
    */
-  getOfficerCustomers: async (search?: string): Promise<OfficerCustomer[]> => {
+  getOfficerCustomers: async (
+    params: OfficerCustomersParams = {},
+  ): Promise<OfficerCustomer[]> => {
+    const { page, pageSize, search, overdue, activeTickets } = params;
     const response = await apiClient.get(endpoints.dashboard.officerCustomers, {
       params: {
+        ...(page ? { page } : {}),
+        ...(pageSize ? { pageSize } : {}),
         ...(search ? { search } : {}),
+        ...(overdue ? { overdue: true } : {}),
+        ...(activeTickets ? { activeTickets: true } : {}),
       },
     });
     const officerCustomers = response.data.data;

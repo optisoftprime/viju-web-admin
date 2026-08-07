@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { Text, Modal, Input, Button } from "@/components/common";
 import OfficerSelectionCard from "@/components/OfficerSelectionCard";
@@ -18,6 +18,11 @@ interface AssignAccountOfficerModalProps {
   isOpen?: boolean;
   onClose?: () => void;
   onConfirm?: (officer: OfficerData) => void;
+  /**
+   * Set while the parent's assignment request is in flight.
+   * Keeps the modal open, shows a spinner and blocks duplicate submissions.
+   */
+  isSubmitting?: boolean;
   distributorName?: string;
   distributorData?: {
     distributor: string;
@@ -35,6 +40,7 @@ export default function AssignAccountOfficerModal({
   isOpen = false,
   onClose,
   onConfirm,
+  isSubmitting = false,
   distributorName = "LAG-234-XG",
   distributorData = {
     distributor: "LAG-234-XG",
@@ -78,19 +84,25 @@ export default function AssignAccountOfficerModal({
     (o) => o.id === selectedOfficerId,
   );
 
-  const handleConfirm = () => {
-    if (selectedOfficer) {
-      onConfirm?.(selectedOfficer);
-      // Reset state after confirmation
+  // Clear the selection whenever the modal closes, whether it was dismissed
+  // here or closed by the parent after a successful request
+  useEffect(() => {
+    if (!isOpen) {
       setSelectedOfficerId(null);
       setSearchInput("");
-      onClose?.();
     }
+  }, [isOpen]);
+
+  const handleConfirm = () => {
+    if (!selectedOfficer || isSubmitting) return;
+
+    // The parent owns closing - it waits for the request to succeed first
+    onConfirm?.(selectedOfficer);
   };
 
   const handleClose = () => {
-    setSelectedOfficerId(null);
-    setSearchInput("");
+    // Don't let the user dismiss a request that is already in flight
+    if (isSubmitting) return;
     onClose?.();
   };
 
@@ -202,6 +214,7 @@ export default function AssignAccountOfficerModal({
         {/* Confirm Button */}
         <Button
           onClick={handleConfirm}
+          loading={isSubmitting}
           disabled={!selectedOfficer || isLoading}
           className="w-full mt-8 bg-linear-to-r from-[#FF0000] to-[#FF5A00] text-white rounded-lg py-3 disabled:opacity-50 disabled:cursor-not-allowed"
         >

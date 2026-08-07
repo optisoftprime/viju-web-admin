@@ -33,12 +33,9 @@ import {
   AdminDashboardStats,
   OfficerDashboardStats,
   OfficerCustomer,
+  OfficerCustomerFilter,
   PendingLoadingRequest,
   RegionalAdminDashboardResponse,
-  DistributorOverview,
-  Order,
-  StockResponse,
-  WaybillsResponse,
 } from "@/lib/api/types";
 import userIcon from "@/assets/icons/usersblack.svg";
 import { TextExtremeEnd } from "@/components/common/TextExtremeEnd";
@@ -49,6 +46,10 @@ import { useAuthStore } from "@/src/store/auth.store";
 import { useRouter } from "next/navigation";
 import LoadingOfficer from "@/components/loadingOfficer/LoadingOfficer";
 import ExportRecord from "@/components/ExportRecord";
+import { auditService } from "@/services/audit.service";
+import { downloadCsvFile } from "@/src/utils/download";
+import { getErrorMessage } from "@/src/utils/apiError";
+import { toast } from "sonner";
 
 // Interface for distributor data structure
 interface Distributor {
@@ -330,8 +331,8 @@ const mockLoadingRequests: Distributor[] = [
 
 function DashboardContent() {
   const router = useRouter();
-  // State for active tab filter
-  const [selectedTab, setSelectedTab] = useState("all");
+  // State for active tab filter (sent to /officers/customers as boolean flags)
+  const [selectedTab, setSelectedTab] = useState<OfficerCustomerFilter>("all");
 
   // State for selected detail tab (Overview, Orders, Chat, Tickets, etc.)
   const [selectedDetailTab, setSelectedDetailTab] = useState("Overview");
@@ -368,6 +369,9 @@ function DashboardContent() {
   const itemsPerPage = 9;
   const [searchTerm, setSearchTerm] = useState("");
 
+  // State for the admin CSV export
+  const [isExporting, setIsExporting] = useState(false);
+
   // Fetch dashboard stats
   const {
     data: dashboardStats,
@@ -378,7 +382,10 @@ function DashboardContent() {
     data: tableData,
     isLoading: tableLoading,
     error: tableError,
-  } = useDashboardTableData({ search: searchTerm || undefined });
+  } = useDashboardTableData({
+    search: searchTerm || undefined,
+    filter: selectedTab,
+  });
   const { user } = useAuthStore();
 
   // Greeting that follows the viewer's local time of day
@@ -676,6 +683,15 @@ function DashboardContent() {
   };
 
   /**
+   * Handle tab filter change
+   * Changing the value re-keys the query, which refetches with the new params
+   */
+  const handleTabChange = (filter: OfficerCustomerFilter) => {
+    setSelectedTab(filter);
+    setCurrentPage(1);
+  };
+
+  /**
    * Handle action button click on table rows
    * Shows what action was clicked (View, Edit, Delete, etc.)
    */
@@ -708,7 +724,8 @@ function DashboardContent() {
     name: string;
     role: string;
   }) => {
-    // Can add additional logic here to update the distributor's assigned officer
+    // The modal no longer closes itself - the caller owns the close
+    setIsAssignOfficerModalOpen(false);
   };
 
   /**
@@ -720,6 +737,26 @@ function DashboardContent() {
     role: string;
   }) => {
     setIsLoadingOfficerSuccessOpen(true);
+  };
+
+  /**
+   * Export the audit ticket records as CSV (ADMIN only)
+   */
+  const handleExport = async () => {
+    if (isExporting) return;
+
+    setIsExporting(true);
+    try {
+      const csvBlob = await auditService.exportTickets({
+        keyword: searchTerm || undefined,
+      });
+      downloadCsvFile(csvBlob, "viju-audit-tickets.csv");
+      toast.success("Export downloaded");
+    } catch (error) {
+      toast.error(getErrorMessage(error) || "Failed to export records");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleDistributorSelect = (distributor: Distributor) => {
@@ -741,7 +778,9 @@ function DashboardContent() {
                 subtitle={`Welcome back to the Viju ${portalName}`}
               />
 
-              <ExportRecord />
+              {(user?.role as any) === "ADMIN" && (
+                <ExportRecord onClick={handleExport} isLoading={isExporting} />
+              )}
             </div>
             {/* Stats Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 ">
@@ -808,7 +847,7 @@ function DashboardContent() {
                 <div className="flex items-center space-x-2 max-w-md md:max-w-none md:space-x-6 ">
                   <Button
                     variant={selectedTab === "all" ? "primary" : "outline"}
-                    onClick={() => setSelectedTab("all")}
+                    onClick={() => handleTabChange("all")}
                     className={
                       selectedTab === "all"
                         ? "bg-primary text-white border border-primary"
@@ -819,7 +858,7 @@ function DashboardContent() {
                   </Button>
                   <Button
                     variant={selectedTab === "overdue" ? "primary" : "outline"}
-                    onClick={() => setSelectedTab("overdue")}
+                    onClick={() => handleTabChange("overdue")}
                     className={`whitespace-nowrap ${
                       selectedTab === "overdue"
                         ? "bg-primary text-white border border-primary"
@@ -829,10 +868,12 @@ function DashboardContent() {
                     Overdue Balances
                   </Button>
                   <Button
-                    variant={selectedTab === "active" ? "primary" : "outline"}
-                    onClick={() => setSelectedTab("active")}
+                    variant={
+                      selectedTab === "activeTickets" ? "primary" : "outline"
+                    }
+                    onClick={() => handleTabChange("activeTickets")}
                     className={`whitespace-nowrap ${
-                      selectedTab === "active"
+                      selectedTab === "activeTickets"
                         ? "bg-primary text-white border border-primary"
                         : "bg-white border border-muted/30 hover:border-primary hover:bg-primary hover:text-white"
                     }`}
@@ -919,14 +960,12 @@ function DashboardContent() {
                     ].map((tab) => (
                       <Button
                         key={tab}
-                        variant={
-                          selectedTab === "overdue" ? "primary" : "outline"
-                        }
+                        variant={"outline"}
                         onClick={() => setSelectedDetailTab(tab)}
                         className={`whitespace-nowrap md:w-max  ${
                           selectedDetailTab === tab
                             ? "bg-primary text-white hover:text-primary border border-primary"
-                            : "bg-white border border-muted/30 hover:border-primary hover:bg-primary hover:text-white"
+                            : "bg-white border border-muted/30 hover:border-primary hover:bg-primary text-black hover:text-white"
                         }`}
                       >
                         {tab}

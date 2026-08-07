@@ -7,6 +7,7 @@ import SearchInput from "./SearchInput";
 import LogoutModal from "./LogoutModal";
 import NotificationSidebar from "@/components/NotificationSidebar";
 import { useAuthStore } from "@/src/store/auth.store";
+import { useNotifications } from "@/hooks/api/useNotification";
 import Logo from "./Logo";
 
 /**
@@ -41,6 +42,14 @@ export default function Navbar({
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   const { user } = useAuthStore();
+
+  // Same query key as the sidebar, so the bell and the panel share one request
+  const { data: notificationsData } = useNotifications({
+    page: 1,
+    pageSize: 20,
+  });
+  const unreadCount = notificationsData?.unread ?? notificationCount;
+
   /**
    * Handle search callback from SearchInput component
    * Logs the search value and can be extended for actual search functionality
@@ -107,12 +116,13 @@ export default function Navbar({
         {/* Notification Bell - Shows unread notification count */}
         <button
           onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-          className=" cursor-pointer p-2 hover:bg-gray-50 rounded-lg transition-colors"
+          className="relative cursor-pointer p-2 hover:bg-gray-50 rounded-lg transition-colors"
+          aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
         >
           <Bell className="w-5 h-5 text-foreground" />
-          {notificationCount > 0 && (
-            <span className="absolute top-0 right-0 w-5 h-5 p-1 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-              {notificationCount}
+          {unreadCount > 0 && (
+            <span className="absolute top-0 right-0 min-w-5 h-5 px-1 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+              {unreadCount > 99 ? "99+" : unreadCount}
             </span>
           )}
         </button>

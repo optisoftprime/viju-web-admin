@@ -24,7 +24,7 @@ const variantMap = {
   primary: "bg-primary text-white hover:bg-primary/80",
   secondary: "bg-secondary text-white hover:bg-secondary/80",
   orange: "bg-orange text-white hover:bg-orange/80",
-  outline: "border border-muted/50 text-muted hover:bg-milkwhite",
+  outline: "border border-muted/50 text-black hover:bg-milkwhite",
   outlinePrimary:
     "border border-primary text-primary hover:bg-primary hover:text-white",
 };

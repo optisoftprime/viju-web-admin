@@ -4,7 +4,12 @@
  */
 
 import { apiClient, endpoints } from "@/lib/api";
-import { OfficersListResponse, CreateOfficerRequest } from "@/lib/api/types";
+import {
+  OfficersListResponse,
+  CreateOfficerRequest,
+  ReassignOfficerCustomersRequest,
+  ReassignOfficerCustomersResponse,
+} from "@/lib/api/types";
 
 interface GetOfficersParams {
   page?: number;
@@ -42,6 +47,26 @@ export const officerService = {
   createOfficer: async (officer: CreateOfficerRequest) => {
     try {
       const { data } = await apiClient.post(endpoints.officers.create, officer);
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Move every customer of the source officer to a new officer
+   * @param officerId - Current (source) officer id
+   */
+  reassignCustomers: async (
+    officerId: string,
+    request: ReassignOfficerCustomersRequest,
+  ): Promise<ReassignOfficerCustomersResponse> => {
+    try {
+      const url = endpoints.officers.reassignCustomers.replace(
+        "{id}",
+        officerId,
+      );
+      const { data } = await apiClient.patch(url, request);
       return data;
     } catch (error) {
       throw error;

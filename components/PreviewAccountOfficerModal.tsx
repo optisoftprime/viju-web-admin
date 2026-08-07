@@ -15,7 +15,7 @@ interface Officer {
   phoneNo: string;
   distributors: number;
   tickets: number;
-  lastLogin: string;
+  createdAt: string;
 }
 
 interface PreviewAccountOfficerModalProps {
@@ -97,8 +97,8 @@ export default function PreviewAccountOfficerModal({
           <div className="flex justify-between items-center border-b border-muted/50 pb-2">
             <BoldTopText top="Tickets" bottom={officer.tickets} />
             <BoldTopText
-              top="Last Login"
-              bottom={officer.lastLogin}
+              top="Created At"
+              bottom={officer.createdAt}
               className="flex flex-col items-end justify-end"
             />
           </div>

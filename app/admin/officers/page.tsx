@@ -12,6 +12,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { useOfficers, useCreateOfficer } from "@/hooks/api/useOfficer";
 import plus from "@/assets/icons/plus.svg";
 import Image from "next/image";
+import { formatDateTime } from "@/src/utils/formatter";
 
 // Interface for officer data structure (transformed from API)
 interface OfficerTableRow {
@@ -23,7 +24,7 @@ interface OfficerTableRow {
   phoneNo: string;
   distributors: number;
   tickets: number;
-  lastLogin: string;
+  createdAt: string;
   action: string;
 }
 
@@ -58,8 +59,8 @@ const tableColumns = [
     title: "TICKETS",
   },
   {
-    key: "lastLogin" as const,
-    title: "LAST LOGIN",
+    key: "createdAt" as const,
+    title: "CREATED AT",
   },
   {
     key: "action" as const,
@@ -112,7 +113,7 @@ function AccountOfficersContent() {
       phoneNo: officer.phone,
       distributors: officer._count?.customers || 0,
       tickets: 0, // Tickets count not in API response, using 0
-      lastLogin: "N/A", // Last login not in API response
+      createdAt: officer.createdAt ? formatDateTime(officer.createdAt) : "N/A",
       action: "Deactivate",
     }));
   }, [officersData?.data]);
@@ -183,7 +184,7 @@ function AccountOfficersContent() {
     <MainLayout>
       <div className="p-4 overflow-y-auto space-y-6 pb-30 h-screen bg-milkwhite/90">
         {/* Page Header Component */}
-        <div className="flex justify-between items-center ">
+        <div className="flex flex-col-reverse md:flex-row justify-between md:items-center items-end gap-4">
           <PageHeader
             title="Account Officers"
             subtitle="Manage account officer portfolio. Phone numbers are fixed once set - password is via OTP to registered phone or email."
