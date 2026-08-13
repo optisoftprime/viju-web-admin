@@ -2,6 +2,9 @@
 
 import { useState, useMemo } from "react";
 import { Text } from "@/components/common";
+import Pagination from "@/components/Pagination";
+import RowDetailsModal from "@/components/RowDetailsModal";
+import { DEFAULT_SECTION_PAGE_SIZE } from "@/constants/pagination";
 import { Order as APIOrder } from "@/src/lib/api/types";
 import { formatDateTime } from "@/src/utils/formatter";
 
@@ -291,7 +294,8 @@ export default function InvoicesSection({
   onPageChange,
 }: InvoicesSectionProps) {
   const [internalPage, setInternalPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_SECTION_PAGE_SIZE);
+  const [detailsRow, setDetailsRow] = useState<Invoice | null>(null);
 
   // Convert API orders to component invoices if needed
   const mappedInvoices = useMemo(() => {
@@ -313,9 +317,17 @@ export default function InvoicesSection({
   const paginatedInvoices = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return mappedInvoices.slice(startIndex, startIndex + itemsPerPage);
-  }, [mappedInvoices, currentPage]);
+  }, [mappedInvoices, currentPage, itemsPerPage]);
 
   const totalItems = mappedInvoices.length;
+
+  /**
+   * Changing the page size restarts at page 1 so the offset stays valid
+   */
+  const handlePageSizeChange = (size: number) => {
+    setItemsPerPage(size);
+    handlePageChange(1);
+  };
 
   return (
     <div className="space-y-4">
@@ -358,7 +370,11 @@ export default function InvoicesSection({
                 index % 2 === 1 ? "" : "border-b border-[#F0F5F9]";
 
               return (
-                <tr key={invoice.id} className={`${bgColor} ${borderClass}`}>
+                <tr
+                  key={invoice.id}
+                  onClick={() => setDetailsRow(invoice)}
+                  className={`${bgColor} ${borderClass} cursor-pointer`}
+                >
                   <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
                     {invoice.invoiceNo}
                   </td>
@@ -396,32 +412,65 @@ export default function InvoicesSection({
       </div>
 
       {/* Pagination */}
-      {mappedInvoices.length > itemsPerPage && (
-        <div className="flex justify-between items-center mt-6">
-          <Text variant="small" color="muted">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-            {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems}
-          </Text>
-          <div className="flex gap-2">
-            <button
-              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className="px-4 py-2 border border-muted/20 rounded-lg text-sm font-medium text-muted hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() =>
-                handlePageChange(Math.min(totalPages, currentPage + 1))
-              }
-              disabled={currentPage === totalPages}
-              className="px-4 py-2 border border-muted/20 rounded-lg text-sm font-medium text-muted hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalItems={totalItems}
+        itemsPerPage={itemsPerPage}
+        onPrevious={() => handlePageChange(Math.max(1, currentPage - 1))}
+        onNext={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+        onItemsPerPageChange={handlePageSizeChange}
+      />
+
+      {/* Row Details Modal - opened by clicking any row */}
+      <RowDetailsModal
+        open={!!detailsRow}
+        onClose={() => setDetailsRow(null)}
+        title={detailsRow?.invoiceNo || "Invoice"}
+        subtitle="Invoice details"
+        sections={[
+          {
+            title: "Invoice",
+            fields: [
+              { label: "Invoice No", value: detailsRow?.invoiceNo, type: "id" },
+              {
+                label: "Payment Status",
+                value: detailsRow?.paymentStatus,
+                type: "status",
+              },
+              {
+                label: "Invoice Date",
+                value: detailsRow?.invoiceDate,
+                type: "date",
+              },
+            ],
+          },
+          {
+            title: "Amounts",
+            fields: [
+              {
+                label: "Invoice Amount",
+                value: detailsRow?.invoiceAmount,
+                type: "amount",
+              },
+              {
+                label: "Amount Paid",
+                value: detailsRow?.amountPaid,
+                type: "amount",
+              },
+              {
+                label: "Outstanding",
+                value: detailsRow?.outstandingAmount,
+                type: "amount",
+              },
+              {
+                label: "Wallet Balance",
+                value: detailsRow?.walletBalance,
+                type: "amount",
+              },
+            ],
+          },
+        ]}
+      />
     </div>
   );
 }

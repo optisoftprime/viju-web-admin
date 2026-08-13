@@ -25,7 +25,8 @@ export interface TableProps<T> {
 type StatusColor = "pending" | "success" | "in-progress";
 
 // Function to get badge styling based on status
-const getStatusBadgeStyle = (
+// Exported so detail views render statuses exactly like the table does
+export const getStatusBadgeStyle = (
   status: string,
 ): { bgColor: string; textColor: string } => {
   const lowerStatus = status.toLowerCase();

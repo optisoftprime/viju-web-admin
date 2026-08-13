@@ -15,6 +15,12 @@
   --statusblue: #354dee;
   --statuslightblue: #155bbd;
   --statuslightsky: #e6f1ff;
+
+  /* Display serif used by the public marketing pages (contact-us hero and
+     section headings). Falls back through the system serifs when the
+     Playfair/Didot webfonts are not installed. */
+  --display-serif:
+    "Playfair Display", "Didot", "Bodoni MT", Georgia, "Times New Roman", serif;
 }
 
 @theme inline {
@@ -22,6 +28,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--display-serif);
 
   /* Brand colors */
   --color-primary: var(--darkerred);
@@ -46,6 +53,88 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-google-sans-flex) sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   Brand motion
+   Shared keyframes for the entrance and ambient animations on the 404 page.
+   Every one of them is switched off under prefers-reduced-motion.
+   --------------------------------------------------------------------------- */
+
+@keyframes viju-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes viju-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+/* Sweeps the brand gradient across whatever it fills */
+@keyframes viju-sheen {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes viju-halo {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.5;
+  }
+  70%,
+  100% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+}
+
+.animate-viju-rise {
+  animation: viju-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-viju-float {
+  animation: viju-float 6s ease-in-out infinite;
+}
+
+.animate-viju-sheen {
+  background-size: 200% auto;
+  animation: viju-sheen 6s ease-in-out infinite;
+}
+
+.animate-viju-halo {
+  animation: viju-halo 3.2s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-viju-rise,
+  .animate-viju-float,
+  .animate-viju-sheen,
+  .animate-viju-halo {
+    animation: none;
+  }
+
+  /* The entrance animation carries the reveal, so restore the end state */
+  .animate-viju-rise {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* @media (prefers-color-scheme: dark) {

@@ -119,7 +119,7 @@ export default function Sidebar({ showSidebar }: { showSidebar: boolean }) {
       type: "ADMIN",
       links: [
         {
-          name: "Org Dashboard",
+          name: "Dashboard",
           url: "/dashboard",
           icon: "Globe",
           secondaryLink: "/admin/distributors",

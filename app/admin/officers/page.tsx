@@ -8,7 +8,9 @@ import Pagination from "@/components/Pagination";
 import AddAccountOfficerFormModal from "@/components/AddAccountOfficerFormModal";
 import PreviewAccountOfficerModal from "@/components/PreviewAccountOfficerModal";
 import SuccessModal from "@/components/SuccessModal";
+import RowDetailsModal from "@/components/RowDetailsModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { usePagination } from "@/hooks/usePagination";
 import { useOfficers, useCreateOfficer } from "@/hooks/api/useOfficer";
 import plus from "@/assets/icons/plus.svg";
 import Image from "next/image";
@@ -79,10 +81,19 @@ function AccountOfficersContent() {
   const [selectedOfficer, setSelectedOfficer] =
     useState<OfficerTableRow | null>(null);
 
+  // State for the row details modal
+  const [detailsRow, setDetailsRow] = useState<OfficerTableRow | null>(null);
+
   // State for pagination
-  const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const itemsPerPage = 20;
+  const {
+    currentPage,
+    pageSize: itemsPerPage,
+    setPageSize,
+    previousPage,
+    nextPage,
+    resetPage,
+  } = usePagination();
 
   // Fetch officers from API
   const {
@@ -126,7 +137,7 @@ function AccountOfficersContent() {
    */
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-    setCurrentPage(1);
+    resetPage();
   };
 
   /**
@@ -142,20 +153,12 @@ function AccountOfficersContent() {
   /**
    * Handle previous page button click
    */
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
+  const handlePreviousPage = () => previousPage();
 
   /**
    * Handle next page button click
    */
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
+  const handleNextPage = () => nextPage(totalPages);
 
   /**
    * Handle new officer button click
@@ -236,7 +239,7 @@ function AccountOfficersContent() {
                 <Table
                   columns={tableColumns}
                   data={tableData}
-                  onRowClick={() => {}}
+                  onRowClick={setDetailsRow}
                   onActionClick={handleActionClick}
                 />
               </div>
@@ -248,6 +251,7 @@ function AccountOfficersContent() {
                 itemsPerPage={itemsPerPage}
                 onPrevious={handlePreviousPage}
                 onNext={handleNextPage}
+                onItemsPerPageChange={setPageSize}
               />
             </>
           )}
@@ -272,6 +276,47 @@ function AccountOfficersContent() {
             onConfirm={handleOfficerDeactivated}
           />
         )}
+
+        {/* Row Details Modal - opened by clicking any table row */}
+        <RowDetailsModal
+          open={!!detailsRow}
+          onClose={() => setDetailsRow(null)}
+          title={detailsRow?.name || "Officer"}
+          subtitle="Account officer details"
+          sections={[
+            {
+              title: "Officer",
+              fields: [
+                { label: "Name", value: detailsRow?.name },
+                { label: "Role", value: detailsRow?.role, type: "status" },
+                { label: "Email", value: detailsRow?.email, fullWidth: true },
+                { label: "Phone Number", value: detailsRow?.phoneNo },
+                { label: "Region", value: detailsRow?.region },
+              ],
+            },
+            {
+              title: "Portfolio",
+              fields: [
+                { label: "Distributors", value: detailsRow?.distributors },
+                { label: "Tickets", value: detailsRow?.tickets },
+                { label: "Created At", value: detailsRow?.createdAt },
+              ],
+            },
+          ]}
+          footer={
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (!detailsRow) return;
+                setSelectedOfficer(detailsRow);
+                setDetailsRow(null);
+                setIsPreviewModalOpen(true);
+              }}
+            >
+              Deactivate
+            </Button>
+          }
+        />
 
         {/* Success Modal */}
         <SuccessModal

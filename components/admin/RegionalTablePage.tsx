@@ -7,10 +7,13 @@ import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
 import AssignAccountOfficerModal from "@/components/AssignAccountOfficerModal";
 import SuccessModal from "@/components/SuccessModal";
+import RowDetailsModal from "@/components/RowDetailsModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { usePagination } from "@/hooks/usePagination";
 import { useCustomers, useReassignCustomer } from "@/hooks/api/useCustomer";
 import { BroadcastRegion } from "@/lib/api/types";
 import { formatToNaira } from "@/utils/formatter";
+import ArrowBack from "../common/ArrowBack";
 
 interface RegionalTablePageProps {
   region?: string;
@@ -85,18 +88,26 @@ const regionTabs = [
  */
 function RegionalTable({}: RegionalTablePageProps) {
   const [selectedTab, setSelectedTab] = useState("all-regions");
-  const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [isAssignOfficerModalOpen, setIsAssignOfficerModalOpen] =
     useState(false);
   const [selectedDistributor, setSelectedDistributor] =
     useState<Distributor | null>(null);
+  const [detailsRow, setDetailsRow] = useState<Distributor | null>(null);
   const [successModal, setSuccessModal] = useState<{
     isOpen: boolean;
     title: string;
     message: string;
   }>({ isOpen: false, title: "", message: "" });
-  const itemsPerPage = 9;
+
+  const {
+    currentPage,
+    pageSize: itemsPerPage,
+    setPageSize,
+    previousPage,
+    nextPage,
+    resetPage,
+  } = usePagination();
 
   const selectedRegion = regionTabs.find(
     (tab) => tab.value === selectedTab,
@@ -149,7 +160,7 @@ function RegionalTable({}: RegionalTablePageProps) {
    */
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-    setCurrentPage(1);
+    resetPage();
   };
 
   /**
@@ -165,20 +176,12 @@ function RegionalTable({}: RegionalTablePageProps) {
   /**
    * Handle previous page button click
    */
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
+  const handlePreviousPage = () => previousPage();
 
   /**
    * Handle next page button click
    */
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
+  const handleNextPage = () => nextPage(totalPages);
 
   /**
    * Assign the selected customer to the chosen officer
@@ -216,6 +219,7 @@ function RegionalTable({}: RegionalTablePageProps) {
   return (
     <MainLayout>
       <div className="px-4 pt-4 pb-30 space-y-6 overflow-y-auto h-screen bg-milkwhite/90">
+        <ArrowBack />
         {/* Page Header Component */}
         <PageHeader
           title="Distributors"
@@ -233,7 +237,7 @@ function RegionalTable({}: RegionalTablePageProps) {
                   variant={selectedTab === tab.value ? "primary" : "outline"}
                   onClick={() => {
                     setSelectedTab(tab.value);
-                    setCurrentPage(1);
+                    resetPage();
                   }}
                   className={`
                     whitespace-nowrap
@@ -279,7 +283,7 @@ function RegionalTable({}: RegionalTablePageProps) {
                 <Table
                   columns={tableColumns}
                   data={tableData}
-                  onRowClick={() => {}}
+                  onRowClick={setDetailsRow}
                   onActionClick={handleActionClick}
                 />
               </div>
@@ -291,6 +295,7 @@ function RegionalTable({}: RegionalTablePageProps) {
                 itemsPerPage={itemsPerPage}
                 onPrevious={handlePreviousPage}
                 onNext={handleNextPage}
+                onItemsPerPageChange={setPageSize}
               />
             </>
           )}
@@ -316,6 +321,57 @@ function RegionalTable({}: RegionalTablePageProps) {
             stock: selectedDistributor?.stock || "N/A",
             ticket: String(selectedDistributor?.tickets ?? 0),
           }}
+        />
+
+        {/* Row Details Modal - opened by clicking any table row */}
+        <RowDetailsModal
+          open={!!detailsRow}
+          onClose={() => setDetailsRow(null)}
+          title={detailsRow?.name || "Distributor"}
+          subtitle="Distributor details"
+          sections={[
+            {
+              title: "Distributor",
+              fields: [
+                { label: "Name", value: detailsRow?.name },
+                { label: "Account", value: detailsRow?.account, type: "id" },
+                { label: "Phone Number", value: detailsRow?.phoneNo },
+                { label: "Region", value: detailsRow?.region },
+              ],
+            },
+            {
+              title: "Account Standing",
+              fields: [
+                { label: "Wallet", value: detailsRow?.wallet, type: "amount" },
+                { label: "Stock", value: detailsRow?.stock, type: "amount" },
+                { label: "Open Tickets", value: detailsRow?.tickets },
+              ],
+            },
+            {
+              title: "Assignment",
+              fields: [
+                {
+                  label: "Account Officers",
+                  value: detailsRow?.officers,
+                  fullWidth: true,
+                },
+              ],
+            },
+          ]}
+          footer={
+            <Button
+              variant="primary"
+              className="bg-linear-to-r from-primary via-orange to-primary"
+              onClick={() => {
+                if (!detailsRow) return;
+                setSelectedDistributor(detailsRow);
+                setDetailsRow(null);
+                setIsAssignOfficerModalOpen(true);
+              }}
+            >
+              Assign Officer
+            </Button>
+          }
         />
 
         {/* Success Modal - shown after a successful assignment */}

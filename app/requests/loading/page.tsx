@@ -7,7 +7,9 @@ import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
 import AssignLoadingOfficerModal from "@/components/AssignLoadingOfficerModal";
 import LoadingOfficerSuccessModal from "@/components/LoadingOfficerSuccessModal";
+import RowDetailsModal from "@/components/RowDetailsModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { usePagination, getTotalPages } from "@/hooks/usePagination";
 import { useAuthStore } from "@/store/auth.store";
 import userIcon from "@/assets/icons/usersblack.svg";
 
@@ -86,12 +88,19 @@ const mockLoadingRequests: LoadingRequest[] = Array.from(
 
 function LoadingRequestPageContent() {
   const [selectedTab, setSelectedTab] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
   const [isAssignLoadingOfficerModalOpen, setIsAssignLoadingOfficerModalOpen] =
     useState(false);
   const [isLoadingOfficerSuccessOpen, setIsLoadingOfficerSuccessOpen] =
     useState(false);
-  const itemsPerPage = 9;
+  const [detailsRow, setDetailsRow] = useState<LoadingRequest | null>(null);
+  const {
+    currentPage,
+    pageSize: itemsPerPage,
+    setPageSize,
+    previousPage,
+    nextPage,
+    resetPage,
+  } = usePagination();
   const { user } = useAuthStore();
 
   // Filter data based on selected tab
@@ -108,7 +117,7 @@ function LoadingRequestPageContent() {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return filteredData.slice(startIndex, endIndex);
-  }, [filteredData, currentPage]);
+  }, [filteredData, currentPage, itemsPerPage]);
 
   /**
    * Handle search input
@@ -129,21 +138,13 @@ function LoadingRequestPageContent() {
   /**
    * Handle previous page button click
    */
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
+  const handlePreviousPage = () => previousPage();
 
   /**
    * Handle next page button click
    */
-  const handleNextPage = () => {
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
+  const handleNextPage = () =>
+    nextPage(getTotalPages(totalItems, itemsPerPage));
 
   /**
    * Handle loading officer assignment
@@ -182,7 +183,7 @@ function LoadingRequestPageContent() {
                   variant={selectedTab === tab.value ? "primary" : "outline"}
                   onClick={() => {
                     setSelectedTab(tab.value);
-                    setCurrentPage(1);
+                    resetPage();
                   }}
                   className={
                     selectedTab === tab.value
@@ -202,7 +203,7 @@ function LoadingRequestPageContent() {
             <Table
               columns={tableColumns}
               data={paginatedData}
-              onRowClick={() => {}}
+              onRowClick={setDetailsRow}
               onActionClick={handleActionClick}
             />
           </div>
@@ -214,8 +215,56 @@ function LoadingRequestPageContent() {
             itemsPerPage={itemsPerPage}
             onPrevious={handlePreviousPage}
             onNext={handleNextPage}
+            onItemsPerPageChange={setPageSize}
           />
         </Card>
+
+        {/* Row Details Modal - opened by clicking any table row */}
+        <RowDetailsModal
+          open={!!detailsRow}
+          onClose={() => setDetailsRow(null)}
+          title={detailsRow?.distributor || "Loading Request"}
+          subtitle={detailsRow ? `Waybill ${detailsRow.waybill}` : undefined}
+          sections={[
+            {
+              title: "Request",
+              fields: [
+                { label: "Waybill", value: detailsRow?.waybill, type: "id" },
+                { label: "Order", value: detailsRow?.order, type: "id" },
+                { label: "Status", value: detailsRow?.status, type: "status" },
+                { label: "Submitted", value: detailsRow?.submitted },
+              ],
+            },
+            {
+              title: "Logistics",
+              fields: [
+                { label: "Truck", value: detailsRow?.truck },
+                { label: "Driver", value: detailsRow?.driver },
+              ],
+            },
+            {
+              title: "Assignment",
+              fields: [
+                { label: "Distributor", value: detailsRow?.distributor },
+                { label: "Loading Officer", value: detailsRow?.officer },
+              ],
+            },
+          ]}
+          footer={
+            detailsRow?.status === "Pending" ? (
+              <Button
+                variant="primary"
+                className="bg-linear-to-r from-primary via-orange to-primary"
+                onClick={() => {
+                  setDetailsRow(null);
+                  setIsAssignLoadingOfficerModalOpen(true);
+                }}
+              >
+                Assign Officer
+              </Button>
+            ) : undefined
+          }
+        />
 
         {/* Assign Loading Officer Modal */}
         <AssignLoadingOfficerModal

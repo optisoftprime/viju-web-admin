@@ -12,6 +12,9 @@ import AssignAccountOfficerModal from "@/components/AssignAccountOfficerModal";
 import AssignLoadingOfficerModal from "@/components/AssignLoadingOfficerModal";
 import LoadingOfficerSuccessModal from "@/components/LoadingOfficerSuccessModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import RowDetailsModal from "@/components/RowDetailsModal";
+import { usePagination, getTotalPages } from "@/hooks/usePagination";
+import { DEFAULT_SECTION_PAGE_SIZE } from "@/constants/pagination";
 import OverviewSection from "@/components/OverviewSection";
 import OrdersSection from "@/components/OrdersSection";
 import InvoicesSection from "@/components/InvoicesSection";
@@ -348,9 +351,13 @@ function DashboardContent() {
 
   // State for orders pagination
   const [orderPage, setOrderPage] = useState(1);
+  const [orderPageSize, setOrderPageSize] = useState(DEFAULT_SECTION_PAGE_SIZE);
 
   // State for waybills pagination
   const [waybillPage, setWaybillPage] = useState(1);
+  const [waybillPageSize, setWaybillPageSize] = useState(
+    DEFAULT_SECTION_PAGE_SIZE,
+  );
 
   // State for assign officer modal
   const [isAssignOfficerModalOpen, setIsAssignOfficerModalOpen] =
@@ -365,9 +372,18 @@ function DashboardContent() {
     useState(false);
 
   // State for pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 9;
+  const {
+    currentPage,
+    pageSize: itemsPerPage,
+    setPageSize,
+    previousPage,
+    nextPage,
+    resetPage,
+  } = usePagination();
   const [searchTerm, setSearchTerm] = useState("");
+
+  // State for the row details modal (regional admin loading requests)
+  const [detailsRow, setDetailsRow] = useState<Distributor | null>(null);
 
   // State for the admin CSV export
   const [isExporting, setIsExporting] = useState(false);
@@ -403,7 +419,7 @@ function DashboardContent() {
     data: ordersData,
     isLoading: ordersLoading,
     error: ordersError,
-  } = useDistributorOrders(selectedDistributorId, orderPage);
+  } = useDistributorOrders(selectedDistributorId, orderPage, orderPageSize);
   const {
     data: invoicesData,
     isLoading: invoicesLoading,
@@ -418,7 +434,11 @@ function DashboardContent() {
     data: waybillsData,
     isLoading: waybillsLoading,
     error: waybillsError,
-  } = useDistributorWaybills(selectedDistributorId, waybillPage);
+  } = useDistributorWaybills(
+    selectedDistributorId,
+    waybillPage,
+    waybillPageSize,
+  );
 
   // Helper function to format large numbers
   const formatNumber = (num: number) => {
@@ -536,7 +556,7 @@ function DashboardContent() {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return transformedTableData?.slice(startIndex, endIndex) || [];
-  }, [transformedTableData, currentPage]);
+  }, [transformedTableData, currentPage, itemsPerPage]);
 
   // Determine stats display based on user role
   const renderStats = () => {
@@ -679,7 +699,7 @@ function DashboardContent() {
    */
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-    setCurrentPage(1);
+    resetPage();
   };
 
   /**
@@ -688,7 +708,7 @@ function DashboardContent() {
    */
   const handleTabChange = (filter: OfficerCustomerFilter) => {
     setSelectedTab(filter);
-    setCurrentPage(1);
+    resetPage();
   };
 
   /**
@@ -700,21 +720,13 @@ function DashboardContent() {
   /**
    * Handle previous page button click
    */
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
+  const handlePreviousPage = () => previousPage();
 
   /**
    * Handle next page button click
    */
-  const handleNextPage = () => {
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
+  const handleNextPage = () =>
+    nextPage(getTotalPages(totalItems, itemsPerPage));
 
   /**
    * Handle officer assignment
@@ -921,6 +933,7 @@ function DashboardContent() {
                 itemsPerPage={itemsPerPage}
                 onPrevious={handlePreviousPage}
                 onNext={handleNextPage}
+                onItemsPerPageChange={setPageSize}
               />
             </Card>
 
@@ -1028,7 +1041,10 @@ function DashboardContent() {
                           orders={ordersData.data}
                           currentPage={orderPage}
                           totalPages={ordersData.meta.totalPages}
+                          totalItems={ordersData.meta.total}
                           onPageChange={setOrderPage}
+                          pageSize={orderPageSize}
+                          onPageSizeChange={setOrderPageSize}
                         />
                       ) : (
                         <div className="flex items-center justify-center h-64">
@@ -1077,7 +1093,6 @@ function DashboardContent() {
                         </div>
                       ) : stockData ? (
                         <StockSection
-                          currentPage={currentPage}
                           catalogue={stockData.catalogue}
                           awaitingLoading={stockData.awaitingLoading}
                         />
@@ -1119,7 +1134,10 @@ function DashboardContent() {
                           waybills={waybillsData.data}
                           currentPage={waybillPage}
                           totalPages={waybillsData.meta.totalPages}
+                          totalItems={waybillsData.meta.total}
                           onPageChange={setWaybillPage}
+                          pageSize={waybillPageSize}
+                          onPageSizeChange={setWaybillPageSize}
                         />
                       ) : (
                         <div className="flex items-center justify-center h-64">
@@ -1183,11 +1201,7 @@ function DashboardContent() {
                   <Table
                     columns={loadingRequestTableColumns}
                     data={paginatedData}
-                    onRowClick={(row) => {
-                      if (row.action === "Assign Officer") {
-                        setIsAssignLoadingOfficerModalOpen(true);
-                      }
-                    }}
+                    onRowClick={setDetailsRow}
                     onActionClick={(action, row) => {
                       if (action === "Assign Officer") {
                         setIsAssignLoadingOfficerModalOpen(true);
@@ -1204,8 +1218,53 @@ function DashboardContent() {
                 itemsPerPage={itemsPerPage}
                 onPrevious={handlePreviousPage}
                 onNext={handleNextPage}
+                onItemsPerPageChange={setPageSize}
               />
             </Card>
+
+            {/* Row Details Modal - opened by clicking any table row */}
+            <RowDetailsModal
+              open={!!detailsRow}
+              onClose={() => setDetailsRow(null)}
+              title={detailsRow?.name || "Loading Request"}
+              subtitle="Loading request details"
+              sections={[
+                {
+                  title: "Request",
+                  fields: [
+                    { label: "Order", value: detailsRow?.account, type: "id" },
+                    {
+                      label: "Status",
+                      value: detailsRow?.status,
+                      type: "status",
+                    },
+                    { label: "Loading Date", value: detailsRow?.lastPurchase },
+                    { label: "Quantity", value: detailsRow?.balance },
+                  ],
+                },
+                {
+                  title: "Logistics",
+                  fields: [
+                    { label: "Distributor", value: detailsRow?.name },
+                    { label: "Vehicle", value: detailsRow?.lastContact },
+                  ],
+                },
+              ]}
+              footer={
+                detailsRow?.action === "Assign Officer" ? (
+                  <Button
+                    variant="primary"
+                    className="bg-linear-to-r from-primary via-orange to-primary"
+                    onClick={() => {
+                      setDetailsRow(null);
+                      setIsAssignLoadingOfficerModalOpen(true);
+                    }}
+                  >
+                    Assign Officer
+                  </Button>
+                ) : undefined
+              }
+            />
 
             {/* Assign Loading Officer Modal */}
             <AssignLoadingOfficerModal

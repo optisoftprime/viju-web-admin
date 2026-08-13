@@ -217,6 +217,7 @@ export default function AddFlyerModal({
                   src={imagePreview}
                   alt="Preview"
                   fill
+                  sizes="100vw"
                   className="object-cover"
                 />
               </div>

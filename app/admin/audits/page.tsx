@@ -5,7 +5,9 @@ import { MainLayout } from "@/components/common";
 import { Text, Card, Button, Table } from "@/components/common";
 import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
+import RowDetailsModal from "@/components/RowDetailsModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { usePagination } from "@/hooks/usePagination";
 import { useAuditTickets } from "@/hooks/api/useAudit";
 import { auditService } from "@/services/audit.service";
 import { BroadcastRegion } from "@/lib/api/types";
@@ -72,9 +74,18 @@ function InteractionAuditContent() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
+  // State for the row details modal
+  const [detailsRow, setDetailsRow] = useState<AuditTableRow | null>(null);
+
   // State for pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
+  const {
+    currentPage,
+    pageSize: itemsPerPage,
+    setPageSize,
+    previousPage,
+    nextPage,
+    resetPage,
+  } = usePagination();
 
   // Fetch audit tickets from API
   const {
@@ -116,12 +127,18 @@ function InteractionAuditContent() {
   const totalItems = auditData?.meta.total || 0;
   const totalPages = auditData?.meta.totalPages || 1;
 
+  // The table row is a flattened view - pull the full ticket for the modal
+  const detailsTicket = useMemo(
+    () => auditData?.data.find((ticket) => ticket.id === detailsRow?.id),
+    [auditData?.data, detailsRow?.id],
+  );
+
   /**
    * Handle region change
    */
   const handleRegionChange = (region: string) => {
     setSelectedRegion(region);
-    setCurrentPage(1);
+    resetPage();
   };
 
   /**
@@ -130,13 +147,13 @@ function InteractionAuditContent() {
   const handleStartDateChange = (date: string) => {
     setStartDate(date);
 
-    setCurrentPage(1);
+    resetPage();
   };
 
   const handleEndDateChange = (date: string) => {
     setEndDate(date);
 
-    setCurrentPage(1);
+    resetPage();
   };
 
   // Only a date selection surfaces the clear button
@@ -152,7 +169,7 @@ function InteractionAuditContent() {
     setKeyword("");
     setStartDate("");
     setEndDate("");
-    setCurrentPage(1);
+    resetPage();
   };
 
   const downloadCsvFile = (blob: Blob, filename: string) => {
@@ -191,20 +208,12 @@ function InteractionAuditContent() {
   /**
    * Handle previous page button click
    */
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
+  const handlePreviousPage = () => previousPage();
 
   /**
    * Handle next page button click
    */
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
+  const handleNextPage = () => nextPage(totalPages);
 
   return (
     <MainLayout>
@@ -249,7 +258,7 @@ function InteractionAuditContent() {
                 value={customerName}
                 onChange={(e) => {
                   setCustomerName(e.target.value);
-                  setCurrentPage(1);
+                  resetPage();
                 }}
                 placeholder="Customer name"
                 className="px-3 py-2 border border-muted/30 rounded-lg text-sm"
@@ -259,7 +268,7 @@ function InteractionAuditContent() {
                 value={officerName}
                 onChange={(e) => {
                   setOfficerName(e.target.value);
-                  setCurrentPage(1);
+                  resetPage();
                 }}
                 placeholder="Officer name"
                 className="px-3 py-2 border border-muted/30 rounded-lg text-sm"
@@ -269,7 +278,7 @@ function InteractionAuditContent() {
                 value={keyword}
                 onChange={(e) => {
                   setKeyword(e.target.value);
-                  setCurrentPage(1);
+                  resetPage();
                 }}
                 placeholder="Keyword"
                 className="px-3 py-2 border border-muted/30 rounded-lg text-sm"
@@ -343,7 +352,7 @@ function InteractionAuditContent() {
                 <Table
                   columns={tableColumns}
                   data={tableData}
-                  onRowClick={() => {}}
+                  onRowClick={setDetailsRow}
                   onActionClick={() => {}}
                 />
               </div>
@@ -355,10 +364,70 @@ function InteractionAuditContent() {
                 itemsPerPage={itemsPerPage}
                 onPrevious={handlePreviousPage}
                 onNext={handleNextPage}
+                onItemsPerPageChange={setPageSize}
               />
             </>
           )}
         </Card>
+
+        {/* Row Details Modal - opened by clicking any table row */}
+        <RowDetailsModal
+          open={!!detailsRow}
+          onClose={() => setDetailsRow(null)}
+          title={detailsRow?.subject || "Ticket"}
+          subtitle={detailsRow ? `Ticket ${detailsRow.ticketId}` : undefined}
+          sections={[
+            {
+              title: "Ticket",
+              fields: [
+                {
+                  label: "Ticket ID",
+                  value: detailsRow?.ticketId,
+                  type: "id",
+                },
+                {
+                  label: "Status",
+                  value: detailsRow?.status,
+                  type: "status",
+                },
+                { label: "Category", value: detailsTicket?.category },
+                { label: "Replies", value: detailsTicket?.replies?.length ?? 0 },
+                {
+                  label: "Subject",
+                  value: detailsRow?.subject,
+                  fullWidth: true,
+                },
+                {
+                  label: "Description",
+                  value: detailsTicket?.description,
+                  type: "longtext",
+                },
+              ],
+            },
+            {
+              title: "Customer",
+              fields: [
+                { label: "Name", value: detailsRow?.customerName },
+                { label: "Region", value: detailsRow?.region },
+              ],
+            },
+            {
+              title: "Timeline",
+              fields: [
+                {
+                  label: "Created",
+                  value: detailsTicket?.createdAt,
+                  type: "date",
+                },
+                {
+                  label: "Last Updated",
+                  value: detailsTicket?.updatedAt,
+                  type: "date",
+                },
+              ],
+            },
+          ]}
+        />
       </div>
     </MainLayout>
   );

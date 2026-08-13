@@ -7,7 +7,9 @@ import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
 import AssignAccountOfficerModal from "@/components/AssignAccountOfficerModal";
 import SuccessModal from "@/components/SuccessModal";
+import RowDetailsModal from "@/components/RowDetailsModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { usePagination } from "@/hooks/usePagination";
 import { toast } from "sonner";
 import { useCustomersForReassignment } from "@/hooks/api/useCustomer";
 import { useReassignOfficerCustomers } from "@/hooks/api/useOfficer";
@@ -104,9 +106,18 @@ function CustomerReassignmentContent() {
     message: "",
   });
 
+  // State for the row details modal
+  const [detailsRow, setDetailsRow] = useState<CustomerTableRow | null>(null);
+
   // State for pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 9;
+  const {
+    currentPage,
+    pageSize: itemsPerPage,
+    setPageSize,
+    previousPage,
+    nextPage,
+    resetPage,
+  } = usePagination();
 
   // Fetch customers from API
   const {
@@ -153,7 +164,7 @@ function CustomerReassignmentContent() {
    */
   const handleRegionChange = (region: string) => {
     setSelectedRegion(region);
-    setCurrentPage(1);
+    resetPage();
   };
 
   /**
@@ -162,7 +173,7 @@ function CustomerReassignmentContent() {
   const handleSearch = (value: string) => {
     setSearchTerm(value);
 
-    setCurrentPage(1);
+    resetPage();
   };
 
   const downloadCsvFile = (blob: Blob, filename: string) => {
@@ -205,20 +216,12 @@ function CustomerReassignmentContent() {
   /**
    * Handle previous page button click
    */
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
+  const handlePreviousPage = () => previousPage();
 
   /**
    * Handle next page button click
    */
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
+  const handleNextPage = () => nextPage(totalPages);
 
   /**
    * Move the source officer's customers to the selected officer
@@ -339,7 +342,7 @@ function CustomerReassignmentContent() {
                 <Table
                   columns={tableColumns}
                   data={tableData}
-                  onRowClick={() => {}}
+                  onRowClick={setDetailsRow}
                   onActionClick={handleActionClick}
                 />
               </div>
@@ -351,6 +354,7 @@ function CustomerReassignmentContent() {
                 itemsPerPage={itemsPerPage}
                 onPrevious={handlePreviousPage}
                 onNext={handleNextPage}
+                onItemsPerPageChange={setPageSize}
               />
             </>
           )}
@@ -376,6 +380,57 @@ function CustomerReassignmentContent() {
             stock: selectedCustomer?.stock || "N/A",
             ticket: String(selectedCustomer?.tickets ?? 0),
           }}
+        />
+
+        {/* Row Details Modal - opened by clicking any table row */}
+        <RowDetailsModal
+          open={!!detailsRow}
+          onClose={() => setDetailsRow(null)}
+          title={detailsRow?.name || "Customer"}
+          subtitle="Customer details"
+          sections={[
+            {
+              title: "Customer",
+              fields: [
+                { label: "Name", value: detailsRow?.name },
+                { label: "Account", value: detailsRow?.account, type: "id" },
+                { label: "Phone Number", value: detailsRow?.phoneNo },
+                { label: "Region", value: detailsRow?.region },
+              ],
+            },
+            {
+              title: "Account Standing",
+              fields: [
+                { label: "Wallet", value: detailsRow?.wallet, type: "amount" },
+                { label: "Stock", value: detailsRow?.stock, type: "amount" },
+                { label: "Open Tickets", value: detailsRow?.tickets },
+              ],
+            },
+            {
+              title: "Assignment",
+              fields: [
+                {
+                  label: "Current Account Officer",
+                  value: detailsRow?.currentOfficerName || detailsRow?.officers,
+                  fullWidth: true,
+                },
+              ],
+            },
+          ]}
+          footer={
+            <Button
+              variant="primary"
+              className="bg-linear-to-r from-primary via-orange to-primary"
+              onClick={() => {
+                if (!detailsRow) return;
+                setSelectedCustomer(detailsRow);
+                setDetailsRow(null);
+                setIsReassignModalOpen(true);
+              }}
+            >
+              Reassign Officer
+            </Button>
+          }
         />
 
         {/* Success Modal - shown after a successful reassignment */}

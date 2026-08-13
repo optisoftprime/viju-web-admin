@@ -8,7 +8,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { flyerService } from "@/services/flyer.service";
 import { queryKeys } from "@/lib/api/queryKeys";
-import { CreateFlyerRequest, UpdateFlyerRequest } from "@/lib/api/types";
+import { Flyer, CreateFlyerRequest, UpdateFlyerRequest } from "@/lib/api/types";
 
 /**
  * Get all flyers
@@ -45,7 +45,17 @@ export const useUpdateFlyer = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateFlyerRequest }) =>
       flyerService.updateFlyer(id, data),
-    onSuccess: () => {
+    onSuccess: (updatedFlyer) => {
+      // Fold the server's response into the cached list so the card reflects
+      // the new state straight away instead of waiting out the refetch
+      if (updatedFlyer?.id) {
+        queryClient.setQueryData<Flyer[]>(queryKeys.flyers.list, (flyers) =>
+          flyers?.map((flyer) =>
+            flyer.id === updatedFlyer.id ? { ...flyer, ...updatedFlyer } : flyer,
+          ),
+        );
+      }
+
       queryClient.invalidateQueries({ queryKey: queryKeys.flyers.all });
     },
   });
