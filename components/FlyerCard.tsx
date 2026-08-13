@@ -18,33 +18,55 @@ interface Flyer {
 interface FlyerCardProps {
   flyer: Flyer;
   onEdit: (flyer: Flyer) => void;
-  onDeactivate?: (flyer: Flyer) => void;
+  /** Opens the full, uncropped artwork - the card thumbnail is cropped */
+  onPreview?: (flyer: Flyer) => void;
+  /** Flips the flyer between active and inactive */
+  onToggleActive?: (flyer: Flyer) => void;
+  /** True while this flyer's own toggle request is in flight */
+  isToggling?: boolean;
   onDelete: (flyer: Flyer) => void;
 }
 
 export default function FlyerCard({
   flyer,
   onEdit,
-  onDeactivate,
+  onPreview,
+  onToggleActive,
+  isToggling = false,
   onDelete,
 }: FlyerCardProps) {
   const imageUrl = flyer.imageUrl || flyer.image;
   const position = flyer.position || flyer.sortOrder || 0;
 
+  // Treat a missing flag as active, matching how the app renders flyers
+  const isActive = flyer.isActive !== false;
+
+  // The button offers the opposite of the current state
+  const toggleLabel = isActive ? "Deactivate" : "Activate";
+  const togglePendingLabel = isActive ? "Deactivating..." : "Activating...";
+
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow mb-5">
       {/* Image Container with Position Badge */}
       <div className="relative">
-        <div className="relative w-full h-64 bg-gray-100">
+        {/* Click the artwork to see it in full */}
+        <button
+          type="button"
+          onClick={() => onPreview?.(flyer)}
+          disabled={!onPreview}
+          aria-label={`Preview ${flyer.name}`}
+          className="relative block w-full h-64 bg-gray-100 enabled:cursor-pointer group"
+        >
           {imageUrl && (
             <Image
               src={imageUrl}
               alt={flyer.name}
               fill
-              className="object-cover"
+              sizes="100vw"
+              className="object-cover transition-transform group-enabled:group-hover:scale-105"
             />
           )}
-        </div>
+        </button>
 
         {/* Position Badge */}
         <div className="absolute top-3 right-3 bg-white rounded-sm w-8 h-8 flex items-center justify-center border border-gray-200 shadow-md">
@@ -74,13 +96,15 @@ export default function FlyerCard({
               <Edit size={18} />
             </button>
 
-            {/* Deactivate Link (if onDeactivate is provided) */}
-            {onDeactivate && (
+            {/* Activate / Deactivate Link - reflects the flyer's current state */}
+            {onToggleActive && (
               <button
-                onClick={() => onDeactivate(flyer)}
-                className="text-muted hover:text-orange/80 cursor-pointer text-sm font-medium underline transition-colors"
+                onClick={() => onToggleActive(flyer)}
+                disabled={isToggling}
+                aria-busy={isToggling}
+                className="text-muted hover:text-orange/80 cursor-pointer text-sm font-medium underline transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Deactivate
+                {isToggling ? togglePendingLabel : toggleLabel}
               </button>
             )}
           </div>

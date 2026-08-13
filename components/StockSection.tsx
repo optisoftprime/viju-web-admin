@@ -2,6 +2,9 @@
 
 import { useState, useMemo } from "react";
 import { Text } from "@/components/common";
+import Pagination from "@/components/Pagination";
+import RowDetailsModal from "@/components/RowDetailsModal";
+import { DEFAULT_SECTION_PAGE_SIZE } from "@/constants/pagination";
 
 interface Stock {
   id: string;
@@ -260,7 +263,8 @@ export default function StockSection({
   onPageChange,
 }: StockSectionProps) {
   const [internalPage, setInternalPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_SECTION_PAGE_SIZE);
+  const [detailsRow, setDetailsRow] = useState<Stock | null>(null);
 
   const combinedData = useMemo(() => {
     if (catalogue.length === 0 && awaitingLoading.length === 0) {
@@ -305,9 +309,17 @@ export default function StockSection({
   const paginatedStocks = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return displayData.slice(startIndex, startIndex + itemsPerPage);
-  }, [displayData, currentPage]);
+  }, [displayData, currentPage, itemsPerPage]);
 
   const totalItems = displayData.length;
+
+  /**
+   * Changing the page size restarts at page 1 so the offset stays valid
+   */
+  const handlePageSizeChange = (size: number) => {
+    setItemsPerPage(size);
+    handlePageChange(1);
+  };
 
   return (
     <div className="space-y-4">
@@ -347,7 +359,11 @@ export default function StockSection({
                 index % 2 === 1 ? "" : "border-b border-[#F0F5F9]";
 
               return (
-                <tr key={stock.id} className={`${bgColor} ${borderClass}`}>
+                <tr
+                  key={stock.id}
+                  onClick={() => setDetailsRow(stock)}
+                  className={`${bgColor} ${borderClass} cursor-pointer`}
+                >
                   <td className="text-left text-[14px] font-medium text-muted p-2">
                     {stock.product}
                   </td>
@@ -382,32 +398,44 @@ export default function StockSection({
       </div>
 
       {/* Pagination */}
-      {displayData.length > itemsPerPage && (
-        <div className="flex justify-between items-center mt-6">
-          <Text variant="small" color="muted">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-            {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems}
-          </Text>
-          <div className="flex gap-2">
-            <button
-              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className="px-4 py-2 border border-muted/20 rounded-lg text-sm font-medium text-muted hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() =>
-                handlePageChange(Math.min(totalPages, currentPage + 1))
-              }
-              disabled={currentPage === totalPages}
-              className="px-4 py-2 border border-muted/20 rounded-lg text-sm font-medium text-muted hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalItems={totalItems}
+        itemsPerPage={itemsPerPage}
+        onPrevious={() => handlePageChange(Math.max(1, currentPage - 1))}
+        onNext={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+        onItemsPerPageChange={handlePageSizeChange}
+      />
+
+      {/* Row Details Modal - opened by clicking any row */}
+      <RowDetailsModal
+        open={!!detailsRow}
+        onClose={() => setDetailsRow(null)}
+        title={detailsRow?.product || "Stock Item"}
+        subtitle="Stock details"
+        sections={[
+          {
+            title: "Product",
+            fields: [
+              { label: "Product", value: detailsRow?.product, fullWidth: true },
+              { label: "Status", value: detailsRow?.status, type: "status" },
+              {
+                label: "Last Stock Update",
+                value: detailsRow?.lastStockUpdate,
+                type: "date",
+              },
+            ],
+          },
+          {
+            title: "Quantities",
+            fields: [
+              { label: "Stock Balance", value: detailsRow?.stockBalance },
+              { label: "Reserved Stock", value: detailsRow?.reservedStock },
+              { label: "Awaiting Loading", value: detailsRow?.awaitingLoading },
+            ],
+          },
+        ]}
+      />
     </div>
   );
 }

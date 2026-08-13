@@ -5,7 +5,9 @@ import { MainLayout } from "@/components/common";
 import { Text, Card, Button, Table, SearchInput } from "@/components/common";
 import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
+import RowDetailsModal from "@/components/RowDetailsModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { usePagination, getTotalPages } from "@/hooks/usePagination";
 import { useAuthStore } from "@/store/auth.store";
 
 interface Officer {
@@ -64,8 +66,14 @@ const mockOfficersData: Officer[] = Array.from({ length: 25 }, (_, i) => ({
 }));
 
 function RegionalAdminOfficersContent() {
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 9;
+  const {
+    currentPage,
+    pageSize: itemsPerPage,
+    setPageSize,
+    previousPage,
+    nextPage,
+  } = usePagination();
+  const [detailsRow, setDetailsRow] = useState<Officer | null>(null);
   const { user } = useAuthStore();
 
   // Calculate pagination
@@ -74,7 +82,7 @@ function RegionalAdminOfficersContent() {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return mockOfficersData.slice(startIndex, endIndex);
-  }, [currentPage]);
+  }, [currentPage, itemsPerPage]);
 
   /**
    * Handle search input
@@ -86,21 +94,13 @@ function RegionalAdminOfficersContent() {
   /**
    * Handle previous page button click
    */
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
+  const handlePreviousPage = () => previousPage();
 
   /**
    * Handle next page button click
    */
-  const handleNextPage = () => {
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
+  const handleNextPage = () =>
+    nextPage(getTotalPages(totalItems, itemsPerPage));
 
   return (
     <MainLayout>
@@ -118,7 +118,7 @@ function RegionalAdminOfficersContent() {
             <Table
               columns={tableColumns}
               data={paginatedData}
-              onRowClick={() => {}}
+              onRowClick={setDetailsRow}
               onActionClick={() => {}}
             />
           </div>
@@ -130,8 +130,36 @@ function RegionalAdminOfficersContent() {
             itemsPerPage={itemsPerPage}
             onPrevious={handlePreviousPage}
             onNext={handleNextPage}
+            onItemsPerPageChange={setPageSize}
           />
         </Card>
+
+        {/* Row Details Modal - opened by clicking any table row */}
+        <RowDetailsModal
+          open={!!detailsRow}
+          onClose={() => setDetailsRow(null)}
+          title={detailsRow?.officer || "Officer"}
+          subtitle="Account officer details"
+          sections={[
+            {
+              title: "Officer",
+              fields: [
+                { label: "Name", value: detailsRow?.officer },
+                { label: "Region", value: detailsRow?.region },
+                { label: "Email", value: detailsRow?.email, fullWidth: true },
+                { label: "Phone Number", value: detailsRow?.phoneNo },
+              ],
+            },
+            {
+              title: "Portfolio",
+              fields: [
+                { label: "Distributors", value: detailsRow?.distributors },
+                { label: "Tickets", value: detailsRow?.tickets },
+                { label: "Last Login", value: detailsRow?.lastLogin },
+              ],
+            },
+          ]}
+        />
       </div>
     </MainLayout>
   );

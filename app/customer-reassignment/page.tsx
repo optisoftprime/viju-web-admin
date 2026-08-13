@@ -6,7 +6,9 @@ import { Text, Card, Button, Table, SearchInput } from "@/components/common";
 import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
 import AssignAccountOfficerModal from "@/components/AssignAccountOfficerModal";
+import RowDetailsModal from "@/components/RowDetailsModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { usePagination, getTotalPages } from "@/hooks/usePagination";
 import userIcon from "@/assets/icons/usersblack.svg";
 
 // Interface for customer data structure
@@ -207,9 +209,18 @@ function CustomerReassignmentContent() {
     null,
   );
 
+  // State for the row details modal
+  const [detailsRow, setDetailsRow] = useState<Customer | null>(null);
+
   // State for pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 9;
+  const {
+    currentPage,
+    pageSize: itemsPerPage,
+    setPageSize,
+    previousPage,
+    nextPage,
+    resetPage,
+  } = usePagination();
 
   /**
    * Filter customers by selected region
@@ -242,14 +253,14 @@ function CustomerReassignmentContent() {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     return filteredCustomers.slice(startIndex, endIndex);
-  }, [filteredCustomers, currentPage]);
+  }, [filteredCustomers, currentPage, itemsPerPage]);
 
   /**
    * Reset pagination when region changes
    */
   const handleRegionChange = (region: string) => {
     setSelectedRegion(region);
-    setCurrentPage(1);
+    resetPage();
   };
 
   /**
@@ -257,7 +268,7 @@ function CustomerReassignmentContent() {
    */
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-    setCurrentPage(1);
+    resetPage();
   };
 
   /**
@@ -273,21 +284,13 @@ function CustomerReassignmentContent() {
   /**
    * Handle previous page button click
    */
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
+  const handlePreviousPage = () => previousPage();
 
   /**
    * Handle next page button click
    */
-  const handleNextPage = () => {
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
+  const handleNextPage = () =>
+    nextPage(getTotalPages(totalItems, itemsPerPage));
 
   /**
    * Handle officer assignment
@@ -348,7 +351,7 @@ function CustomerReassignmentContent() {
             <Table
               columns={tableColumns}
               data={paginatedData}
-              onRowClick={() => {}}
+              onRowClick={setDetailsRow}
               onActionClick={handleActionClick}
             />
           </div>
@@ -360,8 +363,59 @@ function CustomerReassignmentContent() {
             itemsPerPage={itemsPerPage}
             onPrevious={handlePreviousPage}
             onNext={handleNextPage}
+            onItemsPerPageChange={setPageSize}
           />
         </Card>
+
+        {/* Row Details Modal - opened by clicking any table row */}
+        <RowDetailsModal
+          open={!!detailsRow}
+          onClose={() => setDetailsRow(null)}
+          title={detailsRow?.name || "Customer"}
+          subtitle="Customer details"
+          sections={[
+            {
+              title: "Customer",
+              fields: [
+                { label: "Name", value: detailsRow?.name },
+                { label: "Account", value: detailsRow?.account, type: "id" },
+                { label: "Phone Number", value: detailsRow?.phoneNo },
+                { label: "Region", value: detailsRow?.region },
+              ],
+            },
+            {
+              title: "Account Standing",
+              fields: [
+                { label: "Wallet", value: detailsRow?.wallet, type: "amount" },
+                { label: "Stock", value: detailsRow?.stock, type: "amount" },
+                { label: "Open Tickets", value: detailsRow?.tickets },
+              ],
+            },
+            {
+              title: "Assignment",
+              fields: [
+                {
+                  label: "Account Officer",
+                  value: detailsRow?.officers,
+                  fullWidth: true,
+                },
+              ],
+            },
+          ]}
+          footer={
+            <Button
+              variant="primary"
+              onClick={() => {
+                if (!detailsRow) return;
+                setSelectedCustomer(detailsRow);
+                setDetailsRow(null);
+                setIsReassignModalOpen(true);
+              }}
+            >
+              Reassign Officer
+            </Button>
+          }
+        />
 
         {/* Reassign Account Officer Modal */}
         <AssignAccountOfficerModal

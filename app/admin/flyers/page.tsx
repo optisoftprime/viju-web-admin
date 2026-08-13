@@ -4,8 +4,11 @@ import { useState, useMemo } from "react";
 import { MainLayout } from "@/components/common";
 import { Text, Button } from "@/components/common";
 import PageHeader from "@/components/PageHeader";
+import { toast } from "sonner";
 import AddFlyerModal from "@/components/AddFlyerModal";
-import PreviewFlyerModal from "@/components/PreviewFlyerModal";
+import PreviewFlyerModal, {
+  PreviewFlyer,
+} from "@/components/PreviewFlyerModal";
 import SuccessModal from "@/components/SuccessModal";
 import FlyerCard from "@/components/FlyerCard";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -15,6 +18,7 @@ import {
   useUpdateFlyer,
   useDeleteFlyer,
 } from "@/hooks/api/useFlyer";
+import { getErrorMessage } from "@/utils/apiError";
 import { Flyer } from "@/lib/api/types";
 
 export default function FlyerPage() {
@@ -24,9 +28,14 @@ export default function FlyerPage() {
   const deleteFlyerMutation = useDeleteFlyer();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
-  const [selectedFlyer, setSelectedFlyer] = useState<Flyer | null>(null);
   const [editingFlyer, setEditingFlyer] = useState<Flyer | null>(null);
+
+  // Flyer whose full artwork is on screen, set by clicking a card image
+  const [previewFlyer, setPreviewFlyer] = useState<PreviewFlyer | null>(null);
+
+  // Which flyer's activate/deactivate request is currently running, so only
+  // that card shows a pending state rather than every card at once
+  const [togglingFlyerId, setTogglingFlyerId] = useState<string | null>(null);
   const [successModal, setSuccessModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -97,28 +106,49 @@ export default function FlyerPage() {
     }
   };
 
-  const handleDeactivateFlyer = (flyer: any) => {
-    setSelectedFlyer(flyer);
-    setIsPreviewModalOpen(true);
-  };
+  /**
+   * Flip a flyer between active and inactive using the existing update
+   * endpoint. The card only re-labels once the request has succeeded - on
+   * failure the flyer keeps its current state and the API message is shown.
+   */
+  const handleToggleFlyerActive = async (flyer: {
+    id: string;
+    name: string;
+    imageUrl?: string;
+    isActive?: boolean;
+  }) => {
+    // Guard against a second click while this flyer's request is in flight
+    if (togglingFlyerId) return;
 
-  const handleConfirmDeactivate = async (flyer: any) => {
+    const nextIsActive = !(flyer.isActive !== false);
+    setTogglingFlyerId(flyer.id);
+
     try {
       await updateFlyerMutation.mutateAsync({
         id: flyer.id,
-        data: { isActive: false },
+        data: {
+          name: flyer.name,
+          imageUrl: flyer.imageUrl,
+          isActive: nextIsActive,
+        },
       });
+
       setSuccessModal({
         isOpen: true,
-        title: "Flyer Deactivated Successfully",
-        message: "The flyer has been deactivated.",
+        title: nextIsActive
+          ? "Flyer Activated Successfully"
+          : "Flyer Deactivated Successfully",
+        message: nextIsActive
+          ? `"${flyer.name}" is now visible in the distributor app.`
+          : `"${flyer.name}" is now hidden from the distributor app.`,
       });
     } catch (err) {
-      setSuccessModal({
-        isOpen: true,
-        title: "Error",
-        message: "Failed to deactivate flyer. Please try again.",
-      });
+      toast.error(
+        getErrorMessage(err) ||
+          `Failed to ${nextIsActive ? "activate" : "deactivate"} flyer. Please try again.`,
+      );
+    } finally {
+      setTogglingFlyerId(null);
     }
   };
 
@@ -195,7 +225,9 @@ export default function FlyerPage() {
                   key={flyer.id}
                   flyer={flyer}
                   onEdit={handleEditFlyer}
-                  onDeactivate={handleDeactivateFlyer}
+                  onPreview={setPreviewFlyer}
+                  onToggleActive={handleToggleFlyerActive}
+                  isToggling={togglingFlyerId === flyer.id}
                   onDelete={handleDeleteFlyer}
                 />
               ))}
@@ -222,12 +254,11 @@ export default function FlyerPage() {
           flyer={editingFlyer}
         />
 
-        {/* Preview Flyer Modal */}
+        {/* Full Image Preview - opened by clicking a card's artwork */}
         <PreviewFlyerModal
-          isOpen={isPreviewModalOpen}
-          onClose={() => setIsPreviewModalOpen(false)}
-          flyer={selectedFlyer || undefined}
-          onConfirm={handleConfirmDeactivate}
+          isOpen={!!previewFlyer}
+          onClose={() => setPreviewFlyer(null)}
+          flyer={previewFlyer || undefined}
         />
 
         {/* Success Modal */}

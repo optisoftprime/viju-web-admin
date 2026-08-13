@@ -2,6 +2,9 @@
 
 import { useState, useMemo } from "react";
 import { Text } from "@/components/common";
+import Pagination from "@/components/Pagination";
+import RowDetailsModal from "@/components/RowDetailsModal";
+import { DEFAULT_SECTION_PAGE_SIZE } from "@/constants/pagination";
 import { Waybill as APIWaybill } from "@/src/lib/api/types";
 
 interface Waybill {
@@ -21,6 +24,11 @@ interface WaybillsSectionProps {
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
+  /** Server page size, when the parent drives pagination */
+  pageSize?: number;
+  onPageSizeChange?: (pageSize: number) => void;
+  /** Total rows across all pages - defaults to the rows handed in */
+  totalItems?: number;
 }
 
 // Mock waybills data
@@ -325,9 +333,16 @@ export default function WaybillsSection({
   currentPage: externalCurrentPage,
   totalPages: externalTotalPages,
   onPageChange,
+  pageSize: externalPageSize,
+  onPageSizeChange,
+  totalItems: externalTotalItems,
 }: WaybillsSectionProps) {
   const [internalPage, setInternalPage] = useState(1);
-  const itemsPerPage = 10;
+  const [internalPageSize, setInternalPageSize] = useState(
+    DEFAULT_SECTION_PAGE_SIZE,
+  );
+  const [detailsRow, setDetailsRow] = useState<Waybill | null>(null);
+  const itemsPerPage = externalPageSize ?? internalPageSize;
 
   // Convert API waybills to component waybills if needed
   const mappedWaybills = useMemo(() => {
@@ -341,17 +356,35 @@ export default function WaybillsSection({
   }, [waybills]);
 
   // Use external pagination if provided, otherwise use internal
+  const isServerPaged = externalCurrentPage !== undefined;
   const currentPage = externalCurrentPage ?? internalPage;
   const totalPages =
     externalTotalPages ?? Math.ceil(mappedWaybills.length / itemsPerPage);
   const handlePageChange = onPageChange ?? setInternalPage;
 
+  /**
+   * Server-paged rows already arrive one page at a time - slicing again
+   * would hide part of the page.
+   */
   const paginatedWaybills = useMemo(() => {
+    if (isServerPaged) return mappedWaybills;
     const startIndex = (currentPage - 1) * itemsPerPage;
     return mappedWaybills.slice(startIndex, startIndex + itemsPerPage);
-  }, [mappedWaybills, currentPage]);
+  }, [mappedWaybills, currentPage, itemsPerPage, isServerPaged]);
 
-  const totalItems = mappedWaybills.length;
+  const totalItems = externalTotalItems ?? mappedWaybills.length;
+
+  /**
+   * Changing the page size restarts at page 1 so the offset stays valid
+   */
+  const handlePageSizeChange = (size: number) => {
+    if (onPageSizeChange) {
+      onPageSizeChange(size);
+    } else {
+      setInternalPageSize(size);
+    }
+    handlePageChange(1);
+  };
 
   return (
     <div className="space-y-4">
@@ -397,7 +430,11 @@ export default function WaybillsSection({
                 index % 2 === 1 ? "" : "border-b border-[#F0F5F9]";
 
               return (
-                <tr key={waybill.id} className={`${bgColor} ${borderClass}`}>
+                <tr
+                  key={waybill.id}
+                  onClick={() => setDetailsRow(waybill)}
+                  className={`${bgColor} ${borderClass} cursor-pointer`}
+                >
                   <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
                     {waybill.waybill}
                   </td>
@@ -438,32 +475,50 @@ export default function WaybillsSection({
       </div>
 
       {/* Pagination */}
-      {mappedWaybills.length > itemsPerPage && (
-        <div className="flex justify-between items-center mt-6">
-          <Text variant="small" color="muted">
-            Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-            {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems}
-          </Text>
-          <div className="flex gap-2">
-            <button
-              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className="px-4 py-2 border border-muted/20 rounded-lg text-sm font-medium text-muted hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() =>
-                handlePageChange(Math.min(totalPages, currentPage + 1))
-              }
-              disabled={currentPage === totalPages}
-              className="px-4 py-2 border border-muted/20 rounded-lg text-sm font-medium text-muted hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalItems={totalItems}
+        itemsPerPage={itemsPerPage}
+        onPrevious={() => handlePageChange(Math.max(1, currentPage - 1))}
+        onNext={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+        onItemsPerPageChange={handlePageSizeChange}
+      />
+
+      {/* Row Details Modal - opened by clicking any row */}
+      <RowDetailsModal
+        open={!!detailsRow}
+        onClose={() => setDetailsRow(null)}
+        title={detailsRow?.waybill || "Waybill"}
+        subtitle="Waybill details"
+        sections={[
+          {
+            title: "Waybill",
+            fields: [
+              { label: "Waybill", value: detailsRow?.waybill, type: "id" },
+              {
+                label: "Linked Order",
+                value: detailsRow?.linkedOrderId,
+                type: "id",
+              },
+              { label: "Status", value: detailsRow?.status, type: "status" },
+              { label: "Loading Date", value: detailsRow?.loadingDate },
+            ],
+          },
+          {
+            title: "Shipment",
+            fields: [
+              { label: "Product", value: detailsRow?.product, fullWidth: true },
+              { label: "Quantity", value: detailsRow?.quantity },
+              { label: "Destination", value: detailsRow?.destination },
+              {
+                label: "Driver / Vehicle",
+                value: detailsRow?.driverVehicle,
+                fullWidth: true,
+              },
+            ],
+          },
+        ]}
+      />
     </div>
   );
 }
