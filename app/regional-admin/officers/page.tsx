@@ -2,23 +2,29 @@
 
 import { useState, useMemo } from "react";
 import { MainLayout } from "@/components/common";
-import { Text, Card, Button, Table, SearchInput } from "@/components/common";
+import { Text, Card, Table, SearchInput } from "@/components/common";
 import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
-import RowDetailsModal from "@/components/RowDetailsModal";
+import OfficerDetailsModal from "@/components/OfficerDetailsModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { usePagination, getTotalPages } from "@/hooks/usePagination";
+import { usePagination, getAppliedPageSize } from "@/hooks/usePagination";
+import { useOfficers } from "@/hooks/api/useOfficer";
 import { useAuthStore } from "@/store/auth.store";
+import { formatDateTime, formatRegion } from "@/utils/formatter";
+import { safeText, safeNumber, safeDateText } from "@/utils/safe";
 
-interface Officer {
+// Row shape rendered by the table (flattened from the API officer)
+interface OfficerRow {
   id: string;
   officer: string;
   email: string;
   region: string;
   phoneNo: string;
-  distributors: number;
+  customers: number;
   tickets: number;
+  status: string;
   lastLogin: string;
+  createdAt: string;
 }
 
 // Table columns definition
@@ -40,55 +46,81 @@ const tableColumns = [
     title: "PHONE NO",
   },
   {
-    key: "distributors" as const,
-    title: "DISTRIBUTORS",
+    key: "customers" as const,
+    title: "CUSTOMERS",
   },
   {
-    key: "tickets" as const,
-    title: "TICKETS",
+    key: "status" as const,
+    title: "STATUS",
   },
   {
-    key: "lastLogin" as const,
-    title: "LAST LOGIN",
+    key: "createdAt" as const,
+    title: "CREATED AT",
   },
 ];
 
-// Mock officers data
-const mockOfficersData: Officer[] = Array.from({ length: 25 }, (_, i) => ({
-  id: `${i + 1}`,
-  officer: "James Okonkwo",
-  email: "james@gmail.com",
-  region: "Lagos",
-  phoneNo: "+2349876543210",
-  distributors: 14,
-  tickets: 14,
-  lastLogin: "Today, 10:34",
-}));
-
 function RegionalAdminOfficersContent() {
+  const { user } = useAuthStore();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [detailsRow, setDetailsRow] = useState<OfficerRow | null>(null);
+
   const {
     currentPage,
     pageSize: itemsPerPage,
     setPageSize,
     previousPage,
     nextPage,
+    resetPage,
   } = usePagination();
-  const [detailsRow, setDetailsRow] = useState<Officer | null>(null);
-  const { user } = useAuthStore();
 
-  // Calculate pagination
-  const totalItems = mockOfficersData.length;
-  const paginatedData = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return mockOfficersData.slice(startIndex, endIndex);
-  }, [currentPage, itemsPerPage]);
+  /**
+   * A regional admin only ever lists their own region. The region travels to
+   * the API rather than being filtered here, so paging totals stay correct.
+   */
+  const region = user?.region;
+
+  const {
+    data: officersData,
+    isLoading,
+    error,
+  } = useOfficers({
+    page: currentPage,
+    pageSize: itemsPerPage,
+    search: searchTerm || undefined,
+    region,
+  });
+
+  /**
+   * Transform the API response into table rows
+   */
+  const tableData: OfficerRow[] = useMemo(() => {
+    if (!officersData?.data) return [];
+
+    return officersData.data.map((officer) => ({
+      id: officer.id,
+      officer: officer.name,
+      email: officer.email,
+      region: formatRegion(officer.region),
+      phoneNo: safeText(officer.phone),
+      customers: safeNumber(officer._count?.customers, 0),
+      tickets: safeNumber(officer._count?.supportTickets, 0),
+      status: officer.isActive === false ? "Inactive" : "Active",
+      lastLogin: officer.lastLoginAt ? safeDateText(officer.lastLoginAt) : "Never",
+      createdAt: officer.createdAt ? formatDateTime(officer.createdAt) : "N/A",
+    }));
+  }, [officersData?.data]);
+
+  const totalItems = officersData?.meta.total || 0;
+  const totalPages = officersData?.meta.totalPages || 1;
+  // The server clamps pageSize - report what it actually applied
+  const appliedPageSize = getAppliedPageSize(officersData?.meta, itemsPerPage);
 
   /**
    * Handle search input
    */
   const handleSearch = (value: string) => {
-    // Search logic can be implemented here
+    setSearchTerm(value);
+    resetPage();
   };
 
   /**
@@ -99,8 +131,7 @@ function RegionalAdminOfficersContent() {
   /**
    * Handle next page button click
    */
-  const handleNextPage = () =>
-    nextPage(getTotalPages(totalItems, itemsPerPage));
+  const handleNextPage = () => nextPage(totalPages);
 
   return (
     <MainLayout>
@@ -108,58 +139,99 @@ function RegionalAdminOfficersContent() {
         {/* Page Header Component */}
         <PageHeader
           title="Account Officers"
-          subtitle="View all account officers in your region"
+          subtitle={
+            region
+              ? `View all account officers in ${formatRegion(region)}`
+              : "View all account officers in your region"
+          }
         />
+
+        {/* The list cannot be scoped without a region on the signed-in user */}
+        {!region && (
+          <div className="rounded-lg border border-orange/30 bg-orange/10 px-4 py-3">
+            <Text variant="caption" weight="medium" color="orange">
+              Your account has no region set, so this list is not filtered by
+              region. Contact an administrator to have your region assigned.
+            </Text>
+          </div>
+        )}
 
         {/* Officers Card */}
         <Card border={false}>
-          {/* Data Table */}
-          <div className="overflow-x-auto ">
-            <Table
-              columns={tableColumns}
-              data={paginatedData}
-              onRowClick={setDetailsRow}
-              onActionClick={() => {}}
+          {/* Search */}
+          <div className="flex justify-end">
+            <SearchInput
+              placeholder="Search officers"
+              onSearch={handleSearch}
+              debounceDelay={500}
             />
           </div>
 
-          {/* Pagination Component */}
-          <Pagination
-            currentPage={currentPage}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            onPrevious={handlePreviousPage}
-            onNext={handleNextPage}
-            onItemsPerPageChange={setPageSize}
-          />
+          {/* Loading State */}
+          {isLoading && (
+            <div className="py-6 text-center">
+              <Text variant="caption" color="muted">
+                Loading officers...
+              </Text>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <div className="py-6 text-center">
+              <Text variant="caption" color="primary">
+                Error loading officers. Please try again.
+              </Text>
+            </div>
+          )}
+
+          {/* Data Table */}
+          {!isLoading && !error && (
+            <>
+              <div className="overflow-x-auto mt-6">
+                <Table
+                  columns={tableColumns}
+                  data={tableData}
+                  onRowClick={setDetailsRow}
+                  onActionClick={() => {}}
+                />
+              </div>
+
+              {/* Pagination Component */}
+              <Pagination
+                currentPage={currentPage}
+                totalItems={totalItems}
+                itemsPerPage={appliedPageSize}
+                onPrevious={handlePreviousPage}
+                onNext={handleNextPage}
+                onItemsPerPageChange={setPageSize}
+              />
+            </>
+          )}
         </Card>
 
-        {/* Row Details Modal - opened by clicking any table row */}
-        <RowDetailsModal
+        {/* Officer Details Modal - profile plus customer conversations */}
+        <OfficerDetailsModal
           open={!!detailsRow}
           onClose={() => setDetailsRow(null)}
-          title={detailsRow?.officer || "Officer"}
-          subtitle="Account officer details"
-          sections={[
-            {
-              title: "Officer",
-              fields: [
-                { label: "Name", value: detailsRow?.officer },
-                { label: "Region", value: detailsRow?.region },
-                { label: "Email", value: detailsRow?.email, fullWidth: true },
-                { label: "Phone Number", value: detailsRow?.phoneNo },
-              ],
-            },
-            {
-              title: "Portfolio",
-              fields: [
-                { label: "Distributors", value: detailsRow?.distributors },
-                { label: "Tickets", value: detailsRow?.tickets },
-                { label: "Last Login", value: detailsRow?.lastLogin },
-              ],
-            },
-          ]}
+          officer={
+            detailsRow
+              ? {
+                  id: detailsRow.id,
+                  name: detailsRow.officer,
+                  email: detailsRow.email,
+                  phone: detailsRow.phoneNo,
+                  region: detailsRow.region,
+                  status: detailsRow.status,
+                  customers: detailsRow.customers,
+                  tickets: detailsRow.tickets,
+                  lastLogin: detailsRow.lastLogin,
+                  createdAt: detailsRow.createdAt,
+                }
+              : null
+          }
         />
+
       </div>
     </MainLayout>
   );

@@ -1,0 +1,299 @@
+"use client";
+
+import React, { useState } from "react";
+import { Modal } from "@/components/common/Modal";
+import { Text } from "@/components/common/Text";
+import { useAuditChats } from "@/hooks/api/useAudit";
+import { useOfficer } from "@/hooks/api/useOfficer";
+import { formatRegion } from "@/utils/formatter";
+import { safeArray, safeText, safeNumber, safeDateText } from "@/utils/safe";
+import type { AuditChatThread, AuditChatMessage } from "@/lib/api/types";
+
+export interface OfficerProfile {
+  id: string;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  region?: string | null;
+  status?: string | null;
+  customers?: number | null;
+  tickets?: number | null;
+  lastLogin?: string | null;
+  createdAt?: string | null;
+}
+
+interface OfficerDetailsModalProps {
+  open: boolean;
+  onClose: () => void;
+  officer: OfficerProfile | null;
+}
+
+/** One label/value pair in the profile grid */
+function Field({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <Text variant="small" weight="bold" color="foreground">
+        {label}
+      </Text>
+      <Text variant="caption" weight="medium" color="muted">
+        {value}
+      </Text>
+    </div>
+  );
+}
+
+/**
+ * A single chat message inside an expanded thread.
+ * Staff messages sit on the right, the customer messages on the left.
+ */
+function ChatBubble({ message }: { message: AuditChatMessage }) {
+  const isStaff = message?.senderType === "STAFF";
+  const body = safeText(message?.content, "");
+  const attachment =
+    typeof message?.attachmentUrl === "string" && message.attachmentUrl.trim()
+      ? message.attachmentUrl
+      : null;
+
+  // A message with neither text nor an attachment has nothing to render
+  if (!body && !attachment) return null;
+
+  return (
+    <div className={`flex ${isStaff ? "justify-end" : "justify-start"}`}>
+      <div
+        className={`max-w-[80%] rounded-xl px-3 py-2 ${
+          isStaff ? "bg-primary/10" : "bg-muted/10"
+        }`}
+      >
+        {body && (
+          <p className="text-[12px] text-foreground whitespace-pre-wrap break-words">
+            {body}
+          </p>
+        )}
+        {attachment && (
+          <a
+            href={attachment}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] text-primary underline break-all"
+          >
+            View attachment
+          </a>
+        )}
+        <p className="text-[10px] text-muted mt-1">
+          {safeDateText(message?.createdAt, "")}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * One conversation between this officer and a customer. Collapsed to a
+ * summary row until clicked, so a long history does not flood the modal.
+ */
+function ChatThread({ thread }: { thread: AuditChatThread }) {
+  const [expanded, setExpanded] = useState(false);
+  const messages = safeArray<AuditChatMessage>(thread?.messages);
+  const total = safeNumber(thread?.messageCount, messages.length);
+
+  return (
+    <div className="border border-muted/20 rounded-lg overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setExpanded((prev) => !prev)}
+        className="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-muted/5"
+      >
+        <div className="min-w-0">
+          <Text variant="caption" weight="bold" color="foreground">
+            {safeText(thread?.customer?.name, "Unknown customer")}
+          </Text>
+          <Text variant="small" weight="medium" color="muted">
+            {total} {total === 1 ? "message" : "messages"}
+            {thread?.lastMessageAt
+              ? ` - last ${safeDateText(thread.lastMessageAt, "")}`
+              : ""}
+          </Text>
+        </div>
+        <span className="text-muted text-[11px] shrink-0">
+          {expanded ? "Hide" : "View"}
+        </span>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-muted/20 px-3 py-3 space-y-2 max-h-64 overflow-y-auto bg-white">
+          {messages.length === 0 ? (
+            <Text variant="small" weight="medium" color="muted">
+              No messages available for this conversation.
+            </Text>
+          ) : (
+            messages.map((message, index) => (
+              <ChatBubble
+                key={safeText(message?.id, String(index))}
+                message={message}
+              />
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Officer Details Modal
+ * Profile of a single account officer plus their read-only customer
+ * conversations.
+ *
+ * Both halves are keyed on the officer UUID (B-4.1 / B-4.2): the profile from
+ * GET /admin/officers/{id}, the conversations from the chat audit filtered by
+ * officerId. A regional admin is authorised on both routes within their own
+ * region; outside it the API answers 403 and each half degrades independently
+ * rather than blanking the modal.
+ */
+export default function OfficerDetailsModal({
+  open,
+  onClose,
+  officer,
+}: OfficerDetailsModalProps) {
+  const officerId = officer?.id?.trim() || "";
+  const shouldQuery = open && Boolean(officerId);
+
+  // B-4.1 - authoritative profile. The row data renders immediately and each
+  // field is replaced as the detail resolves, so the modal is never blank.
+  const { data: detail, error: detailError } = useOfficer(
+    shouldQuery ? officerId : undefined,
+  );
+
+  // B-4.2 - exact UUID filter. Names were ambiguous when two officers shared
+  // one, and a regional admin is now authorised on this route.
+  const {
+    data: chatData,
+    isLoading,
+    error,
+  } = useAuditChats(shouldQuery ? { officerId, pageSize: 50 } : {});
+
+  const threads = safeArray<AuditChatThread>(chatData?.data);
+
+  // Prefer the detail response, fall back to the row the user clicked
+  const counts = detail?._count;
+  const customerCount =
+    counts?.customers ?? detail?.distributors ?? officer?.customers;
+  const ticketCount =
+    counts?.supportTickets ?? detail?.openTickets ?? officer?.tickets;
+  const threadCount = counts?.chatThreads;
+  const region = detail?.region ?? officer?.region;
+  const status =
+    typeof detail?.isActive === "boolean"
+      ? detail.isActive
+        ? "Active"
+        : "Inactive"
+      : officer?.status;
+  const lastLogin = detail?.lastLoginAt
+    ? safeDateText(detail.lastLoginAt)
+    : (officer?.lastLogin ?? "Never");
+
+  return (
+    <Modal open={open} onClose={onClose}>
+      <div className="w-full max-w-lg mx-auto max-h-[80vh] overflow-y-auto p-1">
+        {/* Header */}
+        <div className="border-b border-muted/20 pb-3 pr-8">
+          <Text variant="body" weight="bold" color="foreground">
+            {safeText(officer?.name, "Officer")}
+          </Text>
+          <Text variant="caption" weight="medium" color="muted">
+            Account officer profile
+          </Text>
+        </div>
+
+        {/* Profile */}
+        <div className="space-y-3 pt-5">
+          <Text
+            variant="caption"
+            weight="bold"
+            color="muted"
+            className="uppercase tracking-wider"
+          >
+            Profile
+          </Text>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+            <Field
+              label="Email"
+              value={safeText(detail?.email ?? officer?.email)}
+            />
+            <Field
+              label="Phone Number"
+              value={safeText(detail?.phone ?? officer?.phone)}
+            />
+            <Field label="Region" value={formatRegion(region)} />
+            <Field label="Status" value={safeText(status)} />
+            <Field label="Customers" value={safeNumber(customerCount, 0)} />
+            <Field label="Open Tickets" value={safeNumber(ticketCount, 0)} />
+            <Field label="Last Login" value={safeText(lastLogin, "Never")} />
+            <Field
+              label="Conversations"
+              value={
+                typeof threadCount === "number"
+                  ? threadCount
+                  : threads.length
+              }
+            />
+          </div>
+        </div>
+
+        {/* A 403/404 on the profile leaves the clicked row's values in place */}
+        {detailError ? (
+          <Text variant="small" weight="medium" color="muted" className="pt-3">
+            Full profile could not be loaded; showing the summary from the list.
+          </Text>
+        ) : null}
+
+        {/* Customer conversations */}
+        <div className="space-y-3 pt-6">
+          <Text
+            variant="caption"
+            weight="bold"
+            color="muted"
+            className="uppercase tracking-wider"
+          >
+            Customer Chats
+          </Text>
+
+          {!shouldQuery && (
+            <Text variant="small" weight="medium" color="muted">
+              Conversations are unavailable for this officer.
+            </Text>
+          )}
+
+          {shouldQuery && isLoading && (
+            <Text variant="small" weight="medium" color="muted">
+              Loading conversations...
+            </Text>
+          )}
+
+          {shouldQuery && !isLoading && error && (
+            <Text variant="small" weight="medium" color="muted">
+              Conversations could not be loaded for this officer.
+            </Text>
+          )}
+
+          {shouldQuery && !isLoading && !error && threads.length === 0 && (
+            <Text variant="small" weight="medium" color="muted">
+              This officer has no recorded conversations with customers.
+            </Text>
+          )}
+
+          {shouldQuery && !isLoading && !error && threads.length > 0 && (
+            <div className="space-y-2">
+              {threads.map((thread, index) => (
+                <ChatThread
+                  key={safeText(thread?.id, String(index))}
+                  thread={thread}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </Modal>
+  );
+}

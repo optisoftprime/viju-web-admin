@@ -6,6 +6,8 @@ import { Text, Modal, Input, Button } from "@/components/common";
 import OfficerSelectionCard from "@/components/OfficerSelectionCard";
 import searchIcon from "@/assets/icons/search-icon-gray.svg";
 import { BoldTopText } from "./common/BoldTopText";
+import { useLoadingOfficers } from "@/hooks/api/useLoading";
+import { safeText, safeNumber } from "@/utils/safe";
 
 interface Officer {
   id: string;
@@ -17,6 +19,8 @@ interface AssignLoadingOfficerModalProps {
   isOpen?: boolean;
   onClose?: () => void;
   onConfirm?: (officer: Officer) => void;
+  /** True while the parent's assign request is in flight */
+  isSubmitting?: boolean;
   truckName?: string;
   driver?: string;
   date?: string;
@@ -24,16 +28,11 @@ interface AssignLoadingOfficerModalProps {
   region?: string;
 }
 
-const mockOfficers: Officer[] = [
-  { id: "1", name: "Ifeanyi Okonkwo", role: "Loading - 14 active loads" },
-  { id: "2", name: "Ifeanyi Okonkwo", role: "Loading - 14 active loads" },
-  { id: "3", name: "Ifeanyi Okonkwo", role: "Loading - 14 active loads" },
-];
-
 export default function AssignLoadingOfficerModal({
   isOpen = false,
   onClose,
   onConfirm,
+  isSubmitting = false,
   truckName = "LAG-234-XY",
   driver = "John Dare",
   date = "Today, 14:00",
@@ -45,17 +44,36 @@ export default function AssignLoadingOfficerModal({
   );
   const [searchInput, setSearchInput] = useState("");
 
+  // RA-06 - real loading officers, not the three hardcoded names
+  const {
+    data: officersResponse,
+    isLoading: isLoadingOfficers,
+    error: officersError,
+  } = useLoadingOfficers(searchInput.trim() || undefined);
+
+  const officers: Officer[] = useMemo(
+    () =>
+      (Array.isArray(officersResponse) ? officersResponse : []).map(
+        (officer: any) => ({
+          id: safeText(officer?.id, ""),
+          name: safeText(officer?.name, "Unnamed officer"),
+          role: `Loading - ${safeNumber(officer?._count?.customers, 0)} assigned`,
+        }),
+      ),
+    [officersResponse],
+  );
+
   // Filter officers based on search input
   const filteredOfficers = useMemo(() => {
-    if (!searchInput.trim()) return mockOfficers;
-    return mockOfficers.filter(
+    if (!searchInput.trim()) return officers;
+    return officers.filter(
       (officer) =>
         officer.name.toLowerCase().includes(searchInput.toLowerCase()) ||
         officer.role.toLowerCase().includes(searchInput.toLowerCase()),
     );
   }, [searchInput]);
 
-  const selectedOfficer = mockOfficers.find((o) => o.id === selectedOfficerId);
+  const selectedOfficer = officers.find((o) => o.id === selectedOfficerId);
 
   const handleConfirm = () => {
     if (selectedOfficer) {
@@ -137,7 +155,13 @@ export default function AssignLoadingOfficerModal({
             ) : (
               <div className="p-4 text-center">
                 <Text variant="caption" color="muted">
-                  No officers found
+                  {isLoadingOfficers
+                    ? "Loading officers..."
+                    : officersError
+                      ? "Could not load loading officers. Please try again."
+                      : searchInput.trim()
+                        ? "No officers match that search"
+                        : "No loading officers available in your region"}
                 </Text>
               </div>
             )}

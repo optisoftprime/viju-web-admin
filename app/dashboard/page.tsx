@@ -44,6 +44,9 @@ import userIcon from "@/assets/icons/usersblack.svg";
 import { TextExtremeEnd } from "@/components/common/TextExtremeEnd";
 import { formatDateTime, formatToNaira } from "@/src/utils/formatter";
 import { useGreeting, getPortalName } from "@/src/utils/greeting";
+import { safeArray, safeNumber, safeText } from "@/utils/safe";
+import { buildErpCaption } from "@/utils/erp";
+import ErpDataQualityBanner from "@/components/ErpDataQualityBanner";
 import Image from "next/image";
 import { useAuthStore } from "@/src/store/auth.store";
 import { useRouter } from "next/navigation";
@@ -90,11 +93,11 @@ interface AdminDashboardSummary {
 const tableColumns = [
   {
     key: "name" as const,
-    title: "DISTRIBUTOR",
+    title: "CUSTOMER",
   },
   {
     key: "account" as const,
-    title: "ACCOUNT#",
+    title: "CODE",
   },
   {
     key: "balance" as const,
@@ -125,11 +128,11 @@ const tableColumns = [
 const officerTableColumns = [
   {
     key: "name" as const,
-    title: "DISTRIBUTOR",
+    title: "CUSTOMER",
   },
   {
     key: "account" as const,
-    title: "ACCOUNT#",
+    title: "CODE",
   },
   {
     key: "balance" as const,
@@ -153,7 +156,7 @@ const officerTableColumns = [
 const loadingRequestTableColumns = [
   {
     key: "name" as const,
-    title: "DISTRIBUTOR",
+    title: "CUSTOMER",
   },
   {
     key: "account" as const,
@@ -203,131 +206,6 @@ const mockDistributorData: Distributor[] = [
     openTickets: 3,
     lastContact: "2026-03-23",
     status: "Success",
-    action: "View",
-  },
-];
-
-// Mock loading requests for regional admin
-const mockLoadingRequests: Distributor[] = [
-  {
-    id: "1",
-    name: "Bello & Sons LTD",
-    account: "ORD-00294",
-    balance: "320 Cartons",
-    lastPurchase: "Today, 14:00",
-    openTickets: 0,
-    lastContact: "LAG-234-XY",
-    status: "Pending",
-    action: "Assign Officer",
-  },
-  {
-    id: "2",
-    name: "Bello & Sons LTD",
-    account: "ORD-00294",
-    balance: "320 Cartons",
-    lastPurchase: "Today, 14:00",
-    openTickets: 0,
-    lastContact: "LAG-234-XY",
-    status: "Pending",
-    action: "Assign Officer",
-  },
-  {
-    id: "3",
-    name: "Bello & Sons LTD",
-    account: "ORD-00294",
-    balance: "320 Cartons",
-    lastPurchase: "Today, 14:00",
-    openTickets: 0,
-    lastContact: "LAG-234-XY",
-    status: "Assigned",
-    action: "Ifeanyi Okon",
-  },
-  {
-    id: "4",
-    name: "Bello & Sons LTD",
-    account: "ORD-00294",
-    balance: "320 Cartons",
-    lastPurchase: "Today, 14:00",
-    openTickets: 0,
-    lastContact: "LAG-234-XY",
-    status: "Pending",
-    action: "Assign Officer",
-  },
-  {
-    id: "5",
-    name: "Bello & Sons LTD",
-    account: "ORD-00294",
-    balance: "320 Cartons",
-    lastPurchase: "Today, 14:00",
-    openTickets: 0,
-    lastContact: "LAG-234-XY",
-    status: "Assigned",
-    action: "Ifeanyi Okon",
-  },
-  {
-    id: "6",
-    name: "Bello & Sons LTD",
-    account: "ORD-00294",
-    balance: "320 Cartons",
-    lastPurchase: "Today, 14:00",
-    openTickets: 0,
-    lastContact: "LAG-234-XY",
-    status: "Pending",
-    action: "Assign Officer",
-  },
-  {
-    id: "7",
-    name: "Bello & Sons LTD",
-    account: "ORD-00294",
-    balance: "320 Cartons",
-    lastPurchase: "Today, 14:00",
-    openTickets: 0,
-    lastContact: "LAG-234-XY",
-    status: "Assigned",
-    action: "View",
-  },
-  {
-    id: "8",
-    name: "Bello & Sons LTD",
-    account: "ORD-00294",
-    balance: "320 Cartons",
-    lastPurchase: "Today, 14:00",
-    openTickets: 0,
-    lastContact: "LAG-234-XY",
-    status: "Assigned",
-    action: "View",
-  },
-  {
-    id: "9",
-    name: "Bello & Sons LTD",
-    account: "ORD-00294",
-    balance: "320 Cartons",
-    lastPurchase: "Today, 14:00",
-    openTickets: 0,
-    lastContact: "LAG-234-XY",
-    status: "Assigned",
-    action: "View",
-  },
-  {
-    id: "10",
-    name: "Bello & Sons LTD",
-    account: "ORD-00294",
-    balance: "320 Cartons",
-    lastPurchase: "Today, 14:00",
-    openTickets: 0,
-    lastContact: "LAG-234-XY",
-    status: "In progress",
-    action: "View",
-  },
-  {
-    id: "11",
-    name: "Bello & Sons LTD",
-    account: "ORD-00294",
-    balance: "320 Cartons",
-    lastPurchase: "Today, 14:00",
-    openTickets: 0,
-    lastContact: "LAG-234-XY",
-    status: "Assigned",
     action: "View",
   },
 ];
@@ -440,17 +318,21 @@ function DashboardContent() {
     waybillPageSize,
   );
 
-  // Helper function to format large numbers
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat("en-NG").format(num);
+  /**
+   * Format a count for a stat tile.
+   * ERP counts are still being reconciled, so a stat can arrive undefined or
+   * null - render 0 rather than "NaN".
+   */
+  const formatNumber = (num: unknown) => {
+    return new Intl.NumberFormat("en-NG").format(safeNumber(num, 0));
   };
 
-  // Helper function to format currency
-  const formatCurrency = (num: number) => {
+  // Helper function to format currency - same guard as formatNumber
+  const formatCurrency = (num: unknown) => {
     return new Intl.NumberFormat("en-NG", {
       style: "currency",
       currency: "NGN",
-    }).format(num);
+    }).format(safeNumber(num, 0));
   };
 
   // Helper function to format date
@@ -480,16 +362,25 @@ function DashboardContent() {
     }));
   };
 
-  // function to Map admin data to card format
+  /**
+   * Map admin data to card format.
+   * byRegion is optional and each member can be null while the ERP projector
+   * is behind, so everything is normalised to a concrete value here.
+   */
   const mapAdminDashboardDataToCard = (
-    adminStats: AdminDashboardStats,
+    adminStats?: AdminDashboardStats | null,
   ): AdminDashboardCard[] => {
-    return adminStats?.byRegion.map((stat) => ({
-      region: stat.region,
-      distributors: stat.distributors,
-      walletBalance: stat.walletBalance,
-      openTickets: stat.openTickets,
-      activeOfficers: stat.activeOfficers,
+    return safeArray<NonNullable<AdminDashboardStats["byRegion"]>[number]>(
+      adminStats?.byRegion,
+    ).map((stat) => ({
+      region: {
+        name: safeText(stat?.region?.name, "Unknown"),
+        dist: safeNumber(stat?.region?.dist, 0),
+      },
+      distributors: safeNumber(stat?.distributors, 0),
+      walletBalance: safeNumber(stat?.walletBalance, 0),
+      openTickets: safeNumber(stat?.openTickets, 0),
+      activeOfficers: safeNumber(stat?.activeOfficers, 0),
     }));
   };
 
@@ -520,14 +411,6 @@ function DashboardContent() {
   // Transform table data based on role
   const transformedTableData: Distributor[] | AdminDashboardCard[] =
     useMemo(() => {
-      // if (!tableData && user?.role !== ("REGIONAL_ADMIN" as any))
-      //   return mockDistributorData;
-
-      if ((user?.role as any) === "REGIONAL_ADMIN") {
-        // For REGIONAL_ADMIN, use mock data
-        return mockLoadingRequests;
-      }
-
       if (user?.role === "OFFICER" && Array.isArray(tableData)) {
         return mapOfficerCustomersToTable(tableData as OfficerCustomer[]);
       }
@@ -536,14 +419,14 @@ function DashboardContent() {
         return mapAdminDashboardDataToCard(tableData as AdminDashboardStats);
       }
 
-      if (
-        (user?.role as any) === "REGIONAL_ADMIN" &&
-        tableData &&
-        "pendingLoadingRequests" in tableData
-      ) {
-        const regionalData = tableData as RegionalAdminDashboardResponse;
+      // RA-02 - live branch. pendingLoadingRequests stays empty until
+      // distributors submit loading requests, so guard for a missing array.
+      if ((user?.role as any) === "REGIONAL_ADMIN") {
+        const regionalData = tableData as RegionalAdminDashboardResponse | undefined;
         return mapPendingLoadingRequestsToTable(
-          regionalData.pendingLoadingRequests,
+          Array.isArray(regionalData?.pendingLoadingRequests)
+            ? regionalData.pendingLoadingRequests
+            : [],
         );
       }
 
@@ -590,6 +473,13 @@ function DashboardContent() {
             icon={userIcon}
             label="Total Customers"
             value={formatNumber(stats.totalCustomers)}
+            caption={buildErpCaption(stats)}
+          />
+          {/* B-1.2 - pairs with the "Unassigned only" filter on the customer list */}
+          <StatCard
+            icon={userIcon}
+            label="Unassigned Customers"
+            value={formatNumber(stats.customersWithoutOfficer)}
           />
           <StatCard
             icon={userIcon}
@@ -794,8 +684,19 @@ function DashboardContent() {
                 <ExportRecord onClick={handleExport} isLoading={isExporting} />
               )}
             </div>
-            {/* Stats Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 ">
+            {/* B-2 - visible pipeline state instead of a silently short list */}
+            {user?.role === "ADMIN" && !statsError && (
+              <ErpDataQualityBanner
+                stats={dashboardStats as AdminDashboardStats | undefined}
+              />
+            )}
+
+            {/* Stats Cards Grid - admin carries one extra tile */}
+            <div
+              className={`grid grid-cols-1 gap-4 md:grid-cols-4 ${
+                user?.role === "ADMIN" ? "lg:grid-cols-5" : ""
+              }`}
+            >
               {renderStats()}
             </div>
           </>
@@ -895,7 +796,7 @@ function DashboardContent() {
                 </div>
                 {/* Search Input Component */}
                 <SearchInput
-                  placeholder="Search name or account"
+                  placeholder="Search name or code"
                   onSearch={handleSearch}
                   debounceDelay={500}
                   fullWidth={true}
@@ -1094,6 +995,10 @@ function DashboardContent() {
                       ) : stockData ? (
                         <StockSection
                           catalogue={stockData.catalogue}
+                          /* Backend handoff: there is no top-level
+                             awaitingLoading array any more - it is a field on
+                             each catalogue row. Kept optional for older
+                             deployments that still send it. */
                           awaitingLoading={stockData.awaitingLoading}
                         />
                       ) : (
@@ -1214,7 +1119,7 @@ function DashboardContent() {
               {/* Pagination Component */}
               <Pagination
                 currentPage={currentPage}
-                totalItems={mockLoadingRequests.length}
+                totalItems={totalItems}
                 itemsPerPage={itemsPerPage}
                 onPrevious={handlePreviousPage}
                 onNext={handleNextPage}

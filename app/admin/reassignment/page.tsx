@@ -9,12 +9,15 @@ import AssignAccountOfficerModal from "@/components/AssignAccountOfficerModal";
 import SuccessModal from "@/components/SuccessModal";
 import RowDetailsModal from "@/components/RowDetailsModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { usePagination } from "@/hooks/usePagination";
+import { formatRegion, formatToNaira } from "@/utils/formatter";
+import { safeArray, safeNumber, safeText } from "@/utils/safe";
+import { usePagination, getAppliedPageSize } from "@/hooks/usePagination";
 import { toast } from "sonner";
 import { useCustomersForReassignment } from "@/hooks/api/useCustomer";
 import { useReassignOfficerCustomers } from "@/hooks/api/useOfficer";
 import { customerService } from "@/services/customer.service";
 import { BroadcastRegion } from "@/lib/api/types";
+import { REGION_FILTER_TABS } from "@/constants/regions";
 import ExportRecord from "@/components/ExportRecord";
 
 // Interface for customer data structure (transformed from API)
@@ -38,7 +41,7 @@ interface CustomerTableRow {
 const tableColumns = [
   {
     key: "name" as const,
-    title: "DISTRIBUTOR",
+    title: "CUSTOMER",
   },
   {
     key: "phoneNo" as const,
@@ -46,7 +49,7 @@ const tableColumns = [
   },
   {
     key: "account" as const,
-    title: "ACCOUNT",
+    title: "CODE",
   },
   {
     key: "region" as const,
@@ -74,14 +77,8 @@ const tableColumns = [
   },
 ];
 
-// Region options for tabs
-const regions = [
-  { name: "All Regions", value: "" },
-  { name: "Lagos", value: "LAGOS" },
-  { name: "South West", value: "SOUTH_WEST" },
-  { name: "South East", value: "SOUTH_EAST" },
-  { name: "North", value: "NORTH" },
-];
+// Region options for tabs - canonical list, see @/constants/regions
+const regions = REGION_FILTER_TABS;
 
 function CustomerReassignmentContent() {
   // State for active region filter
@@ -140,24 +137,35 @@ function CustomerReassignmentContent() {
   const tableData: CustomerTableRow[] = useMemo(() => {
     if (!customersData?.data) return [];
 
-    return customersData.data.map((customer) => ({
-      id: customer.id,
-      name: customer.name,
-      phoneNo: customer.phone,
-      account: customer.erpId,
-      region: customer.region,
-      officers: customer.officerAssignments?.[0]?.staff?.name || "Unassigned",
-      wallet: `₦${customer.outstandingBalance?.toLocaleString() || "0"}`,
-      stock: `₦${customer.outstandingBalance?.toLocaleString() || "0"}`,
-      tickets: customer._count?.supportTickets || 0,
-      action: "Reassign Officer",
-      currentOfficerId: customer.officerAssignments?.[0]?.staff?.id,
-      currentOfficerName: customer.officerAssignments?.[0]?.staff?.name,
-    }));
+    return customersData.data.map((customer) => {
+      const primary = safeArray<{
+        staff?: { id?: string; name?: string } | null;
+      }>(customer?.officerAssignments)[0]?.staff;
+
+      const cartons = safeNumber(customer?.stockBalanceCartons, 0);
+
+      return {
+        id: customer.id,
+        name: safeText(customer?.name, "Unnamed customer"),
+        phoneNo: safeText(customer?.phone),
+        account: safeText(customer?.erpId),
+        region: formatRegion(customer?.region),
+        officers: primary?.name || "Unassigned",
+        wallet: formatToNaira(safeNumber(customer?.outstandingBalance, 0)),
+        // B-1.1 - cartons awaiting loading, not a second copy of the balance
+        stock: `${cartons.toLocaleString()} ${cartons === 1 ? "Carton" : "Cartons"}`,
+        tickets: safeNumber(customer?._count?.supportTickets, 0),
+        action: "Reassign Officer",
+        currentOfficerId: primary?.id,
+        currentOfficerName: primary?.name,
+      };
+    });
   }, [customersData?.data]);
 
   const totalItems = customersData?.meta.total || 0;
   const totalPages = customersData?.meta.totalPages || 1;
+  // The server clamps pageSize - report what it actually applied
+  const appliedPageSize = getAppliedPageSize(customersData?.meta, itemsPerPage);
 
   /**
    * Reset pagination when region changes
@@ -239,7 +247,7 @@ function CustomerReassignmentContent() {
     // This endpoint moves a source officer's book - it needs one to move from
     if (!currentOfficerId) {
       toast.error(
-        `${selectedCustomer.name} has no account officer yet. Assign one from the Distributors page.`,
+        `${selectedCustomer.name} has no account officer yet. Assign one from the Customers page.`,
       );
       return;
     }
@@ -307,7 +315,7 @@ function CustomerReassignmentContent() {
                       : "bg-white border border-muted/30 hover:border-primary hover:bg-primary hover:text-white"
                   }
                 >
-                  {region.name}
+                  {region.label}
                 </Button>
               ))}
 
@@ -316,7 +324,7 @@ function CustomerReassignmentContent() {
                 type="text"
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
-                placeholder="Search name or account"
+                placeholder="Search name or code"
                 className="px-3 py-2 border border-muted/30 rounded-lg text-sm"
               />
             </div>
@@ -351,7 +359,7 @@ function CustomerReassignmentContent() {
               <Pagination
                 currentPage={currentPage}
                 totalItems={totalItems}
-                itemsPerPage={itemsPerPage}
+                itemsPerPage={appliedPageSize}
                 onPrevious={handlePreviousPage}
                 onNext={handleNextPage}
                 onItemsPerPageChange={setPageSize}
@@ -393,7 +401,7 @@ function CustomerReassignmentContent() {
               title: "Customer",
               fields: [
                 { label: "Name", value: detailsRow?.name },
-                { label: "Account", value: detailsRow?.account, type: "id" },
+                { label: "Code", value: detailsRow?.account, type: "id" },
                 { label: "Phone Number", value: detailsRow?.phoneNo },
                 { label: "Region", value: detailsRow?.region },
               ],

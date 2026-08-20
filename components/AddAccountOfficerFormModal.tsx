@@ -8,6 +8,7 @@ import * as yup from "yup";
 import { Button, Input, Modal, Select, Text } from "./common";
 import { useCreateOfficer } from "@/hooks/api/useOfficer";
 import { BroadcastRegion } from "@/lib/api/types";
+import { REGIONS } from "@/constants/regions";
 
 interface AddAccountOfficerModalProps {
   isOpen: boolean;
@@ -39,12 +40,7 @@ const schema = yup.object({
 
 type FormData = yup.InferType<typeof schema>;
 
-const regions = [
-  { label: "Lagos", value: "LAGOS" },
-  { label: "South West", value: "SOUTH_WEST" },
-  { label: "South East", value: "SOUTH_EAST" },
-  { label: "North", value: "NORTH" },
-];
+const regions = REGIONS;
 
 // Generate password function
 const generatePassword = () => {

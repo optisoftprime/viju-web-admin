@@ -45,6 +45,25 @@ export const usePagination = (initialPageSize: number = DEFAULT_PAGE_SIZE) => {
 };
 
 /**
+ * Page size the server actually applied.
+ *
+ * A user can type any positive number into the page-size input; the API clamps
+ * it (to 200) and echoes the applied value back in `meta.pageSize`. Reading
+ * that back keeps the "showing X of Y" line honest instead of reporting the
+ * requested size. Falls back to the requested size when meta is missing or
+ * malformed.
+ */
+export const getAppliedPageSize = (
+  meta: { pageSize?: unknown } | null | undefined,
+  requested: number,
+): number => {
+  const applied = Number(meta?.pageSize);
+  return Number.isFinite(applied) && applied > 0
+    ? Math.floor(applied)
+    : Math.max(1, requested);
+};
+
+/**
  * Total page count for a result set, never below 1 so "Page 1 of 1" holds
  * for an empty table.
  */

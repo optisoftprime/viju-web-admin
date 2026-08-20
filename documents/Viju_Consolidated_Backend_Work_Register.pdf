@@ -1,0 +1,1898 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Length 59602 >>
+stream
+BT /F3 18.00 Tf 0.120 0.220 0.390 rg 24.00 1151.55 Td (Viju - Consolidated Backend Work Register) Tj ET
+BT /F1 8.50 Tf 0.420 0.460 0.530 rg 24.00 1134.55 Td (Merged pending backend items from the Web Portal specification \(Account Officer, Administrator, Regional Admin, Loading Officer\) and the Customer Mobile App specification.) Tj ET
+BT /F1 8.50 Tf 0.420 0.460 0.530 rg 24.00 1122.55 Td (36 items total  -  24 web, 12 mobile  |  Timeline: 18 at 3 days, 18 at 5 days  |  All items Status = Pending  |  Base URL: https://dev-api-viju.optisoft.com.ng/api/v1) Tj ET
+BT /F1 8.50 Tf 0.420 0.460 0.530 rg 24.00 1110.55 Td (Endpoint Provided: Yes = the web portal already has endpoints provided by the backend;  No = not yet provided for the mobile app.   Timeline: 3 days = additive fields or behaviour on a working route;  5 days = new endpoint, new state model, or new infrastructure.) Tj ET
+BT /F1 8.50 Tf 0.360 0.180 0.550 rg 24.00 1098.55 Td (Shared scope: web AO-13 and mobile BE-07 are the same push delivery work.  Web AO-10/CC-03 and mobile BE-08 are the same realtime channel.  Web LO-05 produces the waybill record mobile BE-05 exposes to the customer.  Deliver each once.) Tj ET
+0.120 0.220 0.390 rg 24.00 1059.75 1635.00 20.80 re f
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 27.00 1072.55 Td (Issue) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 167.00 1072.55 Td (Platform) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 221.00 1072.55 Td (Status) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 275.00 1072.55 Td (Time Line) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 333.00 1072.55 Td (Endpoint) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 333.00 1065.15 Td (Provided) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 399.00 1072.55 Td (Endpoint Exists?) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 467.00 1072.55 Td (Existing Frontend / Mobile Endpoint\(s\)) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 647.00 1072.55 Td (Expectation / Required Backend Changes) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 947.00 1072.55 Td (New Endpoint \(if Required\)) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 1127.00 1072.55 Td (Request Body) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 1302.00 1072.55 Td (Query / Filters) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 1462.00 1072.55 Td (Sample Response) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 1050.75 Td (AO-05) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 1043.35 Td (Dashboard: sort table by any column) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 1035.95 Td (\(US-09.3\)) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 1050.75 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 1050.75 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 275.00 1050.75 Td (5 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 1050.75 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 1050.75 Td (YES) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 1043.35 Td (modify) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 1050.75 Td (GET /officers/customers) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 1043.35 Td (GET /admin/customers) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 1035.95 Td (GET /admin/officers) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 1028.55 Td (GET /admin/audit/tickets) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1050.75 Td (FE sends only page, pageSize, search \(+region on customers/officers\).) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1043.35 Td (components/common/Table.tsx declares a `sortable` flag that is never read, so no) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1035.95 Td (table can be sorted. Add optional sortBy + sortOrder to all four list endpoints.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1028.55 Td (Default \(params absent\) must keep today's ordering so nothing regresses. Reject) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1021.15 Td (an unknown sortBy with 400 rather than silently ignoring it. Response envelope) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1013.75 Td (unchanged - only row order changes.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 1050.75 Td (n/a - extend existing routes) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 1050.75 Td (n/a \(GET\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 1050.75 Td (sortOrder: asc | desc \(default desc\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 1035.95 Td (sortBy per route:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 1028.55 Td (/officers/customers: name | accountNumber) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 1021.15 Td (| walletBalance | lastPurchaseDate |) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 1013.75 Td (openTickets | lastContactDate) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 1006.35 Td (/admin/customers: name | erpId | region |) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 998.95 Td (outstandingBalance | supportTickets) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 991.55 Td (/admin/officers: name | email | region |) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 984.15 Td (customers | createdAt | lastLoginAt) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 976.75 Td (/admin/audit/tickets: ticketId | subject |) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 969.35 Td (customerName | region | status | createdAt) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1050.75 Td (Unchanged envelope, reordered rows:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1043.35 Td ({"data":[ ... ], "meta":{"total":150, "page":1,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1035.95 Td ("pageSize":20, "totalPages":8, "hasNextPage":true,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1028.55 Td ("hasPreviousPage":false}}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 964.95 m 1659.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 1059.75 m 24.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 1059.75 m 164.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 1059.75 m 218.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 1059.75 m 272.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 1059.75 m 330.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 1059.75 m 396.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 1059.75 m 464.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 1059.75 m 644.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 1059.75 m 944.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 1059.75 m 1124.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 1059.75 m 1299.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 1059.75 m 1459.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 1059.75 m 1659.00 964.95 l S
+0.945 0.960 0.973 rg 24.00 877.55 1635.00 87.40 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 955.95 Td (AO-08) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 948.55 Td (Last updated timestamp on every) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 941.15 Td (ERP-backed screen \(US-10.7, PRD s7\)) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 955.95 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 955.95 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 275.00 955.95 Td (3 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 955.95 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 955.95 Td (YES) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 948.55 Td (modify) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 955.95 Td (GET /officers/customers/{id}/overview \(already) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 948.55 Td (returns lastUpdated\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 941.15 Td (GET /officers/customers/{id}/orders) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 933.75 Td (GET /officers/customers/{id}/invoices) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 926.35 Td (GET /officers/customers/{id}/stock) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 918.95 Td (GET /officers/customers/{id}/waybills) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 955.95 Td (Only the overview response carries lastUpdated, so only the Overview tab can) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 948.55 Td (render the PRD-mandated 'Last updated' stamp. PRD s7 requires it on every screen) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 941.15 Td (showing ERP data. Add a top-level lastUpdated \(ISO-8601 UTC\) to the other four) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 933.75 Td (responses, reflecting the last ERP sync for that dataset - not the request time.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 926.35 Td (Purely additive.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 955.95 Td (n/a - extend existing routes) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 955.95 Td (n/a \(GET\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 955.95 Td (Unchanged \(orders and waybills keep page,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 948.55 Td (pageSize\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 955.95 Td (Orders / waybills:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 948.55 Td ({"lastUpdated":"2026-08-19T09:15:00Z","data":[ ...) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 941.15 Td (],"meta":{ ... }}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 926.35 Td (Invoices:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 918.95 Td ({"lastUpdated":"...", "walletBalance":1240000,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 911.55 Td ("invoices":[ ... ],"paymentHistory":[ ... ]}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 896.75 Td (Stock:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 889.35 Td ({"lastUpdated":"...","catalogue":[ ...) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 881.95 Td (],"awaitingLoading":[ ... ]}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 877.55 m 1659.00 877.55 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 964.95 m 24.00 877.55 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 964.95 m 164.00 877.55 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 964.95 m 218.00 877.55 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 964.95 m 272.00 877.55 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 964.95 m 330.00 877.55 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 964.95 m 396.00 877.55 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 964.95 m 464.00 877.55 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 964.95 m 644.00 877.55 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 964.95 m 944.00 877.55 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 964.95 m 1124.00 877.55 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 964.95 m 1299.00 877.55 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 964.95 m 1459.00 877.55 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 964.95 m 1659.00 877.55 l S
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 868.55 Td (AO-10 / CC-03) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 861.15 Td (Real-time delivery for chat, tickets) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 853.75 Td (and the bell \(US-11.2\)) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 868.55 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 868.55 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 275.00 868.55 Td (5 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 868.55 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 399.00 868.55 Td (NO) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 861.15 Td (new) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 868.55 Td (GET /chat/{otherUserId}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 861.15 Td (POST /chat/{receiverId}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 853.75 Td (GET /tickets/officer) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 846.35 Td (GET /notifications/me) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 868.55 Td (There is no socket layer in the codebase and React Query staleTime is 5 minutes,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 861.15 Td (so an officer only sees a new message, ticket or notification after navigating or) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 853.75 Td (waiting out the cache. Provide a server-push channel. FE will subscribe and) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 846.35 Td (invalidate the matching query keys - it keeps WRITING through the existing REST) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 838.95 Td (routes, so this channel is server-to-client only. Shares scope with mobile BE-08.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 868.55 Td (WSS /realtime) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 861.15 Td (\(or SSE: GET /realtime/stream\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 868.55 Td (n/a - no body; handshake carries the bearer) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 861.15 Td (token) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 868.55 Td (token=<access_token> \(required\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 861.15 Td (channels=chat,tickets,notifications) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 853.75 Td (\(optional, defaults to all\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 868.55 Td (Event frames:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 861.15 Td ({"event":"chat.message", "data":{"id":"msg_1",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 853.75 Td ("senderId":"cus_9", "receiverId":"stf_2",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 846.35 Td ("content":"Hello", "createdAt":"..."}}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 831.55 Td ({"event":"ticket.updated", "data":{"id":"tkt_1",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 824.15 Td ("ticketId":"TCK-1042", "status":"IN_PROGRESS"}}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 809.35 Td ({"event":"notification.created",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 801.95 Td ("data":{"id":"ntf_1", "content":"New message from Ade) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 794.55 Td (Foods Ltd","type":"CHAT_MESSAGE","isRead":false}}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 790.15 m 1659.00 790.15 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 877.55 m 24.00 790.15 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 877.55 m 164.00 790.15 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 877.55 m 218.00 790.15 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 877.55 m 272.00 790.15 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 877.55 m 330.00 790.15 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 877.55 m 396.00 790.15 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 877.55 m 464.00 790.15 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 877.55 m 644.00 790.15 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 877.55 m 944.00 790.15 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 877.55 m 1124.00 790.15 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 877.55 m 1299.00 790.15 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 877.55 m 1459.00 790.15 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 877.55 m 1659.00 790.15 l S
+0.945 0.960 0.973 rg 24.00 717.55 1635.00 72.60 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 781.15 Td (AO-12) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 773.75 Td (In-app bell notification on new) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 766.35 Td (message or ticket \(US-11.8\)) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 781.15 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 781.15 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 275.00 781.15 Td (3 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 781.15 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 781.15 Td (YES \(read\)) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 773.75 Td (emission missing) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 781.15 Td (GET /notifications/me?page&pageSize) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 773.75 Td (PATCH /notifications/me/read-all) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 766.35 Td (PATCH /notifications/{id}/read) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 781.15 Td (The read and mark-as-read routes work and the bell renders {unread, data, meta}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 773.75 Td (correctly. The gap is that no notification rows are ever created, because the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 766.35 Td (backend does not emit them. Create a row addressed to the assigned officer) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 758.95 Td (whenever a customer sends a chat message or raises a ticket \(PRD s5\). No contract) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 751.55 Td (change - only that records exist. Keep `type` values stable and enumerated.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 781.15 Td (n/a - server-side side effect) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 781.15 Td (n/a) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 781.15 Td (Existing: page, pageSize) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 781.15 Td ({"unread":3, "data":[{"id":"ntf_01",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 773.75 Td ("customerId":"cus_9", "staffId":"stf_2",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 766.35 Td ("content":"New message from Ade Foods Ltd",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 758.95 Td ("isRead":false, "type":"CHAT_MESSAGE",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 751.55 Td ("createdAt":"..."}], "meta":{"total":12, "page":1,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 744.15 Td ("pageSize":20, "totalPages":1}}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 729.35 Td (type enum: CHAT_MESSAGE | TICKET_CREATED |) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 721.95 Td (TICKET_REPLY | TICKET_STATUS | ASSIGNMENT) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 717.55 m 1659.00 717.55 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 790.15 m 24.00 717.55 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 790.15 m 164.00 717.55 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 790.15 m 218.00 717.55 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 790.15 m 272.00 717.55 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 790.15 m 330.00 717.55 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 790.15 m 396.00 717.55 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 790.15 m 464.00 717.55 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 790.15 m 644.00 717.55 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 790.15 m 944.00 717.55 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 790.15 m 1124.00 717.55 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 790.15 m 1299.00 717.55 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 790.15 m 1459.00 717.55 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 790.15 m 1659.00 717.55 l S
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 708.55 Td (AO-13) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 701.15 Td (Customer receives push when officer) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 693.75 Td (replies or changes status \(US-11.7\)) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 708.55 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 708.55 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 275.00 708.55 Td (5 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 708.55 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 399.00 708.55 Td (NO) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 701.15 Td (new \(+ mobile\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 708.55 Td (None - the web app does not consume push. It) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 701.15 Td (only triggers the events via:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 693.75 Td (POST /chat/{receiverId}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 686.35 Td (POST /tickets/{id}/replies) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 678.95 Td (PATCH /tickets/{id}/status) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 708.55 Td (The web app already performs the three actions that must notify a customer. The) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 701.15 Td (backend must fan those out to FCM/APNs. No new web client code is required. SAME) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 693.75 Td (WORK AS MOBILE BE-07 - deliver once and both items close; the device-token) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 686.35 Td (registration route belongs to the mobile side.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 708.55 Td (See mobile BE-07:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 701.15 Td (POST /customers/me/devices) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 693.75 Td (DELETE /customers/me/devices/{token}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 678.95 Td (plus internal push dispatch on chat send, ticket) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 671.55 Td (reply and ticket status change) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 708.55 Td (n/a for web \(web only triggers the events\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 708.55 Td (n/a. Auth: customer bearer token on the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 701.15 Td (mobile registration route.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 708.55 Td (Push payload delivered to the device:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 701.15 Td ({"notification":{"title":"Ifeanyi Okon","body":"Your) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 693.75 Td (ticket has a new reply"},) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 686.35 Td ("data":{"type":"TICKET_REPLY", "entityId":"tkt_1",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 678.95 Td ("notificationId":"ntf_1"}}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 667.15 m 1659.00 667.15 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 717.55 m 24.00 667.15 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 717.55 m 164.00 667.15 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 717.55 m 218.00 667.15 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 717.55 m 272.00 667.15 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 717.55 m 330.00 667.15 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 717.55 m 396.00 667.15 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 717.55 m 464.00 667.15 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 717.55 m 644.00 667.15 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 717.55 m 944.00 667.15 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 717.55 m 1124.00 667.15 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 717.55 m 1299.00 667.15 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 717.55 m 1459.00 667.15 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 717.55 m 1659.00 667.15 l S
+0.945 0.960 0.973 rg 24.00 594.55 1635.00 72.60 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 658.15 Td (AD-04) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 650.75 Td (Admin opens any customer's full) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 643.35 Td (detail with the officer tab set) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 635.95 Td (\(US-12.3\)) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 658.15 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 658.15 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 275.00 658.15 Td (5 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 658.15 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 399.00 658.15 Td (NO for ADMIN) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 650.75 Td (\(officer-scoped) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 643.35 Td (versions exist\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 658.15 Td (GET /officers/customers/{id}/overview) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 650.75 Td (GET /officers/customers/{id}/orders) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 643.35 Td (GET /officers/customers/{id}/invoices) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 635.95 Td (GET /officers/customers/{id}/stock) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 628.55 Td (GET /officers/customers/{id}/waybills) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 613.75 Td (\(all officer-scoped; an ADMIN has no route to) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 606.35 Td (this data\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 658.15 Td (US-12.3 requires an admin to open ANY customer and see the same tabs as the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 650.75 Td (officer. Every detail route is officer-scoped and filtered to the caller's own) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 643.35 Td (assignments, so the admin UI can only show a summary modal today. Two acceptable) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 635.95 Td (fixes: \(a\) PREFERRED - widen the five existing routes to accept ADMIN and skip) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 628.55 Td (the assigned-officer check for it; or \(b\) mirror them under) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 621.15 Td (/admin/customers/{id}/... . Either way the response bodies must be byte-identical) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 613.75 Td (to the officer versions so the FE reuses OverviewSection, OrdersSection,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 606.35 Td (InvoicesSection, StockSection and WaybillsSection unchanged.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 658.15 Td (Option \(a\): no new paths - widen the role check) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 650.75 Td (on the five existing routes) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 635.95 Td (Option \(b\):) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 628.55 Td (GET /admin/customers/{id}/overview) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 621.15 Td (GET /admin/customers/{id}/orders) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 613.75 Td (GET /admin/customers/{id}/invoices) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 606.35 Td (GET /admin/customers/{id}/stock) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 598.95 Td (GET /admin/customers/{id}/waybills) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 658.15 Td (n/a \(GET\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 658.15 Td (orders and waybills: page, pageSize) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 650.75 Td (\(identical to the officer routes\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 658.15 Td (Identical to /officers/customers/{id}/* . Overview) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 650.75 Td (example:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 643.35 Td ({"id":"cus_9","name":"Ade Foods Ltd",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 635.95 Td ("phone":"+2348012345678", "region":"LAGOS",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 628.55 Td ("walletBalance":1240000,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 621.15 Td ("assignedOfficers":[{"id":"stf_2", "name":"Ifeanyi) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 613.75 Td (Okon"}],"lastUpdated":"..."}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 594.55 m 1659.00 594.55 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 667.15 m 24.00 594.55 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 667.15 m 164.00 594.55 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 667.15 m 218.00 594.55 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 667.15 m 272.00 594.55 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 667.15 m 330.00 594.55 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 667.15 m 396.00 594.55 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 667.15 m 464.00 594.55 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 667.15 m 644.00 594.55 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 667.15 m 944.00 594.55 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 667.15 m 1124.00 594.55 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 667.15 m 1299.00 594.55 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 667.15 m 1459.00 594.55 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 667.15 m 1659.00 594.55 l S
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 585.55 Td (AD-08) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 578.15 Td (New officer notified that a customer) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 570.75 Td (was assigned \(US-13.4\)) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 585.55 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 585.55 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 275.00 585.55 Td (3 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 585.55 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 585.55 Td (YES) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 578.15 Td (add side effect) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 585.55 Td (PATCH /admin/customers/{id}/reassign) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 578.15 Td (PATCH /admin/officers/{id}/reassign-customers) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 585.55 Td (Both calls already succeed and the FE invalidates the customer, officer and) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 578.15 Td (dashboard caches. The missing half is US-13.4: the RECEIVING officer must get an) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 570.75 Td (in-app notification. Emit one notification per reassigned customer for the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 563.35 Td (single-customer route, and one summary notification for the bulk route. No) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 555.95 Td (request or response change - the FE only needs the row to exist so it appears in) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 548.55 Td (the bell.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 585.55 Td (n/a - server-side side effect on existing routes) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 585.55 Td (Unchanged:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 578.15 Td ({"newOfficerId":"stf_7"}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 585.55 Td (n/a) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 585.55 Td (Responses unchanged:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 578.15 Td ({"message":"Operation completed successfully"}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 570.75 Td ({"reassigned":15, "fromOfficerId":"stf_2",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 563.35 Td ("toOfficerId":"stf_7"}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 548.55 Td (Side effect - notification row for the new officer:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 541.15 Td ({"staffId":"stf_7","content":"Ade Foods Ltd has been) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 533.75 Td (assigned to you","type":"ASSIGNMENT","isRead":false}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 529.35 m 1659.00 529.35 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 594.55 m 24.00 529.35 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 594.55 m 164.00 529.35 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 594.55 m 218.00 529.35 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 594.55 m 272.00 529.35 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 594.55 m 330.00 529.35 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 594.55 m 396.00 529.35 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 594.55 m 464.00 529.35 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 594.55 m 644.00 529.35 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 594.55 m 944.00 529.35 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 594.55 m 1124.00 529.35 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 594.55 m 1299.00 529.35 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 594.55 m 1459.00 529.35 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 594.55 m 1659.00 529.35 l S
+0.945 0.960 0.973 rg 24.00 478.95 1635.00 50.40 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 520.35 Td (AD-09) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 512.95 Td (Chat history and tickets carry over) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 505.55 Td (on reassignment \(US-13.5\)) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 520.35 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 520.35 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 275.00 520.35 Td (3 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 520.35 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 520.35 Td (YES) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 512.95 Td (behaviour) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 505.55 Td (guarantee) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 520.35 Td (PATCH /admin/customers/{id}/reassign) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 512.95 Td (PATCH /admin/officers/{id}/reassign-customers) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 498.15 Td (Verified through:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 490.75 Td (GET /chat/{customerId}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 483.35 Td (GET /tickets/officer) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 520.35 Td (US-13.5 states no data is lost on reassignment. This is not verifiable from the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 512.95 Td (frontend, so it needs an explicit backend guarantee and a QA check. After a) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 505.55 Td (reassignment the NEW officer must see the complete pre-existing chat thread and) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 498.15 Td (every ticket for that customer, and the OLD officer must lose access. Confirm) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 490.75 Td (chat/ticket ownership derives from the current assignment \(or is re-pointed\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 483.35 Td (rather than copied or left orphaned on the previous officer.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 520.35 Td (n/a) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 520.35 Td (n/a) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 520.35 Td (n/a) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 520.35 Td (Responses unchanged. Acceptance check: message and) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 512.95 Td (ticket counts for the customer are identical before) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 505.55 Td (and after reassignment, and GET /chat/{customerId} as) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 498.15 Td (the OLD officer returns 403.) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 478.95 m 1659.00 478.95 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 529.35 m 24.00 478.95 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 529.35 m 164.00 478.95 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 529.35 m 218.00 478.95 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 529.35 m 272.00 478.95 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 529.35 m 330.00 478.95 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 529.35 m 396.00 478.95 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 529.35 m 464.00 478.95 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 529.35 m 644.00 478.95 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 529.35 m 944.00 478.95 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 529.35 m 1124.00 478.95 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 529.35 m 1299.00 478.95 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 529.35 m 1459.00 478.95 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 529.35 m 1659.00 478.95 l S
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 469.95 Td (AD-12) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 462.55 Td (Audit: all chat threads visible, not) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 455.15 Td (just tickets \(US-14.2\)) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 469.95 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 469.95 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 275.00 469.95 Td (5 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 469.95 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 399.00 469.95 Td (NO) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 462.55 Td (new) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 469.95 Td (GET /admin/audit/tickets) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 462.55 Td (GET /admin/audit/tickets/export.csv) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 469.95 Td (US-14.2 requires the admin to read chat conversations AND ticket threads. Only) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 462.55 Td (the ticket audit exists - chat auditing is entirely absent. Provide a chat audit) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 455.15 Td (that mirrors the ticket audit's filters and response envelope exactly, so the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 447.75 Td (existing audits page can host it as a second tab reusing the same table, filter) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 440.35 Td (and pagination code. Must be strictly read-only \(US-14.3\).) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 469.95 Td (GET /admin/audit/chats) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 462.55 Td (GET /admin/audit/chats/export.csv) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 469.95 Td (n/a \(GET\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 469.95 Td (Identical to the ticket audit:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 462.55 Td (page, pageSize, region, customerName,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 455.15 Td (officerName, keyword, startDate, endDate) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 440.35 Td (keyword must match message body text.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 432.95 Td (region: LAGOS | SOUTH_WEST | SOUTH_EAST |) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 425.55 Td (NORTH) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 469.95 Td ({"data":[{"id":"cht_1", "customer":{"id":"cus_9",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 462.55 Td ("name":"Ade Foods Ltd", "region":"LAGOS"},) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 455.15 Td ("officer":{"id":"stf_2", "name":"Ifeanyi Okon"},) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 447.75 Td ("messageCount":24, "lastMessageAt":"...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 440.35 Td ("messages":[{"id":"msg_1", "senderType":"CUSTOMER",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 432.95 Td ("content":"When is my waybill ready?",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 425.55 Td ("createdAt":"..."}]}], "meta":{"total":57, "page":1,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 418.15 Td ("pageSize":20, "totalPages":3}}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 413.75 m 1659.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 478.95 m 24.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 478.95 m 164.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 478.95 m 218.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 478.95 m 272.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 478.95 m 330.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 478.95 m 396.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 478.95 m 464.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 478.95 m 644.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 478.95 m 944.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 478.95 m 1124.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 478.95 m 1299.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 478.95 m 1459.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 478.95 m 1659.00 413.75 l S
+0.945 0.960 0.973 rg 24.00 363.35 1635.00 50.40 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 404.75 Td (AD-15) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 397.35 Td (Officer list: open tickets and last) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 389.95 Td (login columns \(US-15.1\)) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 404.75 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 404.75 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 275.00 404.75 Td (3 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 404.75 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 404.75 Td (YES) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 397.35 Td (modify) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 404.75 Td (GET /admin/officers?page&pageSize&search&region) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 404.75 Td (US-15.1 requires the officer list to show open tickets and last login. The) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 397.35 Td (response carries neither, so app/admin/officers/page.tsx hardcodes the ticket) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 389.95 Td (count to 0 and substitutes createdAt for last login - both misleading. Add) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 382.55 Td (lastLoginAt \(nullable ISO-8601, null until first login\) and _count.supportTickets) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 375.15 Td (\(open tickets across that officer's customers\). Purely additive.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 404.75 Td (n/a - extend existing route) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 404.75 Td (n/a \(GET\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 404.75 Td (Existing: page, pageSize, search, region) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 404.75 Td ({"data":[{"id":"stf_2","name":"Ifeanyi Okon",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 397.35 Td ("email":"i.okon@viju.com", "phone":"+2348012345678",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 389.95 Td ("region":"LAGOS", "isActive":true, "createdAt":"...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 382.55 Td ("lastLoginAt":"2026-08-19T07:41:00Z",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 375.15 Td ("_count":{"customers":14, "supportTickets":3}}],) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 367.75 Td ("meta":{"total":32, "page":1, "pageSize":20}}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 363.35 m 1659.00 363.35 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 413.75 m 24.00 363.35 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 413.75 m 164.00 363.35 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 413.75 m 218.00 363.35 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 413.75 m 272.00 363.35 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 413.75 m 330.00 363.35 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 413.75 m 396.00 363.35 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 413.75 m 464.00 363.35 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 413.75 m 644.00 363.35 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 413.75 m 944.00 363.35 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 413.75 m 1124.00 363.35 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 413.75 m 1299.00 363.35 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 413.75 m 1459.00 363.35 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 413.75 m 1659.00 363.35 l S
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 354.35 Td (AD-17) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 346.95 Td (New officer receives an email with) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 339.55 Td (login details \(US-15.3\)) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 354.35 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 354.35 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 275.00 354.35 Td (3 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 354.35 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 354.35 Td (YES) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 346.95 Td (add side effect) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 354.35 Td (POST /admin/officers) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 354.35 Td (The FE posts the new officer and then shows a success modal telling the admin the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 346.95 Td (officer 'will receive an email with their login credentials'. No email is) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 339.55 Td (actually sent, so that message is currently false. Send the credentials email as) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 332.15 Td (a side effect of a successful create. Optionally return emailSent so the FE can) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 324.75 Td (soften the wording when delivery fails.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 354.35 Td (n/a - server-side side effect on the existing) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 346.95 Td (route) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 354.35 Td (Unchanged:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 346.95 Td ({"name":"Ifeanyi Okon",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 339.55 Td ("email":"i.okon@viju.com",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 332.15 Td ("phone":"+2348012345678", "region":"LAGOS",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 324.75 Td ("password":"TempPass123"}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 354.35 Td (n/a. Auth: ADMIN only.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 354.35 Td (201 \(emailSent is the only addition\):) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 346.95 Td ({"id":"stf_9","name":"Ifeanyi Okon",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 339.55 Td ("email":"i.okon@viju.com", "region":"LAGOS",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 332.15 Td ("isActive":true, "emailSent":true}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 320.35 m 1659.00 320.35 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 363.35 m 24.00 320.35 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 363.35 m 164.00 320.35 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 363.35 m 218.00 320.35 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 363.35 m 272.00 320.35 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 363.35 m 330.00 320.35 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 363.35 m 396.00 320.35 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 363.35 m 464.00 320.35 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 363.35 m 644.00 320.35 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 363.35 m 944.00 320.35 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 363.35 m 1124.00 320.35 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 363.35 m 1299.00 320.35 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 363.35 m 1459.00 320.35 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 363.35 m 1659.00 320.35 l S
+0.945 0.960 0.973 rg 24.00 247.75 1635.00 72.60 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 311.35 Td (AD-18) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 303.95 Td (Deactivate an officer, blocked until) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 296.55 Td (customers are reassigned \(US-15.4\)) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 311.35 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 311.35 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 275.00 311.35 Td (5 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 311.35 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 399.00 311.35 Td (NO) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 303.95 Td (new) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 311.35 Td (None. components/PreviewAccountOfficerModal.tsx) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 303.95 Td (fakes success with a setTimeout and calls no API) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 296.55 Td (at all.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 311.35 Td (The confirm modal is fully built but has nothing to call, so deactivation does) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 303.95 Td (not work. Provide a deactivate route \(the same route reactivates with isActive) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 296.55 Td (true\). It MUST refuse while the officer still holds customers, and the refusal) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 289.15 Td (must carry a machine-readable code plus the count, so the FE can tell the admin) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 281.75 Td (exactly how many customers to move first. The FE then calls the existing) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 274.35 Td (reassign-customers route and retries.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 311.35 Td (PATCH /admin/officers/{id}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 311.35 Td ({"isActive":false}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 296.55 Td (Same route reactivates:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 289.15 Td ({"isActive":true}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 311.35 Td (n/a. Auth: ADMIN only.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 311.35 Td (200 success:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 303.95 Td ({"id":"stf_2","name":"Ifeanyi) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 296.55 Td (Okon","isActive":false,"updatedAt":"..."}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 281.75 Td (409 blocked \(FE renders `message` verbatim\):) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 274.35 Td ({"message":"Reassign this officer's 14 customers) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 266.95 Td (before deactivating.",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 259.55 Td ("code":"OFFICER_HAS_CUSTOMERS",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 252.15 Td ("assignedCustomers":14, "statusCode":409}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 247.75 m 1659.00 247.75 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 320.35 m 24.00 247.75 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 320.35 m 164.00 247.75 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 320.35 m 218.00 247.75 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 320.35 m 272.00 247.75 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 320.35 m 330.00 247.75 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 320.35 m 396.00 247.75 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 320.35 m 464.00 247.75 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 320.35 m 644.00 247.75 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 320.35 m 944.00 247.75 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 320.35 m 1124.00 247.75 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 320.35 m 1299.00 247.75 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 320.35 m 1459.00 247.75 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 320.35 m 1659.00 247.75 l S
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 238.75 Td (AD-19) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 231.35 Td (Deactivated officer cannot log in;) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 223.95 Td (history stays visible \(US-15.5\)) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 238.75 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 238.75 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 275.00 238.75 Td (3 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 238.75 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 238.75 Td (YES) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 231.35 Td (modify) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 238.75 Td (POST /auth/staff/login) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 231.35 Td (POST /auth/staff/web-login) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 223.95 Td (POST /auth/refresh) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 238.75 Td (Reject authentication for staff with isActive false on BOTH login routes, and) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 231.35 Td (refuse to mint or refresh tokens for them so any live session dies at its next) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 223.95 Td (refresh. No FE change needed: the axios client already surfaces the API `message`) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 216.55 Td (verbatim, and a 401 on refresh already forces a logout and redirect. Past chat) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 209.15 Td (and ticket history must remain readable by admins in the audit views.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 238.75 Td (n/a - extend existing routes) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 238.75 Td (Unchanged) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 238.75 Td (n/a) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 238.75 Td (403 on login, and on refresh for a deactivated) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 231.35 Td (account:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 223.95 Td ({"message":"This account has been deactivated.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 216.55 Td (Contact an administrator.","statusCode":403}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 204.75 m 1659.00 204.75 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 247.75 m 24.00 204.75 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 247.75 m 164.00 204.75 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 247.75 m 218.00 204.75 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 247.75 m 272.00 204.75 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 247.75 m 330.00 204.75 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 247.75 m 396.00 204.75 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 247.75 m 464.00 204.75 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 247.75 m 644.00 204.75 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 247.75 m 944.00 204.75 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 247.75 m 1124.00 204.75 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 247.75 m 1299.00 204.75 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 247.75 m 1459.00 204.75 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 247.75 m 1659.00 204.75 l S
+0.945 0.960 0.973 rg 24.00 139.55 1635.00 65.20 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 195.75 Td (RA-02) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 188.35 Td (Regional dashboard: summary cards and) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 180.95 Td (pending loading requests) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 195.75 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 195.75 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 275.00 195.75 Td (3 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 195.75 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 195.75 Td (YES) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 188.35 Td (contract) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 180.95 Td (unverified) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 195.75 Td (GET /regional/dashboard?region=LAGOS) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 195.75 Td (The FE types this response but has NEVER exercised it - app/dashboard/page.tsx) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 188.35 Td (returns mock rows for REGIONAL_ADMIN unconditionally, leaving the real branch as) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 180.95 Td (unreachable dead code. Backend to confirm the live response matches the typed) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 173.55 Td (shape exactly before the FE deletes the mock. pendingLoadingRequests cannot be) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 166.15 Td (populated until loading data exists \(RA-06\), and `region` should stop being) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 158.75 Td (trusted from the query string \(RA-03\).) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 195.75 Td (n/a - existing route, confirm contract) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 195.75 Td (n/a \(GET\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 195.75 Td (region is currently sent by the FE. It) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 188.35 Td (should become server-derived from the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 180.95 Td (token and the query param ignored or) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 173.55 Td (rejected.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 195.75 Td ({"summary":{"totalDistributors":256, "openTickets":4,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 188.35 Td ("pendingWaybills":11, "activeOfficers":8},) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 180.95 Td ("pendingLoadingRequests":[{"id":"lr_1",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 173.55 Td ("reference":"ORD-00294", "distributorName":"Bello &) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 166.15 Td (Sons LTD", "loadingDate":"...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 158.75 Td ("truckPlateNumber":"LAG-234-XY", "driverName":"John) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 151.35 Td (Dare", "quantityCartons":320, "status":"PENDING",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 143.95 Td ("submittedAt":"..."}]}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 139.55 m 1659.00 139.55 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 204.75 m 24.00 139.55 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 204.75 m 164.00 139.55 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 204.75 m 218.00 139.55 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 204.75 m 272.00 139.55 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 204.75 m 330.00 139.55 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 204.75 m 396.00 139.55 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 204.75 m 464.00 139.55 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 204.75 m 644.00 139.55 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 204.75 m 944.00 139.55 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 204.75 m 1124.00 139.55 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 204.75 m 1299.00 139.55 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 204.75 m 1459.00 139.55 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 204.75 m 1659.00 139.55 l S
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 130.55 Td (RA-03) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 123.15 Td (Data scoped to the user's own region) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 130.55 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 130.55 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 275.00 130.55 Td (5 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 130.55 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 130.55 Td (YES) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 123.15 Td (modify) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 130.55 Td (POST /auth/staff/login) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 123.15 Td (POST /auth/staff/web-login) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 115.75 Td (GET /users/me) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 130.55 Td (The User type declares region as optional but it is not reliably returned, so) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 123.15 Td (useDashboard hardcodes 'LAGOS' for every regional admin and the sidebar badge is) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 115.75 Td (static text. That is a cross-region data-leak risk against the 'no cross-region) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 108.35 Td (leakage' principle. Return region on the login user object and from /users/me for) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 100.95 Td (REGIONAL_ADMIN, OFFICER and LOADING_OFFICER \(null for org-wide ADMIN\). CRITICAL:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 93.55 Td (every region-scoped endpoint must filter by the TOKEN's region server-side, never) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 86.15 Td (by a client-supplied query param.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 130.55 Td (n/a - extend existing routes) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 130.55 Td (Unchanged) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 130.55 Td (n/a) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 130.55 Td ({"access_token":"eyJ...", "refresh_token":"eyJ...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 123.15 Td ("expires_in":3600, "user":{"id":"stf_5",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 115.75 Td ("name":"Chidi) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 108.35 Td (Eze","role":"REGIONAL_ADMIN","region":"SOUTH_EAST"}}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 93.55 Td (region: LAGOS | SOUTH_WEST | SOUTH_EAST | NORTH |) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 86.15 Td (null) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 81.75 m 1659.00 81.75 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 139.55 m 24.00 81.75 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 139.55 m 164.00 81.75 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 139.55 m 218.00 81.75 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 139.55 m 272.00 81.75 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 139.55 m 330.00 81.75 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 139.55 m 396.00 81.75 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 139.55 m 464.00 81.75 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 139.55 m 644.00 81.75 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 139.55 m 944.00 81.75 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 139.55 m 1124.00 81.75 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 139.55 m 1299.00 81.75 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 139.55 m 1459.00 81.75 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 139.55 m 1659.00 81.75 l S
+BT /F1 7.00 Tf 0.420 0.460 0.530 rg 1599.78 22.00 Td (Page 1) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Length 60208 >>
+stream
+0.120 0.220 0.390 rg 24.00 1145.75 1635.00 20.80 re f
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 27.00 1158.55 Td (Issue) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 167.00 1158.55 Td (Platform) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 221.00 1158.55 Td (Status) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 275.00 1158.55 Td (Time Line) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 333.00 1158.55 Td (Endpoint) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 333.00 1151.15 Td (Provided) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 399.00 1158.55 Td (Endpoint Exists?) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 467.00 1158.55 Td (Existing Frontend / Mobile Endpoint\(s\)) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 647.00 1158.55 Td (Expectation / Required Backend Changes) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 947.00 1158.55 Td (New Endpoint \(if Required\)) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 1127.00 1158.55 Td (Request Body) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 1302.00 1158.55 Td (Query / Filters) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 1462.00 1158.55 Td (Sample Response) Tj ET
+0.945 0.960 0.973 rg 24.00 1087.95 1635.00 57.80 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 1136.75 Td (RA-05) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 1129.35 Td (Officers list for the region) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 1136.75 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 1136.75 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 275.00 1136.75 Td (3 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 1136.75 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 1136.75 Td (YES) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 1129.35 Td (modify) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 1136.75 Td (GET /admin/officers?page&pageSize&search&region) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1136.75 Td (The regional officers page previously rendered a hardcoded 25-row array; the FE) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1129.35 Td (fix has shipped and it now calls this route live, sending region from) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1121.95 Td (user.region. Two backend gaps remain: \(1\) confirm /admin/officers actually) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1114.55 Td (honours the region query param - /admin/customers does, but this route was never) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1107.15 Td (verified; \(2\) the route is admin-scoped, so allow REGIONAL_ADMIN and force the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1099.75 Td (filter to the token's region, ignoring any client-supplied value. Response shape) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1092.35 Td (unchanged.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 1136.75 Td (n/a - extend existing route) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 1136.75 Td (n/a \(GET\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 1136.75 Td (page, pageSize, search, region) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 1129.35 Td (region: LAGOS | SOUTH_WEST | SOUTH_EAST |) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 1121.95 Td (NORTH) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1136.75 Td (Existing OfficersListResponse envelope, filtered to) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1129.35 Td (one region:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1121.95 Td ({"data":[{"id":"stf_2","name":"Ifeanyi Okon",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1114.55 Td ("region":"SOUTH_EAST", "isActive":true,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1107.15 Td ("_count":{"customers":14}}], "meta":{"total":6,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1099.75 Td ("page":1, "pageSize":10}}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 1087.95 m 1659.00 1087.95 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 1145.75 m 24.00 1087.95 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 1145.75 m 164.00 1087.95 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 1145.75 m 218.00 1087.95 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 1145.75 m 272.00 1087.95 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 1145.75 m 330.00 1087.95 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 1145.75 m 396.00 1087.95 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 1145.75 m 464.00 1087.95 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 1145.75 m 644.00 1087.95 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 1145.75 m 944.00 1087.95 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 1145.75 m 1124.00 1087.95 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 1145.75 m 1299.00 1087.95 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 1145.75 m 1459.00 1087.95 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 1145.75 m 1659.00 1087.95 l S
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 1078.95 Td (RA-06) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 1071.55 Td (Loading requests list and assign to a) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 1064.15 Td (loading officer) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 1078.95 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 1078.95 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 275.00 1078.95 Td (5 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 1078.95 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 399.00 1078.95 Td (NO) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 1071.55 Td (new) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 1078.95 Td (None. app/requests/loading/page.tsx and) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 1071.55 Td (components/AssignLoadingOfficerModal.tsx are) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 1064.15 Td (fully mocked - the modal even lists three) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 1056.75 Td (hardcoded officers.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1078.95 Td (A regional admin lists pending loading requests for their region and assigns each) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1071.55 Td (to a loading officer. The FE already renders the columns waybill, distributor,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1064.15 Td (order, truck, driver, submitted, officer and status, and has filter tabs All /) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1056.75 Td (Pending / Assigned / Loading In Progress / Completed - so the list route needs a) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1049.35 Td (status filter matching those tabs. The assign modal also needs a real source of) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1041.95 Td (loading officers; reusing /admin/officers with a role filter avoids a new route.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 1078.95 Td (GET /regional/loading-requests) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 1071.55 Td (PATCH /regional/loading-requests/{id}/assign) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 1056.75 Td (plus officer picker:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 1049.35 Td (GET /admin/officers?role=LOADING_OFFICER) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 1078.95 Td (Assign:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 1071.55 Td ({"loadingOfficerId":"stf_11"}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 1078.95 Td (List: page, pageSize, search, status) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 1071.55 Td (status: PENDING | ASSIGNED | IN_PROGRESS |) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 1064.15 Td (COMPLETED) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 1049.35 Td (Region derived from the token, not the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 1041.95 Td (query.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1078.95 Td ({"data":[{"id":"lr_1", "waybill":"WB-19045",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1071.55 Td ("reference":"ORD-00294", "distributorName":"Bello &) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1064.15 Td (Sons LTD", "truckPlateNumber":"LAG-234-XY",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1056.75 Td ("driverName":"John Dare", "quantityCartons":320,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1049.35 Td ("status":"PENDING", "assignedOfficer":null}],) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1041.95 Td ("meta":{"total":11, "page":1, "pageSize":10}}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1027.15 Td (Assign 200: {"id":"lr_1", "status":"ASSIGNED",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1019.75 Td ("assignedOfficer":{"id":"stf_11", "name":"Ifeanyi) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1012.35 Td (Okon"}}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 1007.95 m 1659.00 1007.95 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 1087.95 m 24.00 1007.95 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 1087.95 m 164.00 1007.95 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 1087.95 m 218.00 1007.95 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 1087.95 m 272.00 1007.95 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 1087.95 m 330.00 1007.95 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 1087.95 m 396.00 1007.95 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 1087.95 m 464.00 1007.95 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 1087.95 m 644.00 1007.95 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 1087.95 m 944.00 1007.95 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 1087.95 m 1124.00 1007.95 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 1087.95 m 1299.00 1007.95 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 1087.95 m 1459.00 1007.95 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 1087.95 m 1659.00 1007.95 l S
+0.945 0.960 0.973 rg 24.00 964.95 1635.00 43.00 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 998.95 Td (LO-02) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 991.55 Td (My Loading Queue) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 998.95 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 998.95 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 275.00 998.95 Td (5 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 998.95 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 399.00 998.95 Td (NO) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 991.55 Td (new) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 998.95 Td (None. app/loading/queue/page.tsx and every file) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 991.55 Td (under components/loadingOfficer/ are 100% mock) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 984.15 Td (with zero API calls.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 998.95 Td (The signed-in loading officer must see only their own assignments. The FE list) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 991.55 Td (already renders id, orderId, distributorName, region, submittedAt and a status of) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 984.15 Td (assigned | in-progress | completed, and groups them by those three states. Scope) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 976.75 Td (by the officer on the token - never accept an officerId from the client.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 998.95 Td (GET /loading/queue) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 998.95 Td (n/a \(GET\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 998.95 Td (page, pageSize, status) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 991.55 Td (status: ASSIGNED | IN_PROGRESS | COMPLETED) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 976.75 Td (Officer derived from the token.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 998.95 Td ({"data":[{"id":"lr_1", "orderId":"ORD-0099",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 991.55 Td ("distributorName":"Ibonodu Mega Distributor",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 984.15 Td ("region":"LAGOS", "submittedAt":"...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 976.75 Td ("status":"ASSIGNED"}], "meta":{"total":8, "page":1,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 969.35 Td ("pageSize":20, "totalPages":1}}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 964.95 m 1659.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 1007.95 m 24.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 1007.95 m 164.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 1007.95 m 218.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 1007.95 m 272.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 1007.95 m 330.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 1007.95 m 396.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 1007.95 m 464.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 1007.95 m 644.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 1007.95 m 944.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 1007.95 m 1124.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 1007.95 m 1299.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 1007.95 m 1459.00 964.95 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 1007.95 m 1659.00 964.95 l S
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 955.95 Td (LO-03) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 948.55 Td (Assignment detail view) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 955.95 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 955.95 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 275.00 955.95 Td (3 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 955.95 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 399.00 955.95 Td (NO) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 948.55 Td (new) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 955.95 Td (None - the detail panel is driven by a hardcoded) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 948.55 Td (mockDetailsMap keyed by row id.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 955.95 Td (Selecting a queue item opens its detail panel. The FE renders orderId,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 948.55 Td (distributorName, region, submittedAt, truck, driver, loadingDate, quantity and) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 941.15 Td (currentStatus. Must return 403 if the assignment does not belong to the caller,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 933.75 Td (so one loading officer cannot read another's work.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 955.95 Td (GET /loading/queue/{id}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 955.95 Td (n/a \(GET\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 955.95 Td (n/a. Caller must own the assignment.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 955.95 Td ({"id":"lr_1", "orderId":"ORD-0099",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 948.55 Td ("distributorName":"Ibonodu Mega Distributor",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 941.15 Td ("region":"LAGOS", "truckPlateNumber":"RJ-290",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 933.75 Td ("driverName":"John Dare", "loadingDate":"...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 926.35 Td ("quantityCartons":320, "status":"ASSIGNED"}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 921.95 m 1659.00 921.95 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 964.95 m 24.00 921.95 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 964.95 m 164.00 921.95 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 964.95 m 218.00 921.95 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 964.95 m 272.00 921.95 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 964.95 m 330.00 921.95 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 964.95 m 396.00 921.95 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 964.95 m 464.00 921.95 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 964.95 m 644.00 921.95 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 964.95 m 944.00 921.95 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 964.95 m 1124.00 921.95 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 964.95 m 1299.00 921.95 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 964.95 m 1459.00 921.95 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 964.95 m 1659.00 921.95 l S
+0.945 0.960 0.973 rg 24.00 864.15 1635.00 57.80 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 912.95 Td (LO-04) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 905.55 Td (Update loading status / mark complete) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 912.95 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 912.95 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 275.00 912.95 Td (3 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 912.95 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 399.00 912.95 Td (NO) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 905.55 Td (new) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 912.95 Td (None - no UI action is wired and no endpoint) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 905.55 Td (exists.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 912.95 Td (The officer advances a load through ASSIGNED -> IN_PROGRESS -> COMPLETED. Reject) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 905.55 Td (illegal transitions \(for example COMPLETED back to ASSIGNED\) with 409 rather than) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 898.15 Td (silently accepting them. The change should also surface on the regional admin) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 890.75 Td (dashboard, so emit the same waybill update that feeds RA-02's) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 883.35 Td (pendingLoadingRequests.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 912.95 Td (PATCH /loading/queue/{id}/status) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 912.95 Td ({"status":"IN_PROGRESS"}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 898.15 Td (status: IN_PROGRESS | COMPLETED) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 912.95 Td (n/a. Caller must own the assignment.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 912.95 Td (200:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 905.55 Td ({"id":"lr_1", "status":"IN_PROGRESS",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 898.15 Td ("updatedAt":"..."}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 883.35 Td (409 illegal transition:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 875.95 Td ({"message":"A completed load cannot be reopened.",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 868.55 Td ("code":"INVALID_STATUS_TRANSITION", "statusCode":409}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 864.15 m 1659.00 864.15 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 921.95 m 24.00 864.15 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 921.95 m 164.00 864.15 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 921.95 m 218.00 864.15 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 921.95 m 272.00 864.15 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 921.95 m 330.00 864.15 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 921.95 m 396.00 864.15 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 921.95 m 464.00 864.15 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 921.95 m 644.00 864.15 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 921.95 m 944.00 864.15 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 921.95 m 1124.00 864.15 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 921.95 m 1299.00 864.15 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 921.95 m 1459.00 864.15 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 921.95 m 1659.00 864.15 l S
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 855.15 Td (LO-05) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 847.75 Td (Waybill capture: truck, driver,) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 840.35 Td (quantity) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 855.15 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 855.15 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 275.00 855.15 Td (5 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 855.15 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 399.00 855.15 Td (PARTLY) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 847.75 Td (read-only route) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 840.35 Td (exists) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 855.15 Td (GET /officers/customers/{id}/waybills) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 847.75 Td (\(read-only, customer-scoped\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 855.15 Td (Only a read view of waybills exists. The loading officer must be able to RECORD) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 847.75 Td (the completed load - truck, driver, quantity and an optional proof-of-loading) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 840.35 Td (image. The image can reuse the existing POST /uploads route, so only the waybill) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 832.95 Td (write route is new. The record created here is what the existing read route) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 825.55 Td (should subsequently return, and what mobile BE-05 exposes to the customer.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 855.15 Td (POST /loading/queue/{id}/waybill) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 855.15 Td ({"truckPlateNumber":"LAG-234-XY",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 847.75 Td ("driverName":"John Dare",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 840.35 Td ("quantityCartons":320,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 832.95 Td ("attachmentUrl":"https://res.cloudinary.com/..) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 825.55 Td (./proof.jpg"}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 810.75 Td (attachmentUrl optional; obtained from the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 803.35 Td (existing POST /uploads) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 855.15 Td (n/a. Caller must own the assignment.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 855.15 Td (201:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 847.75 Td ({"id":"wb_1", "waybillNumber":"WB-19045",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 840.35 Td ("loadingRequestId":"lr_1",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 832.95 Td ("truckPlateNumber":"LAG-234-XY", "driverName":"John) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 825.55 Td (Dare", "quantityCartons":320, "status":"COMPLETED",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 818.15 Td ("createdAt":"..."}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 798.95 m 1659.00 798.95 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 864.15 m 24.00 798.95 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 864.15 m 164.00 798.95 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 864.15 m 218.00 798.95 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 864.15 m 272.00 798.95 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 864.15 m 330.00 798.95 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 864.15 m 396.00 798.95 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 864.15 m 464.00 798.95 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 864.15 m 644.00 798.95 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 864.15 m 944.00 798.95 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 864.15 m 1124.00 798.95 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 864.15 m 1299.00 798.95 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 864.15 m 1459.00 798.95 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 864.15 m 1659.00 798.95 l S
+0.945 0.960 0.973 rg 24.00 733.75 1635.00 65.20 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 789.95 Td (CC-01) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 782.55 Td (Role-based access control \(CRITICAL\)) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 789.95 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 789.95 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 275.00 789.95 Td (5 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 789.95 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 789.95 Td (YES) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 782.55 Td (enforcement gap) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 789.95 Td (Every /admin/* route called by the FE,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 782.55 Td (including:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 775.15 Td (GET /admin/dashboard) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 767.75 Td (GET /admin/customers) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 760.35 Td (GET /admin/officers) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 752.95 Td (GET /admin/audit/tickets) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 745.55 Td (GET /admin/product-flyers) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 738.15 Td (PATCH /admin/customers/{id}/reassign) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 789.95 Td (The web app has NO middleware.ts and ProtectedRoute checks authentication only,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 782.55 Td (never role - so an OFFICER can type /admin/officers into the address bar and the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 775.15 Td (page renders. The sidebar merely hides the links. Client-side gating is being) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 767.75 Td (added, but the server must be the authority: /admin/* must 403 for non-ADMIN,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 760.35 Td (/regional/* for non-REGIONAL_ADMIN, /loading/* for non-LOADING_OFFICER, and) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 752.95 Td (/officers/* must stay scoped to the caller's own customers. Confirm the JWT) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 745.55 Td (carries a role claim validated on every request.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 789.95 Td (n/a - enforce on all existing routes) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 789.95 Td (n/a) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 789.95 Td (n/a. Role claim required in the JWT.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 789.95 Td (403 for a role mismatch \(the FE already renders) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 782.55 Td (`message` verbatim\):) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 775.15 Td ({"message":"You do not have permission to perform) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 767.75 Td (this action.","statusCode":403}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 733.75 m 1659.00 733.75 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 798.95 m 24.00 733.75 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 798.95 m 164.00 733.75 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 798.95 m 218.00 733.75 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 798.95 m 272.00 733.75 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 798.95 m 330.00 733.75 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 798.95 m 396.00 733.75 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 798.95 m 464.00 733.75 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 798.95 m 644.00 733.75 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 798.95 m 944.00 733.75 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 798.95 m 1124.00 733.75 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 798.95 m 1299.00 733.75 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 798.95 m 1459.00 733.75 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 798.95 m 1659.00 733.75 l S
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 724.75 Td (CC-02) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 717.35 Td (Secure auth token storage) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 724.75 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 724.75 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 275.00 724.75 Td (5 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 724.75 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 724.75 Td (YES) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 717.35 Td (modify) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 724.75 Td (POST /auth/staff/login) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 717.35 Td (POST /auth/staff/web-login) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 709.95 Td (POST /auth/refresh) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 702.55 Td (POST /auth/logout) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 724.75 Td (Tokens are returned in the JSON body and stored with js-cookie, which cannot set) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 717.35 Td (httpOnly. Both the access and refresh token are therefore readable by any XSS on) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 709.95 Td (the page. It also blocks CC-01: Next.js middleware cannot read a JS-set cookie) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 702.55 Td (reliably, so server-side route gating is impossible until this changes. Preferred) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 695.15 Td (fix: set the tokens as httpOnly + Secure + SameSite=Lax cookies on login and) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 687.75 Td (refresh, clear them on logout, with CORS credentials enabled for the web origin.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 724.75 Td (n/a - change token delivery on existing routes) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 724.75 Td (Unchanged) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 724.75 Td (n/a. Requires CORS) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 717.35 Td (Access-Control-Allow-Credentials: true and) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 709.95 Td (an explicit origin.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 724.75 Td (Response headers:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 717.35 Td (Set-Cookie: access_token=eyJ...; HttpOnly; Secure;) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 709.95 Td (SameSite=Lax; Path=/; Max-Age=3600) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 702.55 Td (Set-Cookie: refresh_token=eyJ...; HttpOnly; Secure;) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 695.15 Td (SameSite=Lax; Path=/auth; Max-Age=2592000) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 680.35 Td (Body \(tokens no longer included\):) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 672.95 Td ({"user":{"id":"stf_5","name":"Chidi) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 665.55 Td (Eze","role":"REGIONAL_ADMIN","region":"SOUTH_EAST"}}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 661.15 m 1659.00 661.15 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 733.75 m 24.00 661.15 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 733.75 m 164.00 661.15 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 733.75 m 218.00 661.15 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 733.75 m 272.00 661.15 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 733.75 m 330.00 661.15 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 733.75 m 396.00 661.15 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 733.75 m 464.00 661.15 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 733.75 m 644.00 661.15 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 733.75 m 944.00 661.15 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 733.75 m 1124.00 661.15 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 733.75 m 1299.00 661.15 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 733.75 m 1459.00 661.15 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 733.75 m 1659.00 661.15 l S
+0.945 0.960 0.973 rg 24.00 603.35 1635.00 57.80 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 652.15 Td (CC-05) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 644.75 Td (Contact-us form submission) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 167.00 652.15 Td (Web) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 652.15 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 275.00 652.15 Td (3 days) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 333.00 652.15 Td (Yes) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 399.00 652.15 Td (NO) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 644.75 Td (new) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 652.15 Td (None - components/contact/ContactForm.tsx) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 644.75 Td (validates and resets but posts nowhere. It) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 637.35 Td (exposes an onSubmit hook ready to wire.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 652.15 Td (Public marketing form on /contact-us. The FE already validates fullName \(min 2) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 644.75 Td (chars\), email format, phone \(7-20 chars, digits and + - \( \) only\) and message) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 637.35 Td (\(min 10 chars\), and surfaces the API `message` on failure. Unauthenticated public) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 629.95 Td (route, so it should be rate-limited or captcha-guarded to avoid being used as a) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 622.55 Td (spam relay.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 652.15 Td (POST /contact) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 652.15 Td ({"fullName":"Ada Obi",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 644.75 Td ("email":"ada@example.com",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 637.35 Td ("phone":"+2348012345678", "message":"I would) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 629.95 Td (like to discuss a distributorship."}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 652.15 Td (n/a. No auth. Rate limit by IP.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 652.15 Td (201:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 644.75 Td ({"message":"Thanks for reaching out. We'll get back) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 637.35 Td (to you within 24 hours."}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 622.55 Td (429:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 615.15 Td ({"message":"Too many requests. Please try again) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 607.75 Td (later.","statusCode":429}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 603.35 m 1659.00 603.35 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 661.15 m 24.00 603.35 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 661.15 m 164.00 603.35 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 661.15 m 218.00 603.35 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 661.15 m 272.00 603.35 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 661.15 m 330.00 603.35 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 661.15 m 396.00 603.35 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 661.15 m 464.00 603.35 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 661.15 m 644.00 603.35 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 661.15 m 944.00 603.35 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 661.15 m 1124.00 603.35 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 661.15 m 1299.00 603.35 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 661.15 m 1459.00 603.35 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 661.15 m 1659.00 603.35 l S
+0.973 0.957 0.980 rg 24.00 493.75 1635.00 109.60 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 594.35 Td (BE-01) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 586.95 Td (Registration & OTP edge cases:) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 579.55 Td (expiry, resend, lockout) Tj ET
+BT /F2 6.00 Tf 0.360 0.180 0.550 rg 167.00 594.35 Td (Mobile) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 594.35 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 275.00 594.35 Td (5 days) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 333.00 594.35 Td (No) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 594.35 Td (YES) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 586.95 Td (modify) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 594.35 Td (POST /auth/customer/request-otp) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 586.95 Td (POST /auth/customer/verify-otp) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 572.15 Td (Both are used twice: first-time registration and) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 564.75 Td (the forgot-password reset flow, so verify-otp) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 557.35 Td (must serve as both 'activate account' and 'reset) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 549.95 Td (password'.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 594.35 Td (The backend returns only a free-text message, so the app cannot show the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 586.95 Td (10-minute expiry, a working resend, or the 30-minute lockout after 3 wrong) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 579.55 Td (attempts. ADD to request-otp: expiresAt, expiresInSeconds, resendAvailableAt,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 572.15 Td (resendAfterSeconds. ADD a stable machine-readable `code` on every error. ADD) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 564.75 Td (attemptsRemaining on OTP_INVALID, and lockedUntil + retryAfterSeconds on) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 557.35 Td (OTP_LOCKED. Calling request-otp again must invalidate the previous code and apply) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 549.95 Td (the cooldown. GUARD: never return devOtp/devNote outside dev. MUST NOT change the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 542.55 Td (verify-otp success keys access_token, refresh_token, user.id/name/role.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 594.35 Td (n/a - extend both existing endpoints) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 594.35 Td (Unchanged. Optional additive field:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 586.95 Td ({"phone":"+2348012345678",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 579.55 Td ("purpose":"REGISTRATION"|"PASSWORD_RESET"}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 564.75 Td (If added it must stay optional - the shipped) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 557.35 Td (build does not send it.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 594.35 Td (None.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 579.55 Td (code enum: OTP_EXPIRED | OTP_INVALID |) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 572.15 Td (OTP_LOCKED | OTP_RESEND_TOO_SOON |) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 564.75 Td (PHONE_NOT_FOUND) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 594.35 Td (200 request-otp:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 586.95 Td ({"message":"OTP sent", "expiresAt":"...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 579.55 Td ("expiresInSeconds":600, "resendAvailableAt":"...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 572.15 Td ("resendAfterSeconds":60}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 557.35 Td (400 {"code":"OTP_INVALID","message":"The code you) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 549.95 Td (entered is incorrect.","attemptsRemaining":2}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 542.55 Td (410 {"code":"OTP_EXPIRED","message":"This code has) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 535.15 Td (expired."}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 527.75 Td (423 {"code":"OTP_LOCKED","message":"Too many) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 520.35 Td (incorrect attempts.", "lockedUntil":"...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 512.95 Td ("retryAfterSeconds":1800}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 505.55 Td (429) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 498.15 Td ({"code":"OTP_RESEND_TOO_SOON","retryAfterSeconds":37}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 493.75 m 1659.00 493.75 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 603.35 m 24.00 493.75 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 603.35 m 164.00 493.75 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 603.35 m 218.00 493.75 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 603.35 m 272.00 493.75 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 603.35 m 330.00 493.75 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 603.35 m 396.00 493.75 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 603.35 m 464.00 493.75 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 603.35 m 644.00 493.75 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 603.35 m 944.00 493.75 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 603.35 m 1124.00 493.75 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 603.35 m 1299.00 493.75 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 603.35 m 1459.00 493.75 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 603.35 m 1659.00 493.75 l S
+0.973 0.957 0.980 rg 24.00 413.75 1635.00 80.00 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 484.75 Td (BE-02) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 477.35 Td (Bottom-navigation badge counts) Tj ET
+BT /F2 6.00 Tf 0.360 0.180 0.550 rg 167.00 484.75 Td (Mobile) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 484.75 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 275.00 484.75 Td (5 days) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 333.00 484.75 Td (No) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 399.00 484.75 Td (NO) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 477.35 Td (new) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 484.75 Td (None from the bottom navigation. Related lists:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 477.35 Td (GET /notifications/me \(already returns unread\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 469.95 Td (GET /customers/me/purchases) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 462.55 Td (GET /customers/me/invoices) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 455.15 Td (GET /customers/me/waybills) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 447.75 Td (GET /chat/me) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 440.35 Td (GET /tickets/customer) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 484.75 Td (The six tabs exist in BottomNavWidget but there is no data source for the counts.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 477.35 Td (Deriving them from the five list endpoints would mean five requests on every app) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 469.95 Td (foreground. Provide one cheap aggregate. Counts: payment, invoice, waybill) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 462.55 Td (\(changed since the tab was last opened\), chat \(STAFF messages with readAt null\),) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 455.15 Td (support \(unread STAFF ticket replies\), notifications \(mirrors the existing) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 447.75 Td (unread\). Because 'last opened' is server state, a companion mark-as-seen route is) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 440.35 Td (required. Chat and support are already derivable from readAt, so they can ship) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 432.95 Td (first if tab-seen tracking is deferred.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 484.75 Td (GET /customers/me/mobile-badges) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 477.35 Td (PATCH /customers/me/mobile-badges/seen) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 462.55 Td (Auth: bearer, role CUSTOMER. Customer resolved) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 455.15 Td (from the token - no id in the path.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 484.75 Td (GET: none.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 469.95 Td (PATCH:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 462.55 Td ({"tabs":["chat","waybill"]}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 447.75 Td (any subset of payment | invoice | waybill |) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 440.35 Td (chat | support | notifications; unknown value) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 432.95 Td (-> 400; must be idempotent.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 484.75 Td (GET: optional tabs=chat,support) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 477.35 Td (\(comma-separated\). Omitted -> all counts.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 462.55 Td (Counts-only query, must respond well under) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 455.15 Td (300 ms - called on every app foreground.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 484.75 Td (200:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 477.35 Td ({"counts":{"payment":2, "invoice":0, "waybill":1,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 469.95 Td ("chat":4, "support":1, "notifications":6},) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 462.55 Td ("totalUnread":14, "generatedAt":"..."}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 447.75 Td (All counts must be non-negative integers and present) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 440.35 Td (even when 0 - a missing key is treated as an error.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 425.55 Td (400 {"code":"VALIDATION_ERROR","message":"Unknown) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 418.15 Td (tab: 'orders'."}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 413.75 m 1659.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 493.75 m 24.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 493.75 m 164.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 493.75 m 218.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 493.75 m 272.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 493.75 m 330.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 493.75 m 396.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 493.75 m 464.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 493.75 m 644.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 493.75 m 944.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 493.75 m 1124.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 493.75 m 1299.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 493.75 m 1459.00 413.75 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 493.75 m 1659.00 413.75 l S
+0.973 0.957 0.980 rg 24.00 333.75 1635.00 80.00 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 404.75 Td (BE-03) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 397.35 Td (Home screen must supply 5 recent) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 389.95 Td (purchases) Tj ET
+BT /F2 6.00 Tf 0.360 0.180 0.550 rg 167.00 404.75 Td (Mobile) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 404.75 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 275.00 404.75 Td (3 days) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 333.00 404.75 Td (No) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 404.75 Td (YES) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 397.35 Td (modify) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 404.75 Td (GET /customers/me/home) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 404.75 Td (The PRD requires the home screen to show the last 5 orders; the app renders 3.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 397.35 Td (Trimming is a mobile change, but the app can only display 5 if the backend) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 389.95 Td (returns 5 - the size of recentPurchases is entirely backend-controlled and) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 382.55 Td (currently unspecified. Return the 5 most recent ordered by orderDate descending.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 375.15 Td (Also return productFlyers: [] - an empty array, never null and never a) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 367.75 Td (placeholder flyer - so the app can hide the flyer section as the PRD requires.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 360.35 Td (Keep every existing key name.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 404.75 Td (n/a - extend existing route) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 404.75 Td (None - GET request.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 404.75 Td (None currently sent. Optional additive:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 397.35 Td (recentLimit \(integer 1-10, default 5\).) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 404.75 Td ({"customerName":"Ada Obi",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 397.35 Td ("accountBalance":{"amount":1250000.00,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 389.95 Td ("lastUpdated":"...", "isLow":false},) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 382.55 Td ("stockBalance":{"totalCartons":1200,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 375.15 Td ("loadedCartons":800, "remainingCartons":400},) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 367.75 Td ("productFlyers":[],) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 360.35 Td ("recentPurchases":[{"id":"pur_01",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 352.95 Td ("erpId":"SO-10231", "orderDate":"...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 345.55 Td ("totalItems":12, "totalValue":480000,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 338.15 Td ("status":"COMPLETED"}, ... 5 items ]}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 333.75 m 1659.00 333.75 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 413.75 m 24.00 333.75 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 413.75 m 164.00 333.75 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 413.75 m 218.00 333.75 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 413.75 m 272.00 333.75 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 413.75 m 330.00 333.75 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 413.75 m 396.00 333.75 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 413.75 m 464.00 333.75 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 413.75 m 644.00 333.75 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 413.75 m 944.00 333.75 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 413.75 m 1124.00 333.75 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 413.75 m 1299.00 333.75 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 413.75 m 1459.00 333.75 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 413.75 m 1659.00 333.75 l S
+0.973 0.957 0.980 rg 24.00 238.95 1635.00 94.80 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 324.75 Td (BE-04) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 317.35 Td (Linked invoice number on order /) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 309.95 Td (payment detail) Tj ET
+BT /F2 6.00 Tf 0.360 0.180 0.550 rg 167.00 324.75 Td (Mobile) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 324.75 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 275.00 324.75 Td (5 days) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 333.00 324.75 Td (No) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 324.75 Td (YES) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 317.35 Td (modify) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 324.75 Td (GET /customers/me/purchases?page&pageSize) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 317.35 Td (\(powers both the Payment list and the Payment) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 309.95 Td (Detail screen - detail renders from the list) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 302.55 Td (item, there is no per-purchase endpoint\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 295.15 Td (GET /customers/me/invoices) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 287.75 Td (GET /customers/me/invoices/{invoiceId}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 324.75 Td (The purchase payload contains no invoice reference of any kind, so the app has) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 317.35 Td (nothing to display and no id with which to open the invoice. ADD to every element) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 309.95 Td (of data[]: invoiceId \(the id accepted by /invoices/{invoiceId}\), invoiceNumber) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 302.55 Td (\(human-readable\), and optional invoiceStatus mirroring the invoice list. Both) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 295.15 Td (must be nullable and always present rather than omitted. If one order can map to) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 287.75 Td (MORE than one invoice, replace them with invoices:[{id,invoiceNumber,status}] and) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 280.35 Td (tell the mobile team first - it changes the detail layout. Nothing may be) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 272.95 Td (removed; erpId is the order reference throughout the Payment screens.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 324.75 Td (n/a - extend existing route. A dedicated) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 317.35 Td (/purchases/{id} is NOT required.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 324.75 Td (None - GET request.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 324.75 Td (Currently: page, pageSize.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 309.95 Td (Requested additions \(the app filters) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 302.55 Td (client-side over one page of 20, which) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 295.15 Td (silently hides older orders\):) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 287.75 Td (startDate, endDate \(YYYY-MM-DD on) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 280.35 Td (orderDate\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 272.95 Td (status: PROCESSING | COMPLETED | CANCELLED) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 265.55 Td (search: over erpId and items[].productName) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 250.75 Td (All optional and combinable; meta must) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 243.35 Td (reflect filtered totals.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 324.75 Td ({"data":[{"id":"pur_01", "erpId":"SO-10231",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 317.35 Td ("orderDate":"...", "totalItems":12,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 309.95 Td ("totalValue":480000, "status":"COMPLETED",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 302.55 Td ("invoiceId":"inv_01",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 295.15 Td ("invoiceNumber":"INV-2026-0453",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 287.75 Td ("invoiceStatus":"UNPAID", "items":[{"id":"itm_1",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 280.35 Td ("productName":"Viju Milk 15cl x24", "quantity":8,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 272.95 Td ("unitPrice":40000, "lineTotal":320000}]}],) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 265.55 Td ("meta":{"total":37, "page":1, "pageSize":20,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 258.15 Td ("totalPages":2}}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 238.95 m 1659.00 238.95 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 333.75 m 24.00 238.95 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 333.75 m 164.00 238.95 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 333.75 m 218.00 238.95 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 333.75 m 272.00 238.95 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 333.75 m 330.00 238.95 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 333.75 m 396.00 238.95 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 333.75 m 464.00 238.95 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 333.75 m 644.00 238.95 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 333.75 m 944.00 238.95 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 333.75 m 1124.00 238.95 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 333.75 m 1299.00 238.95 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 333.75 m 1459.00 238.95 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 333.75 m 1659.00 238.95 l S
+0.973 0.957 0.980 rg 24.00 99.75 1635.00 139.20 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 229.95 Td (BE-05) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 222.55 Td (Waybill detail view) Tj ET
+BT /F2 6.00 Tf 0.360 0.180 0.550 rg 167.00 229.95 Td (Mobile) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 229.95 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 275.00 229.95 Td (5 days) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 333.00 229.95 Td (No) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 229.95 Td (PARTIAL) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 222.55 Td (list exists, no) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 215.15 Td (detail) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 229.95 Td (GET /customers/me/waybills?page&pageSize) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 222.55 Td (POST /customers/me/waybills \(submit loading) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 215.15 Td (request\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 207.75 Td (POST /customers/me/waybills/accept-terms) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 229.95 Td (The list response contains none of the officer, timeline or document fields, so a) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 222.55 Td (detail screen cannot be built from it. The POST loading-request response already) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 215.15 Td (returns assignedOfficerId, assignedAt, loadingStartedAt, completedAt,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 207.75 Td (waybillDocumentUrl, notes, termsAcceptedAt, externalFormUrl and region - THESE) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 200.35 Td (EXIST SERVER-SIDE BUT ARE NEVER EXPOSED ON READ. \(a\) Add a detail endpoint) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 192.95 Td (returning the full record with the officer RESOLVED to name and phone \(the app) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 185.55 Td (has no staff-directory endpoint\). \(b\) Add assignedOfficer{id,name} and) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 178.15 Td (hasDocument to each list row. waybillDocumentUrl must be openable by the app - a) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 170.75 Td (pre-signed URL with a stated TTL, or one that accepts the bearer header. Return) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 163.35 Td (404 not 403 for another customer's waybill so ids cannot be enumerated.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 229.95 Td (GET /customers/me/waybills/{waybillId}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 215.15 Td (Auth: bearer, role CUSTOMER.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 229.95 Td (None - GET request.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 229.95 Td (Detail: none.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 215.15 Td (List currently page / pageSize. Requested:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 207.75 Td (startDate, endDate \(YYYY-MM-DD on) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 200.35 Td (requestedLoadingDate\) and status.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 185.55 Td (CONFIRM the authoritative status enum -) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 178.15 Td (the app colours statuses by string) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 170.75 Td (matching: PENDING | APPROVED | LOADING |) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 163.35 Td (COMPLETED | REJECTED.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 229.95 Td (Detail 200:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 222.55 Td ({"id":"wb_01", "reference":"WB-2026-0091",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 215.15 Td ("status":"LOADING", "truckPlateNumber":"ABC-123-XY",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 207.75 Td ("driverName":"Emeka Nwosu", "driverPhone":"...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 200.35 Td ("quantityCartons":400, "destination":"Onitsha) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 192.95 Td (Depot","assignedOfficer":{"id":"stf_01","name":"Chidi) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 185.55 Td (Umeh", "phone":"..."}, "waybillDocumentUrl":"...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 178.15 Td ("documentExpiresAt":"...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 170.75 Td ("timeline":[{"status":"PENDING", "at":"...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 163.35 Td ("note":"Request submitted"}, {"status":"LOADING",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 155.95 Td ("at":"...", "note":"Loading) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 148.55 Td (started"}],"completedAt":null}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 133.75 Td (Enriched list row adds:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 126.35 Td ("assignedOfficer":{"id","name"}, "hasDocument":true) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 111.55 Td (404 {"code":"WAYBILL_NOT_FOUND","message":"Waybill) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 104.15 Td (not found."}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 99.75 m 1659.00 99.75 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 238.95 m 24.00 99.75 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 238.95 m 164.00 99.75 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 238.95 m 218.00 99.75 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 238.95 m 272.00 99.75 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 238.95 m 330.00 99.75 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 238.95 m 396.00 99.75 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 238.95 m 464.00 99.75 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 238.95 m 644.00 99.75 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 238.95 m 944.00 99.75 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 238.95 m 1124.00 99.75 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 238.95 m 1299.00 99.75 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 238.95 m 1459.00 99.75 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 238.95 m 1659.00 99.75 l S
+BT /F1 7.00 Tf 0.420 0.460 0.530 rg 1599.78 22.00 Td (Page 2) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Length 40422 >>
+stream
+0.120 0.220 0.390 rg 24.00 1145.75 1635.00 20.80 re f
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 27.00 1158.55 Td (Issue) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 167.00 1158.55 Td (Platform) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 221.00 1158.55 Td (Status) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 275.00 1158.55 Td (Time Line) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 333.00 1158.55 Td (Endpoint) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 333.00 1151.15 Td (Provided) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 399.00 1158.55 Td (Endpoint Exists?) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 467.00 1158.55 Td (Existing Frontend / Mobile Endpoint\(s\)) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 647.00 1158.55 Td (Expectation / Required Backend Changes) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 947.00 1158.55 Td (New Endpoint \(if Required\)) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 1127.00 1158.55 Td (Request Body) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 1302.00 1158.55 Td (Query / Filters) Tj ET
+BT /F2 6.60 Tf 1.000 1.000 1.000 rg 1462.00 1158.55 Td (Sample Response) Tj ET
+0.973 0.957 0.980 rg 24.00 1050.95 1635.00 94.80 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 1136.75 Td (BE-06) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 1129.35 Td (External T&C / loading form URL) Tj ET
+BT /F2 6.00 Tf 0.360 0.180 0.550 rg 167.00 1136.75 Td (Mobile) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 1136.75 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 275.00 1136.75 Td (3 days) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 333.00 1136.75 Td (No) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 1136.75 Td (YES) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 1129.35 Td (modify \(decision) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 1121.95 Td (needed\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 1136.75 Td (POST /customers/me/waybills/accept-terms) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 1129.35 Td (POST /customers/me/waybills) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1136.75 Td (formUrl is already modelled but is empty in practice, so the app ignores it and) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1129.35 Td (opens its own LoadingFormDialog. DECISION REQUIRED. Option A \(recommended,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1121.95 Td (already working\): keep the in-app form, return formUrl: null and a real terms) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1114.55 Td (version - the mobile team then needs written sign-off that the PRD's 'external) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1107.15 Td (form URL' wording is satisfied. Option B: return a resolvable formUrl the app) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1099.75 Td (opens in a webview - it must \(i\) identify the customer via a signed, single-use,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1092.35 Td (short-lived token IN THE URL because the webview will not carry the bearer token,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1084.95 Td (\(ii\) state an expiry, and \(iii\) declare a success redirect the app can intercept,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1077.55 Td (otherwise the app can never know the request was submitted. Independently:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1070.15 Td (replace the literal 'agreed' with a versioned identifier, and expose) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1062.75 Td (termsAcceptedAt + currentTermsVersion on GET /customers/me so a returning) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1055.35 Td (customer is not asked again.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 1136.75 Td (n/a - both options are satisfied by the existing) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 1129.35 Td (accept-terms route plus two additive profile) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 1121.95 Td (fields.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 1136.75 Td ({"termsVersion":"v1.2"}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 1121.95 Td (Current build hardcodes "agreed". Reject) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 1114.55 Td (unknown/outdated versions with 400) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 1107.15 Td (TERMS_VERSION_INVALID. Accepting the same) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 1099.75 Td (version twice must be idempotent, returning) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 1092.35 Td (the original acceptedAt.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 1136.75 Td (None.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1136.75 Td (Option A:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1129.35 Td ({"formUrl":null, "acceptedAt":"...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1121.95 Td ("termsVersion":"v1.2", "note":"Terms accepted."}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1107.15 Td (Option B:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1099.75 Td ({"formUrl":"https://forms.viju.ng/loading?t=...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1092.35 Td ("formUrlExpiresAt":"...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1084.95 Td ("successRedirectUrl":"vijuapp://loading-request/succe) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1077.55 Td (ss", "acceptedAt":"...", "termsVersion":"v1.2"}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1062.75 Td (400 {"code":"TERMS_VERSION_INVALID",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1055.35 Td ("currentTermsVersion":"v1.3"}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 1050.95 m 1659.00 1050.95 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 1145.75 m 24.00 1050.95 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 1145.75 m 164.00 1050.95 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 1145.75 m 218.00 1050.95 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 1145.75 m 272.00 1050.95 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 1145.75 m 330.00 1050.95 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 1145.75 m 396.00 1050.95 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 1145.75 m 464.00 1050.95 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 1145.75 m 644.00 1050.95 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 1145.75 m 944.00 1050.95 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 1145.75 m 1124.00 1050.95 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 1145.75 m 1299.00 1050.95 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 1145.75 m 1459.00 1050.95 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 1145.75 m 1659.00 1050.95 l S
+0.973 0.957 0.980 rg 24.00 926.55 1635.00 124.40 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 1041.95 Td (BE-07) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 1034.55 Td (Push notifications) Tj ET
+BT /F2 6.00 Tf 0.360 0.180 0.550 rg 167.00 1041.95 Td (Mobile) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 1041.95 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 275.00 1041.95 Td (5 days) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 333.00 1041.95 Td (No) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 399.00 1041.95 Td (NO) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 1034.55 Td (new) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 1041.95 Td (GET /notifications/me?page&pageSize) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 1034.55 Td (PATCH /notifications/me/read-all) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 1027.15 Td (PATCH /notifications/{notificationId}/read) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 1012.35 Td (\(in-app only - these work solely while the app) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 1004.95 Td (is open\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1041.95 Td (No device-token registration endpoint and no push integration exist anywhere.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1034.55 Td (Register/refresh a token after login, deregister on logout. Deliver via Firebase) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1027.15 Td (Cloud Messaging \(FCM covers Android and iOS via APNs\) on: waybill status change,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1019.75 Td (staff chat message, staff ticket reply, and optionally invoice issued / overdue.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1012.35 Td (Every push must carry a data payload with type, entityId and notificationId so) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 1004.95 Td (the app can deep-link, and must ALSO create the matching in-app record so the two) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 997.55 Td (lists never diverge. Deduplicate - one event, one push per device. SAME DELIVERY) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 990.15 Td (WORK AS WEB AO-13. INFRA PREREQUISITE before mobile work can start: Firebase) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 982.75 Td (project, google-services.json, GoogleService-Info.plist, APNs auth key uploaded,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 975.35 Td (FCM server key held backend-side, bundle ids matching the shipped app.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 1041.95 Td (POST /customers/me/devices \(upsert on token\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 1034.55 Td (DELETE /customers/me/devices/{token}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 1019.75 Td (A body-based POST /devices/unregister is) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 1012.35 Td (acceptable if path-encoding the token is) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 1004.95 Td (awkward. A token registered by one customer must) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 997.55 Td (be REASSIGNED, not duplicated, when another logs) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 990.15 Td (in on the same device.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 1041.95 Td ({"token":"fMEP0vJ...:APA91bH...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 1034.55 Td ("platform":"android", "deviceId":"...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 1027.15 Td ("appVersion":"1.0.3+4", "osVersion":"Android) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 1019.75 Td (15"}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 1004.95 Td (token and platform required \(android | ios\);) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 997.55 Td (the rest optional. DELETE takes no body.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 1041.95 Td (None. Stale tokens rejected by FCM must be) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 1034.55 Td (purged server-side.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1041.95 Td (201:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1034.55 Td ({"id":"dev_01", "token":"fMEP0vJ...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1027.15 Td ("platform":"android", "customerId":"cus_01",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1019.75 Td ("createdAt":"..."}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1012.35 Td (204 on deregistration \(app accepts 200 and 204) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 1004.95 Td (alike\).) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 990.15 Td (FCM payload:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 982.75 Td ({"notification":{"title":"Waybill WB-2026-0091) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 975.35 Td (updated","body":"Your loading request is now) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 967.95 Td (LOADING."}, "data":{"type":"WAYBILL_STATUS",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 960.55 Td ("entityId":"wb_01", "notificationId":"ntf_01",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 953.15 Td ("deepLink":"vijuapp://waybill/wb_01"}}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 938.35 Td (type enum must match /notifications/me - PLEASE) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 930.95 Td (PUBLISH IT.) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 926.55 m 1659.00 926.55 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 1050.95 m 24.00 926.55 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 1050.95 m 164.00 926.55 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 1050.95 m 218.00 926.55 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 1050.95 m 272.00 926.55 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 1050.95 m 330.00 926.55 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 1050.95 m 396.00 926.55 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 1050.95 m 464.00 926.55 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 1050.95 m 644.00 926.55 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 1050.95 m 944.00 926.55 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 1050.95 m 1124.00 926.55 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 1050.95 m 1299.00 926.55 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 1050.95 m 1459.00 926.55 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 1050.95 m 1659.00 926.55 l S
+0.973 0.957 0.980 rg 24.00 831.75 1635.00 94.80 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 917.55 Td (BE-08) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 910.15 Td (Realtime chat \(officer replies) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 902.75 Td (without manual refresh\)) Tj ET
+BT /F2 6.00 Tf 0.360 0.180 0.550 rg 167.00 917.55 Td (Mobile) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 917.55 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 275.00 917.55 Td (5 days) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 333.00 917.55 Td (No) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 917.55 Td (PARTIAL) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 910.15 Td (no cursor, no) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 902.75 Td (receipts) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 917.55 Td (GET /chat/me - returns a BARE JSON ARRAY, not an) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 910.15 Td (object) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 902.75 Td (POST /chat/me) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 917.55 Td (ChatScreen fetches the whole thread once in initState and afterwards only appends) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 910.15 Td (messages the customer sends. No polling, no websocket, no cursor - re-fetching) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 902.75 Td (means re-downloading the entire conversation. WARNING: the app throws 'Invalid) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 895.35 Td (chat response' if the body is not an array, so this must NOT be wrapped in a data) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 887.95 Td (envelope without a coordinated mobile release. ADD ?since= returning only) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 880.55 Td (messages strictly newer, with guaranteed ascending createdAt and a strictly) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 873.15 Td (monotonic per-message timestamp \(or expose a monotonic seq integer\) so no message) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 865.75 Td (can be skipped. ADD ?limit \(default 50, max 200\) and ?before for scroll-back. ADD) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 858.35 Td (read receipts - readAt is already in the model but nothing can write it, which) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 850.95 Td (also blocks the chat badge in BE-02. senderLabel should read 'Viju Account) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 843.55 Td (Officer' for all STAFF messages.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 917.55 Td (No for the incremental fetch - extend GET) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 910.15 Td (/chat/me with query params.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 895.35 Td (YES, one small route:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 887.95 Td (PATCH /chat/me/read) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 873.15 Td (Optional: wss://<host>/ws/chat \(polling stays) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 865.75 Td (the fallback\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 917.55 Td (POST unchanged:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 910.15 Td ({"content":"...","attachmentUrl":"..."} - the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 902.75 Td (app always sends attachmentUrl and uses "") Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 895.35 Td (when there is no image, so treat "" as no) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 887.95 Td (attachment.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 873.15 Td (PATCH /chat/me/read:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 865.75 Td ({"upTo":"2026-08-19T15:40:12.000Z"} ) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 858.35 Td (\(preferred\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 850.95 Td (or {"messageIds":["msg_01","msg_02"]}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 836.15 Td (Must be idempotent.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 917.55 Td (On GET /chat/me - all optional, all) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 910.15 Td (additive:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 902.75 Td (since \(ISO-8601, strictly newer\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 895.35 Td (before \(ISO-8601, scroll-back\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 887.95 Td (limit \(default 50, max 200\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 873.15 Td (With no parameters the endpoint must) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 865.75 Td (behave EXACTLY as it does today so the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 858.35 Td (shipped build keeps working.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 917.55 Td (200 - array, never an object:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 910.15 Td ([{"id":"msg_01","content":"Your loading request has) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 902.75 Td (been approved.", "attachmentUrl":null,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 895.35 Td ("senderType":"STAFF", "senderLabel":"Viju Account) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 887.95 Td (Officer","createdAt":"...","readAt":null}]) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 873.15 Td (An empty poll returns [] with status 200 - never 204,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 865.75 Td (never null.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 850.95 Td (200 PATCH /chat/me/read:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 843.55 Td ({"updated":3,"unread":0}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 831.75 m 1659.00 831.75 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 926.55 m 24.00 831.75 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 926.55 m 164.00 831.75 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 926.55 m 218.00 831.75 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 926.55 m 272.00 831.75 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 926.55 m 330.00 831.75 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 926.55 m 396.00 831.75 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 926.55 m 464.00 831.75 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 926.55 m 644.00 831.75 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 926.55 m 944.00 831.75 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 926.55 m 1124.00 831.75 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 926.55 m 1299.00 831.75 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 926.55 m 1459.00 831.75 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 926.55 m 1659.00 831.75 l S
+0.973 0.957 0.980 rg 24.00 722.15 1635.00 109.60 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 822.75 Td (BE-09) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 815.35 Td (Chat image upload: folder value and 5) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 807.95 Td (MB validation) Tj ET
+BT /F2 6.00 Tf 0.360 0.180 0.550 rg 167.00 822.75 Td (Mobile) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 822.75 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 275.00 822.75 Td (3 days) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 333.00 822.75 Td (No) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 822.75 Td (YES) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 815.35 Td (modify) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 822.75 Td (POST /uploads?folder=profile-photos - multipart,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 815.35 Td (called from ChatRemoteDataSourceImpl) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 807.95 Td (POST /chat/me - the returned url is sent as) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 800.55 Td (attachmentUrl) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 822.75 Td (EVERY chat and ticket attachment is currently stored in the profile-photos) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 815.35 Td (folder, because that is the only folder value the app knows - this needs a data) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 807.95 Td (migration the longer it runs. Accept folder=chat-attachments, publish the full) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 800.55 Td (list of accepted folder values, and reject unknown ones with 400 instead of) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 793.15 Td (silently defaulting. Enforce the PRD's 5 MB limit SERVER-SIDE and return a) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 785.75 Td (structured error including maxBytes. Enforce an allow-list of the six image MIME) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 778.35 Td (types the app can send. CONFIRM whether HEIC/HEIF are storable and servable - iOS) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 770.95 Td (produces them by default and mobile must convert if not. MUST NOT change the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 763.55 Td (field name `file` or the response keys url, key, size, mimeType. The returned url) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 756.15 Td (must be readable by the message recipient - the app renders it in Image.network) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 748.75 Td (with no custom headers.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 822.75 Td (n/a - extend the existing upload route.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 822.75 Td (multipart/form-data:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 815.35 Td (file = <binary>   \(field name is exactly) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 807.95 Td ("file"\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 800.55 Td (folder = "chat-attachments"   \(also sent as a) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 793.15 Td (form field\)) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 778.35 Td (Validation: file required; size <= 5 242 880) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 770.95 Td (bytes; MIME in the allow-list; folder in the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 763.55 Td (published enum.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 822.75 Td (folder - required, currently sent as BOTH) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 815.35 Td (a query parameter and a form field.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 800.55 Td (Requested accepted values: profile-photos) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 793.15 Td (| chat-attachments | ticket-attachments) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 822.75 Td (200 \(shape unchanged\):) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 815.35 Td ({"url":"https://cdn.viju.ng/chat-attachments/2026/08/) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 807.95 Td (19/8f2c1a.jpg", "key":"chat-attachments/...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 800.55 Td ("size":842104, "mimeType":"image/jpeg"}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 785.75 Td (413 {"code":"FILE_TOO_LARGE","message":"Image must be) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 778.35 Td (5MB or) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 770.95 Td (smaller.","maxBytes":5242880,"receivedBytes":8310442}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 763.55 Td (415 {"code":"UNSUPPORTED_MEDIA_TYPE",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 756.15 Td ("allowed":["image/jpeg", "image/png", "image/webp",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 748.75 Td ("image/gif", "image/heic", "image/heif"]}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 741.35 Td (400 {"code":"VALIDATION_ERROR","message":"Unknown) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 733.95 Td (folder.", "allowed":["profile-photos",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 726.55 Td ("chat-attachments", "ticket-attachments"]}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 722.15 m 1659.00 722.15 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 831.75 m 24.00 722.15 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 831.75 m 164.00 722.15 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 831.75 m 218.00 722.15 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 831.75 m 272.00 722.15 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 831.75 m 330.00 722.15 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 831.75 m 396.00 722.15 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 831.75 m 464.00 722.15 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 831.75 m 644.00 722.15 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 831.75 m 944.00 722.15 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 831.75 m 1124.00 722.15 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 831.75 m 1299.00 722.15 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 831.75 m 1459.00 722.15 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 831.75 m 1659.00 722.15 l S
+0.973 0.957 0.980 rg 24.00 619.95 1635.00 102.20 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 713.15 Td (BE-10) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 705.75 Td (Support ticket image upload: folder) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 698.35 Td (value and validation) Tj ET
+BT /F2 6.00 Tf 0.360 0.180 0.550 rg 167.00 713.15 Td (Mobile) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 713.15 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 275.00 713.15 Td (3 days) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 333.00 713.15 Td (No) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 713.15 Td (YES) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 705.75 Td (modify) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 713.15 Td (POST /uploads?folder=profile-photos - shared) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 705.75 Td (helper for ticket creation and replies) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 698.35 Td (POST /tickets) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 690.95 Td (POST /tickets/{ticketId}/replies) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 683.55 Td (GET /tickets/customer?page&pageSize) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 676.15 Td (GET /tickets/{ticketId}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 713.15 Td (Same two defects as BE-09: wrong folder, and no size or type validation. Accept) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 705.75 Td (folder=ticket-attachments with the identical validation contract. PUBLISH the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 698.35 Td (authoritative category enum - the app currently sends the display strings) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 690.95 Td ('Account Query', 'Delivery Issue', 'Product Query', 'Other'; if the backend) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 683.55 Td (expects codes such as ACCOUNT_QUERY, say so and the app will send codes and) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 676.15 Td (render labels locally. Silent acceptance of arbitrary strings is today's) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 668.75 Td (behaviour and makes reporting unreliable. PUBLISH the ticket status enum too.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 661.35 Td (Treat an empty-string attachmentUrl as null so threads do not contain empty URLs) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 653.95 Td (the app tries to render. ADD unreadReplies and lastReplyAt to ticket list rows -) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 646.55 Td (needed for the BE-02 support badge and to avoid opening every thread.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 713.15 Td (n/a - extend existing routes.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 713.15 Td (Upload identical to BE-09 with) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 705.75 Td (folder=ticket-attachments. Ticket create/reply) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 698.35 Td (bodies unchanged.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 683.55 Td (Validation on create: category in the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 676.15 Td (published enum; subject 1-120 chars;) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 668.75 Td (description 1-2000 chars; attachmentUrl) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 661.35 Td (optional and must be a URL the backend itself) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 653.95 Td (issued.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 713.15 Td (Upload: folder=ticket-attachments.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 698.35 Td (Ticket list currently page, pageSize.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 690.95 Td (Requested optional additions: status and) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 683.55 Td (category filters, so the list is filtered) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 676.15 Td (server-side rather than within a single) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 668.75 Td (20-row page.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 713.15 Td (200 enriched ticket row:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 705.75 Td ({"data":[{"id":"tkt_01", "ticketId":"TKT-2026-0188",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 698.35 Td ("category":"DELIVERY_ISSUE", "subject":"Truck not) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 690.95 Td (loaded", "attachmentUrl":null, "status":"OPEN",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 683.55 Td ("unreadReplies":2, "lastReplyAt":"...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 676.15 Td ("createdAt":"..."}], "meta":{"total":4, "page":1,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 668.75 Td ("pageSize":20}}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 653.95 Td (400 {"code":"VALIDATION_ERROR","message":"Unknown) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 646.55 Td (category.", "allowed":["ACCOUNT_QUERY",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 639.15 Td ("DELIVERY_ISSUE", "PRODUCT_QUERY", "OTHER"]}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 624.35 Td (Size and type errors identical to BE-09.) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 619.95 m 1659.00 619.95 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 722.15 m 24.00 619.95 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 722.15 m 164.00 619.95 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 722.15 m 218.00 619.95 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 722.15 m 272.00 619.95 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 722.15 m 330.00 619.95 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 722.15 m 396.00 619.95 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 722.15 m 464.00 619.95 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 722.15 m 644.00 619.95 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 722.15 m 944.00 619.95 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 722.15 m 1124.00 619.95 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 722.15 m 1299.00 619.95 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 722.15 m 1459.00 619.95 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 722.15 m 1659.00 619.95 l S
+0.973 0.957 0.980 rg 24.00 539.95 1635.00 80.00 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 610.95 Td (BE-11) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 603.55 Td (Support thread sender label) Tj ET
+BT /F2 6.00 Tf 0.360 0.180 0.550 rg 167.00 610.95 Td (Mobile) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 610.95 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 275.00 610.95 Td (3 days) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 333.00 610.95 Td (No) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 610.95 Td (YES) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 603.55 Td (modify) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 610.95 Td (GET /tickets/{ticketId} - the full thread) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 603.55 Td (POST /tickets/{ticketId}/replies) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 610.95 Td (Replies carry senderType and a raw staffId but no display name, and the app has) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 603.55 Td (NO endpoint with which to resolve a staff id to a person - so staff replies) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 596.15 Td (cannot be labelled at all. ADD senderLabel to every element of replies[]: for) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 588.75 Td (senderType STAFF return 'Viju Support' \(or 'Viju Account Officer' - CONFIRM the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 581.35 Td (preferred wording and keep it consistent with the chat label in BE-08\); for) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 573.95 Td (CUSTOMER return the customer's name. Return the same senderLabel on the POST) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 566.55 Td (reply response so an optimistically-rendered reply matches a later refresh.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 559.15 Td (CONFIRM the authoritative senderType values - the app compares against 'STAFF') Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 551.75 Td (and 'CUSTOMER', and any other casing silently renders every message on the wrong) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 544.35 Td (side of the thread. Nothing should be removed; staffId can stay for audit.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 610.95 Td (n/a - one additive field on existing responses.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 610.95 Td (GET thread: none.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 603.55 Td (POST reply unchanged:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 596.15 Td ({"content":"...","attachmentUrl":"..."}) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 610.95 Td (None. If threads can grow long, optional) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 603.55 Td (limit / before paging on replies[] would) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 596.15 Td (help - not required for launch.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 610.95 Td (200 GET /tickets/{ticketId}:) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 603.55 Td ({"id":"tkt_01", "ticketId":"TKT-2026-0188",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 596.15 Td ("status":"IN_PROGRESS", "customer":{ ... },) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 588.75 Td ("replies":[{"id":"rep_01", "senderType":"CUSTOMER",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 581.35 Td ("staffId":null, "senderLabel":"Ada) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 573.95 Td (Obi","content":"Any update on this?",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 566.55 Td ("createdAt":"..."}, {"id":"rep_02",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 559.15 Td ("senderType":"STAFF", "staffId":"stf_01",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 551.75 Td ("senderLabel":"Viju Support","content":"We have) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 544.35 Td (escalated this to the depot.","createdAt":"..."}]}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 539.95 m 1659.00 539.95 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 619.95 m 24.00 539.95 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 619.95 m 164.00 539.95 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 619.95 m 218.00 539.95 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 619.95 m 272.00 539.95 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 619.95 m 330.00 539.95 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 619.95 m 396.00 539.95 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 619.95 m 464.00 539.95 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 619.95 m 644.00 539.95 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 619.95 m 944.00 539.95 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 619.95 m 1124.00 539.95 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 619.95 m 1299.00 539.95 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 619.95 m 1459.00 539.95 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 619.95 m 1659.00 539.95 l S
+0.973 0.957 0.980 rg 24.00 459.95 1635.00 80.00 re f
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 530.95 Td (BE-12) Tj ET
+BT /F2 6.00 Tf 0.120 0.220 0.390 rg 27.00 523.55 Td (Profile account number) Tj ET
+BT /F2 6.00 Tf 0.360 0.180 0.550 rg 167.00 530.95 Td (Mobile) Tj ET
+BT /F2 6.00 Tf 0.700 0.420 0.000 rg 221.00 530.95 Td (Pending) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 275.00 530.95 Td (3 days) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 333.00 530.95 Td (No) Tj ET
+BT /F2 6.00 Tf 0.690 0.000 0.130 rg 399.00 530.95 Td (CLARIFY) Tj ET
+BT /F2 6.00 Tf 0.000 0.420 0.250 rg 399.00 523.55 Td (then modify) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 530.95 Td (GET /customers/me) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 523.55 Td (PATCH /customers/me/photo) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 467.00 516.15 Td (PATCH /customers/me/password) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 530.95 Td (The PRD lists 'account number' as a profile field; the app has only erpId,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 523.55 Td (rendered as 'Account <erpId>'. DECISION REQUIRED - is erpId the number the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 516.15 Td (customer sees on their invoices and quotes? If YES, no backend change and the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 508.75 Td (mobile team relabels the field. If NO, add a nullable accountNumber string; the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 501.35 Td (app will prefer it and fall back to erpId, so the change is safe to deploy in) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 493.95 Td (either order. INDEPENDENTLY: settle accountOfficer on ONE shape and keep it - the) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 486.55 Td (app defensively handles a plain string, an object with displayName, an object) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 479.15 Td (with name, and null. Adding the officer's phone would let the profile offer a) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 471.75 Td (direct call action. Also add termsAcceptedAt and currentTermsVersion here \(see) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 647.00 464.35 Td (BE-06\).) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 530.95 Td (n/a - additive fields on the existing profile) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 947.00 523.55 Td (route.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1127.00 530.95 Td (None - GET request.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1302.00 530.95 Td (None.) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 530.95 Td (200 GET /customers/me \(additions marked\):) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 523.55 Td ({"id":"cus_01", "erpId":"CUS-4471",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 516.15 Td ("accountNumber":"VJ-0044710", "name":"Ada Obi",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 508.75 Td ("phone":"+2348012345678", "region":"SOUTH-EAST",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 501.35 Td ("accountStatus":"ACTIVE",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 493.95 Td ("outstandingBalance":1250000,) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 486.55 Td ("accountOfficer":{"id":"stf_01", "name":"Chidi Umeh",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 479.15 Td ("phone":"+2348140000000"}, "termsAcceptedAt":"...",) Tj ET
+BT /F1 6.00 Tf 0.100 0.100 0.100 rg 1462.00 471.75 Td ("currentTermsVersion":"v1.2"}) Tj ET
+0.780 0.820 0.870 RG 0.40 w 24.00 459.95 m 1659.00 459.95 l S
+0.780 0.820 0.870 RG 0.40 w 24.00 539.95 m 24.00 459.95 l S
+0.780 0.820 0.870 RG 0.40 w 164.00 539.95 m 164.00 459.95 l S
+0.780 0.820 0.870 RG 0.40 w 218.00 539.95 m 218.00 459.95 l S
+0.780 0.820 0.870 RG 0.40 w 272.00 539.95 m 272.00 459.95 l S
+0.780 0.820 0.870 RG 0.40 w 330.00 539.95 m 330.00 459.95 l S
+0.780 0.820 0.870 RG 0.40 w 396.00 539.95 m 396.00 459.95 l S
+0.780 0.820 0.870 RG 0.40 w 464.00 539.95 m 464.00 459.95 l S
+0.780 0.820 0.870 RG 0.40 w 644.00 539.95 m 644.00 459.95 l S
+0.780 0.820 0.870 RG 0.40 w 944.00 539.95 m 944.00 459.95 l S
+0.780 0.820 0.870 RG 0.40 w 1124.00 539.95 m 1124.00 459.95 l S
+0.780 0.820 0.870 RG 0.40 w 1299.00 539.95 m 1299.00 459.95 l S
+0.780 0.820 0.870 RG 0.40 w 1459.00 539.95 m 1459.00 459.95 l S
+0.780 0.820 0.870 RG 0.40 w 1659.00 539.95 m 1659.00 459.95 l S
+BT /F1 7.00 Tf 0.420 0.460 0.530 rg 1599.78 22.00 Td (Page 3) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 10 0 R /MediaBox [0 0 1683.78 1190.55] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 4 0 R >>
+endobj
+8 0 obj
+<< /Type /Page /Parent 10 0 R /MediaBox [0 0 1683.78 1190.55] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 5 0 R >>
+endobj
+9 0 obj
+<< /Type /Page /Parent 10 0 R /MediaBox [0 0 1683.78 1190.55] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 6 0 R >>
+endobj
+10 0 obj
+<< /Type /Pages /Kids [7 0 R 8 0 R 9 0 R] /Count 3 >>
+endobj
+11 0 obj
+<< /Type /Catalog /Pages 10 0 R >>
+endobj
+xref
+0 12
+0000000000 65535 f 
+0000000015 00000 n 
+0000000110 00000 n 
+0000000210 00000 n 
+0000000312 00000 n 
+0000059967 00000 n 
+0000120228 00000 n 
+0000160703 00000 n 
+0000160858 00000 n 
+0000161013 00000 n 
+0000161168 00000 n 
+0000161238 00000 n 
+trailer
+<< /Size 12 /Root 11 0 R >>
+startxref
+161289
+%%EOF

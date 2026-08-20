@@ -10,9 +10,11 @@ import { toast } from "sonner";
 import { customerService } from "@/services/customer.service";
 import { queryKeys, assignmentQueryKeys } from "@/lib/api/queryKeys";
 import { getErrorMessage } from "@/utils/apiError";
+import { DEFAULT_PAGE_SIZE } from "@/constants/pagination";
 import {
-  CustomersListResponse,
+  CustomerSortBy,
   ReassignCustomerRequest,
+  SortOrder,
 } from "@/lib/api/types";
 
 interface GetCustomersParams {
@@ -20,6 +22,9 @@ interface GetCustomersParams {
   pageSize?: number;
   region?: string;
   search?: string;
+  hasOfficer?: boolean;
+  sortBy?: CustomerSortBy;
+  sortOrder?: SortOrder;
 }
 
 /**
@@ -34,11 +39,62 @@ export const useCustomers = (params: GetCustomersParams = {}) => {
     queryFn: () =>
       customerService.getCustomers({
         page: params.page ?? 1,
-        pageSize: params.pageSize ?? 20,
+        pageSize: params.pageSize ?? DEFAULT_PAGE_SIZE,
         region: params.region,
         search: params.search,
+        hasOfficer: params.hasOfficer,
+        sortBy: params.sortBy,
+        sortOrder: params.sortOrder,
       }),
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1,
+  });
+};
+
+/**
+ * B-3: single customer detail
+ * GET /admin/customers/{id} - only runs once an id is selected
+ */
+export const useCustomer = (customerId?: string | null) => {
+  return useQuery({
+    queryKey: ["customers", "detail", customerId],
+    queryFn: () => customerService.getCustomer(customerId as string),
+    enabled: Boolean(customerId),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+};
+
+/**
+ * B-2: ERP rows quarantined for an unmappable region.
+ * Admin-only, so a 403 for other roles is expected - callers must render the
+ * error branch rather than assuming data.
+ */
+export const useUnmappedCustomers = (
+  params: { page?: number; pageSize?: number; enabled?: boolean } = {},
+) => {
+  return useQuery({
+    queryKey: ["erp", "unmapped-customers", params.page, params.pageSize],
+    queryFn: () =>
+      customerService.getUnmappedCustomers({
+        page: params.page ?? 1,
+        pageSize: params.pageSize ?? DEFAULT_PAGE_SIZE,
+      }),
+    enabled: params.enabled !== false,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+};
+
+/**
+ * B-2: ingest / projection freshness
+ */
+export const useErpSyncStatus = (enabled = true) => {
+  return useQuery({
+    queryKey: ["erp", "sync-status"],
+    queryFn: () => customerService.getErpSyncStatus(),
+    enabled,
+    staleTime: 60 * 1000,
     retry: 1,
   });
 };

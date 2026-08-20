@@ -29,7 +29,7 @@ interface Customer {
 const tableColumns = [
   {
     key: "name" as const,
-    title: "DISTRIBUTOR",
+    title: "CUSTOMER",
   },
   {
     key: "phoneNo" as const,
@@ -37,7 +37,7 @@ const tableColumns = [
   },
   {
     key: "account" as const,
-    title: "ACCOUNT",
+    title: "CODE",
   },
   {
     key: "region" as const,
@@ -84,7 +84,7 @@ const mockCustomerData: Customer[] = [
     name: "KJ Fresh Mart",
     phoneNo: "08012345678",
     account: "VJ-00988",
-    region: "South West",
+    region: "Western",
     officers: "David Okafor",
     wallet: "₦850,500",
     stock: "₦900,000",
@@ -96,7 +96,7 @@ const mockCustomerData: Customer[] = [
     name: "Premium Foods",
     phoneNo: "08098765432",
     account: "VJ-00989",
-    region: "South East",
+    region: "Eastern",
     officers: "Chinedu Obi",
     wallet: "₦520,000",
     stock: "₦450,000",
@@ -132,7 +132,7 @@ const mockCustomerData: Customer[] = [
     name: "Southwest Traders",
     phoneNo: "08022222222",
     account: "VJ-00992",
-    region: "South West",
+    region: "Western",
     officers: "David Okafor",
     wallet: "₦750,000",
     stock: "₦700,000",
@@ -144,7 +144,7 @@ const mockCustomerData: Customer[] = [
     name: "Eastern Foods Inc",
     phoneNo: "08033333333",
     account: "VJ-00993",
-    region: "South East",
+    region: "Eastern",
     officers: "Chinedu Obi",
     wallet: "₦920,000",
     stock: "₦850,000",
@@ -180,7 +180,7 @@ const mockCustomerData: Customer[] = [
     name: "Coastal Retail",
     phoneNo: "08066666666",
     account: "VJ-00996",
-    region: "South West",
+    region: "Western",
     officers: "David Okafor",
     wallet: "₦1,100,000",
     stock: "₦1,000,000",
@@ -193,8 +193,8 @@ const mockCustomerData: Customer[] = [
 const regions = [
   { name: "All Regions", value: "all" },
   { name: "Lagos", value: "Lagos" },
-  { name: "South West", value: "South West" },
-  { name: "South East", value: "South East" },
+  { name: "Western", value: "Western" },
+  { name: "Eastern", value: "Eastern" },
   { name: "North", value: "North" },
 ];
 
@@ -338,7 +338,7 @@ function CustomerReassignmentContent() {
 
               {/* Search Input Component */}
               <SearchInput
-                placeholder="Search name or account"
+                placeholder="Search name or code"
                 onSearch={handleSearch}
                 debounceDelay={500}
                 fullWidth={false}
@@ -378,7 +378,7 @@ function CustomerReassignmentContent() {
               title: "Customer",
               fields: [
                 { label: "Name", value: detailsRow?.name },
-                { label: "Account", value: detailsRow?.account, type: "id" },
+                { label: "Code", value: detailsRow?.account, type: "id" },
                 { label: "Phone Number", value: detailsRow?.phoneNo },
                 { label: "Region", value: detailsRow?.region },
               ],

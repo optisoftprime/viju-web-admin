@@ -30,17 +30,20 @@ export const dashboardService = {
   },
 
   /**
-   * Get regional admin dashboard statistics
-   * @param region - Region enum value (LAGOS, SOUTH_WEST, SOUTH_EAST, NORTH)
+   * Get regional admin dashboard statistics.
+   *
+   * A REGIONAL_ADMIN must NOT send `region` - the server derives it from the
+   * token and returns 403 if a different one is passed. Only an org-wide ADMIN
+   * passes a region, and for them it is required.
+   *
+   * @param region - Region enum value, see @/constants/regions (ADMIN only)
    */
   getRegionalDashboard: async (
-    region: string,
+    region?: string,
   ): Promise<RegionalAdminDashboardResponse> => {
     const { data } = await apiClient.get(
       endpoints.dashboard.regionalDashboard,
-      {
-        params: { region },
-      },
+      region ? { params: { region } } : undefined,
     );
     return data;
   },

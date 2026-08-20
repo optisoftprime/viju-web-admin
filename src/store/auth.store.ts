@@ -28,6 +28,8 @@ interface AuthStore {
   ) => void;
   logout: () => void;
   initializeAuth: () => void;
+  /** Merge fresh fields from GET /users/me (notably `region`) into the store */
+  syncUser: (partial: Partial<User>) => void;
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
@@ -82,6 +84,20 @@ export const useAuthStore = create<AuthStore>((set) => ({
       isLoading: false,
     });
   },
+
+  syncUser: (partial) =>
+    set((state) => {
+      if (!state.user || !partial) return {};
+
+      const merged = { ...state.user, ...partial };
+      // Keep the cookie in step so a refresh does not lose the region
+      try {
+        Cookie.set("user", JSON.stringify(merged), { expires: 7 });
+      } catch {
+        // A serialisation failure must not break the session
+      }
+      return { user: merged };
+    }),
 
   initializeAuth: () => {
     const state = useAuthStore.getState();

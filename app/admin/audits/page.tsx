@@ -7,10 +7,12 @@ import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
 import RowDetailsModal from "@/components/RowDetailsModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { usePagination } from "@/hooks/usePagination";
+import { formatRegion } from "@/utils/formatter";
+import { usePagination, getAppliedPageSize } from "@/hooks/usePagination";
 import { useAuditTickets } from "@/hooks/api/useAudit";
 import { auditService } from "@/services/audit.service";
 import { BroadcastRegion } from "@/lib/api/types";
+import { REGION_FILTER_TABS } from "@/constants/regions";
 import ExportRecord from "@/components/ExportRecord";
 
 // Table columns definition
@@ -41,14 +43,8 @@ const tableColumns = [
   },
 ];
 
-// Region options for tabs
-const regions = [
-  { name: "All Regions", value: "" },
-  { name: "Lagos", value: "LAGOS" },
-  { name: "South West", value: "SOUTH_WEST" },
-  { name: "South East", value: "SOUTH_EAST" },
-  { name: "North", value: "NORTH" },
-];
+// Region options for tabs - canonical list, see @/constants/regions
+const regions = REGION_FILTER_TABS;
 
 // Transform API data to table format
 interface AuditTableRow {
@@ -114,7 +110,7 @@ function InteractionAuditContent() {
       ticketId: ticket.ticketId,
       subject: ticket.subject,
       customerName: ticket.customer.name,
-      region: ticket.customer.region,
+      region: formatRegion(ticket.customer?.region),
       status: ticket.status,
       createdAt: new Date(ticket.createdAt).toLocaleDateString("en-US", {
         year: "numeric",
@@ -126,6 +122,8 @@ function InteractionAuditContent() {
 
   const totalItems = auditData?.meta.total || 0;
   const totalPages = auditData?.meta.totalPages || 1;
+  // The server clamps pageSize - report what it actually applied
+  const appliedPageSize = getAppliedPageSize(auditData?.meta, itemsPerPage);
 
   // The table row is a flattened view - pull the full ticket for the modal
   const detailsTicket = useMemo(
@@ -246,7 +244,7 @@ function InteractionAuditContent() {
                       : "bg-white border border-muted/30 hover:border-primary hover:bg-primary hover:text-white"
                   }
                 >
-                  {region.name}
+                  {region.label}
                 </Button>
               ))}
             </div>
@@ -361,7 +359,7 @@ function InteractionAuditContent() {
               <Pagination
                 currentPage={currentPage}
                 totalItems={totalItems}
-                itemsPerPage={itemsPerPage}
+                itemsPerPage={appliedPageSize}
                 onPrevious={handlePreviousPage}
                 onNext={handleNextPage}
                 onItemsPerPageChange={setPageSize}

@@ -31,17 +31,26 @@ export const endpoints = {
   },
   customers: {
     list: "/admin/customers",
+    // B-3: ERP-parity detail for a single customer
+    detail: "/admin/customers/{id}",
     reassign: "/admin/customers/{id}/reassign",
     export: "/admin/customers/export.csv",
   },
   audits: {
     tickets: "/admin/audit/tickets",
     export: "/admin/audit/tickets/export.csv",
+    // AD-12: chat audit, one row per THREAD
+    chats: "/admin/audit/chats",
+    chatsExport: "/admin/audit/chats/export.csv",
   },
   officers: {
     list: "/admin/officers",
     create: "/admin/officers",
+    // B-4.1: officer profile, readable by a regional admin in their own region
+    detail: "/admin/officers/{id}",
     reassignCustomers: "/admin/officers/{id}/reassign-customers",
+    // AD-18: deactivate / reactivate
+    update: "/admin/officers/{id}",
   },
   flyers: {
     list: "/admin/product-flyers",
@@ -71,5 +80,30 @@ export const endpoints = {
   },
   uploads: {
     file: "/uploads",
+  },
+  // AO-10 / CC-03: server-sent events (SSE, not WebSocket)
+  realtime: {
+    stream: "/realtime/stream",
+  },
+  // RA-06: regional loading requests
+  regional: {
+    loadingRequests: "/regional/loading-requests",
+    assignLoadingRequest: "/regional/loading-requests/{id}/assign",
+  },
+  // LO-02..LO-05: loading / warehouse officer queue
+  loading: {
+    queue: "/loading/queue",
+    detail: "/loading/queue/{id}",
+    status: "/loading/queue/{id}/status",
+    waybill: "/loading/queue/{id}/waybill",
+  },
+  // B-2: ERP data-quality surfaces
+  erp: {
+    unmappedCustomers: "/admin/erp/unmapped-customers",
+    syncStatus: "/admin/erp/sync-status",
+  },
+  // CC-05: public contact form
+  contact: {
+    submit: "/contact",
   },
 };

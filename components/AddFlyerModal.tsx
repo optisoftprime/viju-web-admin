@@ -7,11 +7,17 @@ import { Button } from "@/components/common/Button";
 import { Input } from "@/components/common/Input";
 import { Upload } from "lucide-react";
 import Image from "next/image";
+import { toast } from "sonner";
+import { chatService } from "@/services/chat.service";
+import { getErrorMessage } from "@/utils/apiError";
+import PreviewFlyerModal from "@/components/PreviewFlyerModal";
 
 interface Flyer {
   id?: string;
   name: string;
   imageUrl?: string;
+  sortOrder?: number;
+  isActive?: boolean;
 }
 
 interface AddFlyerModalProps {
@@ -35,6 +41,10 @@ export default function AddFlyerModal({
   });
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  // "Preview flyer before publishing" - shows exactly what the distributor
+  // will see, using the same modal the flyers grid uses.
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; imageUrl?: string }>(
     {},
   );
@@ -64,39 +74,66 @@ export default function AddFlyerModal({
     }
   };
 
+  /**
+   * Upload the chosen file and keep the CDN URL the API returns.
+   *
+   * This previously stored the FileReader base64 data URI directly in
+   * `imageUrl` and POSTed that to the API - which is why flyers failed to
+   * display: a data URI is not a URL the CDN (or next/image) can serve.
+   * The local preview still uses the data URI; only the SAVED value changes.
+   */
+  const uploadFlyerImage = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setErrors((prev) => ({
+        ...prev,
+        imageUrl: "Please upload a valid image file",
+      }));
+      return;
+    }
+
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      setErrors((prev) => ({
+        ...prev,
+        imageUrl: "File size must be less than 5MB",
+      }));
+      return;
+    }
+
+    // Instant local preview while the upload runs
+    const reader = new FileReader();
+    reader.onloadend = () => setImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
+
+    setIsUploading(true);
+    setErrors((prev) => ({ ...prev, imageUrl: undefined }));
+
+    try {
+      // POST /uploads now requires the Authorization header - apiClient
+      // attaches it automatically.
+      const url = await chatService.uploadFile(file, "product-flyers");
+
+      if (!url) throw new Error("Upload did not return a URL");
+
+      setFormData((prev) => ({ ...prev, imageUrl: url }));
+      setImagePreview(url);
+    } catch (error) {
+      setImagePreview(null);
+      setErrors((prev) => ({
+        ...prev,
+        imageUrl: getErrorMessage(error) || "Could not upload that image",
+      }));
+      toast.error(getErrorMessage(error) || "Could not upload that image");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith("image/")) {
-        setErrors({
-          ...errors,
-          imageUrl: "Please upload a valid image file",
-        });
-        return;
-      }
-
-      // Validate file size (e.g., max 5MB)
-      const maxSize = 5 * 1024 * 1024; // 5MB
-      if (file.size > maxSize) {
-        setErrors({
-          ...errors,
-          imageUrl: "File size must be less than 5MB",
-        });
-        return;
-      }
-
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setFormData({ ...formData, imageUrl: result });
-        setImagePreview(result);
-
-        setErrors({ ...errors, imageUrl: undefined });
-      };
-      reader.readAsDataURL(file);
-    }
+    if (file) void uploadFlyerImage(file);
+    // allow re-picking the same file after a failed upload
+    e.target.value = "";
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -109,35 +146,7 @@ export default function AddFlyerModal({
     e.stopPropagation();
 
     const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      const file = files[0];
-      if (!file.type.startsWith("image/")) {
-        setErrors({
-          ...errors,
-          imageUrl: "Please upload a valid image file",
-        });
-        return;
-      }
-
-      const maxSize = 5 * 1024 * 1024;
-      if (file.size > maxSize) {
-        setErrors({
-          ...errors,
-          imageUrl: "File size must be less than 5MB",
-        });
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setFormData({ ...formData, imageUrl: result });
-        setImagePreview(result);
-
-        setErrors({ ...errors, imageUrl: undefined });
-      };
-      reader.readAsDataURL(file);
-    }
+    if (files.length > 0) void uploadFlyerImage(files[0]);
   };
 
   const validateForm = () => {
@@ -147,8 +156,13 @@ export default function AddFlyerModal({
       newErrors.name = "Flyer Name is required";
     }
 
-    if (!formData.imageUrl) {
+    if (isUploading) {
+      newErrors.imageUrl = "Please wait for the image upload to finish";
+    } else if (!formData.imageUrl) {
       newErrors.imageUrl = "Flyer Image is required";
+    } else if (formData.imageUrl.startsWith("data:")) {
+      // Guard against ever saving a data URI again
+      newErrors.imageUrl = "Image is still uploading. Please try again.";
     }
 
     setErrors(newErrors);
@@ -169,6 +183,7 @@ export default function AddFlyerModal({
   const handleClose = () => {
     setFormData({ name: "", imageUrl: "" });
     setImagePreview(null);
+    setIsUploading(false);
     setErrors({});
     onClose();
   };
@@ -256,7 +271,7 @@ export default function AddFlyerModal({
         </div>
 
         {/* Form Actions */}
-        <div className="flex justify-end gap-3 pt-4">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4">
           <Button
             variant="secondary"
             onClick={handleClose}
@@ -264,8 +279,20 @@ export default function AddFlyerModal({
           >
             Cancel
           </Button>
+
+          {/* Preview before publishing - disabled until there is something
+              to look at, so it can never open an empty frame */}
+          <Button
+            variant="outline"
+            disabled={!imagePreview || isUploading}
+            onClick={() => setIsPreviewOpen(true)}
+          >
+            Preview
+          </Button>
+
           <Button
             variant="primary"
+            loading={isUploading}
             onClick={handleSubmit}
             className="bg-orange hover:bg-orange/90"
           >
@@ -273,6 +300,19 @@ export default function AddFlyerModal({
           </Button>
         </div>
       </div>
+
+      {/* Preview uses the staged image, so it reflects unsaved edits */}
+      <PreviewFlyerModal
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        flyer={{
+          id: flyer?.id || "preview",
+          name: formData.name || "Untitled flyer",
+          imageUrl: imagePreview || formData.imageUrl || undefined,
+          sortOrder: flyer?.sortOrder,
+          isActive: flyer?.isActive,
+        }}
+      />
     </Modal>
   );
 }

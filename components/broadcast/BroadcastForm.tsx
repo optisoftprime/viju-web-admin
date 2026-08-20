@@ -18,11 +18,12 @@ import {
   useInfiniteCustomers,
 } from "@/hooks/api/useBroadcast";
 import { toast } from "sonner";
+import { REGIONS } from "@/constants/regions";
 
 interface BroadcastFormData {
   broadcastType: "regional" | "individual";
   regions: string[];
-  distributor: string;
+  customer: string;
   message: string;
   allowance: number;
 }
@@ -31,12 +32,7 @@ interface BroadcastFormProps {
   onSubmit?: (data: BroadcastFormData) => void;
 }
 
-const regionOptions = [
-  { label: "North", value: "NORTH" },
-  { label: "South West", value: "SOUTH_WEST" },
-  { label: "South East", value: "SOUTH_EAST" },
-  { label: "Lagos", value: "LAGOS" },
-];
+const regionOptions = REGIONS;
 
 const validationSchema = yup.object().shape({
   broadcastType: yup
@@ -51,9 +47,9 @@ const validationSchema = yup.object().shape({
         .required("Region is required") as any,
     otherwise: (schema) => schema.optional(),
   }) as any,
-  distributor: yup.string().when("broadcastType", {
+  customer: yup.string().when("broadcastType", {
     is: "individual",
-    then: (schema) => schema.required("Distributor is required"),
+    then: (schema) => schema.required("customer is required"),
     otherwise: (schema) => schema.optional(),
   }) as any,
   message: yup
@@ -78,7 +74,7 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
   );
   const [messageLength, setMessageLength] = useState(0);
   const [customerSearch, setCustomerSearch] = useState("");
-  // Kept separately so the chosen distributor stays readable after the
+  // Kept separately so the chosen customer stays readable after the
   // search box is cleared and the option list reloads
   const [selectedCustomer, setSelectedCustomer] = useState<{
     label: string;
@@ -109,7 +105,7 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
     defaultValues: {
       broadcastType: "individual",
       regions: [],
-      distributor: "",
+      customer: "",
       message: "",
       allowance: 0,
     },
@@ -147,7 +143,7 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
     isCustomerListOpen,
   ]);
 
-  // Close the distributor dropdown when clicking outside of it
+  // Close the customer dropdown when clicking outside of it
   useEffect(() => {
     if (!isCustomerListOpen) return;
 
@@ -169,7 +165,7 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
     reset({
       broadcastType: type,
       regions: [],
-      distributor: "",
+      customer: "",
       message: "",
       allowance: 0,
     });
@@ -192,7 +188,7 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
         // meaningful when > 0, so it is left out entirely otherwise
         const allowance = Number(data.allowance);
         await individualMutation.mutateAsync({
-          customerId: data.distributor,
+          customerId: data.customer,
           message: data.message,
           ...(allowance > 0 ? { deliveryAllowance: allowance } : {}),
         });
@@ -202,7 +198,7 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
       reset({
         broadcastType: data.broadcastType,
         regions: [],
-        distributor: "",
+        customer: "",
         message: "",
         allowance: 0,
       });
@@ -246,7 +242,7 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
               New Broadcast
             </Text>
             <Text variant="caption" color="muted" className="mt-1">
-              Push notification delivered to distributor mobile apps.
+              Push notification delivered to customer mobile apps.
             </Text>
           </div>
           <BroadcastTypeTabs
@@ -261,10 +257,10 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
         onSubmit={handleSubmit(onFormSubmit, onFormInvalid)}
         className="p-4 space-y-6"
       >
-        {/* Regions / Distributor Field */}
+        {/* Regions / customer Field */}
         {broadcastType === "individual" ? (
           <Controller
-            name="distributor"
+            name="customer"
             control={control}
             render={({ field }) => {
               const selectedLabel =
@@ -282,7 +278,7 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
                     color="foreground"
                     className="block"
                   >
-                    Target Distributor
+                    Target customer
                   </Text>
 
                   {/* Trigger - shows the current selection, opens the list */}
@@ -291,7 +287,7 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
                       !isLoading && setIsCustomerListOpen((prev) => !prev)
                     }
                     className={`w-full border rounded-md px-3 py-2.5 flex items-center justify-between gap-2 ${
-                      errors.distributor ? "border-red-500" : "border-[#E5E7EB]"
+                      errors.customer ? "border-red-500" : "border-[#E5E7EB]"
                     } ${isLoading ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
                   >
                     <Text
@@ -299,7 +295,7 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
                       color={selectedLabel ? "foreground" : "muted"}
                       className="truncate"
                     >
-                      {selectedLabel || "Select distributor"}
+                      {selectedLabel || "Select customer"}
                     </Text>
                     <ChevronDown
                       className={`w-4 h-4 text-muted shrink-0 transition-transform ${
@@ -314,7 +310,7 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
                         <input
                           autoFocus
                           type="text"
-                          placeholder="Search distributor..."
+                          placeholder="Search customer..."
                           value={customerSearch}
                           onChange={(e) => setCustomerSearch(e.target.value)}
                           className="w-full p-2 border border-[#E5E7EB] rounded-md outline-none text-sm"
@@ -370,13 +366,13 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
                     </div>
                   )}
 
-                  {errors.distributor && (
+                  {errors.customer && (
                     <Text
                       variant="caption"
                       color="primary"
                       className="text-red-500"
                     >
-                      {errors.distributor.message}
+                      {errors.customer.message}
                     </Text>
                   )}
                 </div>
@@ -433,7 +429,7 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
               color="muted"
               className="mt-1 max-w-[320px]"
             >
-              Optional. If entered, the distributor's wallet is credited
+              Optional. If entered, the customer's wallet is credited
               immediately on receipt.
             </Text>
           </div>
@@ -468,8 +464,8 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
         <div className="border border-[#E5E7EB] rounded-md p-5 flex justify-between items-center">
           <Text variant="caption" color="muted">
             {broadcastType === "individual"
-              ? "Push notification will include distributor's name"
-              : "Push notification will be delivered to all distributors in selected regions"}
+              ? "Push notification will include customer's name"
+              : "Push notification will be delivered to all customers in selected regions"}
           </Text>
           <Button
             type="submit"
