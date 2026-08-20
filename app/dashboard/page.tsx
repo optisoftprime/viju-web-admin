@@ -474,7 +474,7 @@ function DashboardContent() {
             icon={userIcon}
             label="Total Customers"
             value={formatNumber(stats.totalCustomers)}
-            caption={buildErpCaption(stats)}
+            // caption={buildErpCaption(stats)} client said - do not show this
           />
           {/* B-1.2 - pairs with the "Unassigned only" filter on the customer list */}
           <StatCard
