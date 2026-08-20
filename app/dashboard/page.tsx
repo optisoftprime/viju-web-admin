@@ -42,11 +42,10 @@ import {
 } from "@/lib/api/types";
 import userIcon from "@/assets/icons/usersblack.svg";
 import { TextExtremeEnd } from "@/components/common/TextExtremeEnd";
-import { formatDateTime, formatToNaira } from "@/src/utils/formatter";
+import { formatToNaira } from "@/src/utils/formatter";
 import { useGreeting, getPortalName } from "@/src/utils/greeting";
 import { safeArray, safeNumber, safeText } from "@/utils/safe";
 import { buildErpCaption } from "@/utils/erp";
-import ErpDataQualityBanner from "@/components/ErpDataQualityBanner";
 import Image from "next/image";
 import { useAuthStore } from "@/src/store/auth.store";
 import { useRouter } from "next/navigation";
@@ -422,7 +421,9 @@ function DashboardContent() {
       // RA-02 - live branch. pendingLoadingRequests stays empty until
       // distributors submit loading requests, so guard for a missing array.
       if ((user?.role as any) === "REGIONAL_ADMIN") {
-        const regionalData = tableData as RegionalAdminDashboardResponse | undefined;
+        const regionalData = tableData as
+          | RegionalAdminDashboardResponse
+          | undefined;
         return mapPendingLoadingRequestsToTable(
           Array.isArray(regionalData?.pendingLoadingRequests)
             ? regionalData.pendingLoadingRequests
@@ -490,11 +491,6 @@ function DashboardContent() {
             icon={userIcon}
             label="Open Tickets"
             value={formatNumber(stats.openTickets)}
-          />
-          <StatCard
-            icon={userIcon}
-            label="Outstanding Balance"
-            value={formatCurrency(stats.totalOutstandingBalance)}
           />
         </>
       );
@@ -685,16 +681,11 @@ function DashboardContent() {
               )}
             </div>
             {/* B-2 - visible pipeline state instead of a silently short list */}
-            {user?.role === "ADMIN" && !statsError && (
-              <ErpDataQualityBanner
-                stats={dashboardStats as AdminDashboardStats | undefined}
-              />
-            )}
 
             {/* Stats Cards Grid - admin carries one extra tile */}
             <div
               className={`grid grid-cols-1 gap-4 md:grid-cols-4 ${
-                user?.role === "ADMIN" ? "lg:grid-cols-5" : ""
+                user?.role === "ADMIN" ? "lg:grid-cols-4" : ""
               }`}
             >
               {renderStats()}

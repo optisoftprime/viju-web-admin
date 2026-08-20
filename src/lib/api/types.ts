@@ -108,6 +108,19 @@ export interface UnmappedCustomer {
   lastSeenAt?: string | null;
 }
 
+/**
+ * POST /uploads - the only folders the API accepts. Anything else is rejected
+ * with "folder must be one of the following values: ...", so this is typed
+ * rather than a bare string.
+ */
+export type UploadFolder =
+  | "profile-photos"
+  | "chat-attachments"
+  | "ticket-attachments"
+  | "waybill-documents"
+  | "product-flyers"
+  | "misc";
+
 /** B-2: GET /admin/erp/sync-status - one row per ingest/projection job */
 export interface ErpSyncJob {
   job?: string | null;

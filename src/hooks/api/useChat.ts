@@ -7,7 +7,9 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { chatService } from "@/services/chat.service";
-import { SendMessageRequest } from "@/lib/api/types";
+import { SendMessageRequest,
+  UploadFolder,
+} from "@/lib/api/types";
 
 /**
  * Fetch chat history with a specific user
@@ -44,7 +46,7 @@ export const useSendMessage = (receiverId: string) => {
  */
 export const useFileUpload = () => {
   return useMutation({
-    mutationFn: (data: { file: File; folder?: string }) =>
+    mutationFn: (data: { file: File; folder?: UploadFolder }) =>
       chatService.uploadFile(data.file, data.folder),
   });
 };
