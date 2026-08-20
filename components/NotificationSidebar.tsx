@@ -137,8 +137,9 @@ export default function NotificationSidebar({
                 key={notification.id}
                 id={notification.id}
                 title={notification.content?.trim() || "New notification"}
+                type={notification.type}
                 timestamp={formatRelativeTime(notification.createdAt)}
-                isRead={notification.isRead}
+                isRead={!!notification.isRead}
                 onClick={() => handleNotificationClick(notification)}
               />
             ))

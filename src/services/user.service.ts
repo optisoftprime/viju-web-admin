@@ -4,13 +4,15 @@
  */
 
 import { apiClient, endpoints } from "@/lib/api";
-import { User } from "@/lib/api/types";
+import { User, CurrentUser } from "@/lib/api/types";
 
 export const userService = {
   /**
-   * Get current authenticated user
+   * Get current authenticated user (RA-03).
+   * Now carries `region` - the region this user's data is scoped to.
+   * region is null for an org-wide ADMIN.
    */
-  getCurrentUser: async (): Promise<User> => {
+  getCurrentUser: async (): Promise<CurrentUser> => {
     const { data } = await apiClient.get(endpoints.user.me);
     return data;
   },

@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Modal } from "@/components/common/Modal";
 import { Text } from "@/components/common/Text";
 import { Button } from "@/components/common/Button";
 import { BoldTopText } from "./common/BoldTopText";
+import { useSetOfficerActive } from "@/hooks/api/useOfficer";
+import { getErrorMessage } from "@/utils/apiError";
+import { safeText } from "@/utils/safe";
 
 interface Officer {
   id: string;
@@ -14,8 +18,10 @@ interface Officer {
   role: string;
   phoneNo: string;
   distributors: number;
-  tickets: number;
+  tickets: number | string;
   createdAt: string;
+  /** Present once the list carries it - drives reactivate vs deactivate */
+  isActive?: boolean;
 }
 
 interface PreviewAccountOfficerModalProps {
@@ -31,22 +37,54 @@ export default function PreviewAccountOfficerModal({
   officer,
   onConfirm,
 }: PreviewAccountOfficerModalProps) {
-  const [isDeactivating, setIsDeactivating] = useState(false);
+  // 409 OFFICER_HAS_CUSTOMERS is rendered inline, not as a toast, because the
+  // admin needs the count and the next step in front of them.
+  const [blocker, setBlocker] = useState<{
+    message: string;
+    assignedCustomers: number;
+  } | null>(null);
 
-  const handleDeactivate = async () => {
-    if (!officer) return;
-    setIsDeactivating(true);
+  const setActiveMutation = useSetOfficerActive();
+
+  // Treat a missing flag as active, matching how the list renders
+  const isActive = officer?.isActive !== false;
+
+  const handleToggleActive = async () => {
+    if (!officer || setActiveMutation.isPending) return;
+    setBlocker(null);
+
     try {
-      // Simulate API call
-      setTimeout(() => {
-        setIsDeactivating(false);
-        onConfirm?.(officer);
-        onClose();
-      }, 500);
+      await setActiveMutation.mutateAsync({
+        officerId: officer.id,
+        body: { isActive: !isActive },
+      });
+      onConfirm?.(officer);
+      onClose();
     } catch (error) {
-      setIsDeactivating(false);
+      const body = (error as any)?.response?.data;
+
+      // Branch on `code`, never on the message text (backend handoff).
+      if (body?.code === "OFFICER_HAS_CUSTOMERS") {
+        setBlocker({
+          message: safeText(
+            body?.message,
+            "Reassign this officer's customers before deactivating.",
+          ),
+          assignedCustomers: Number(body?.assignedCustomers) || 0,
+        });
+        return;
+      }
+
+      toast.error(
+        getErrorMessage(error) || "Could not update this officer. Try again.",
+      );
     }
   };
+
+  // Clear the blocker when the modal is dismissed and reopened
+  useEffect(() => {
+    if (!isOpen) setBlocker(null);
+  }, [isOpen]);
 
   if (!officer) return null;
 
@@ -57,7 +95,7 @@ export default function PreviewAccountOfficerModal({
         <div className="flex items-center justify-between pb-4 border-b border-muted/20">
           <div>
             <Text variant="h3" weight="bold">
-              Deactivate Account Officer
+              {isActive ? "Deactivate" : "Reactivate"} Account Officer
             </Text>
             <Text variant="caption" color="muted">
               Account Officer's details
@@ -104,16 +142,30 @@ export default function PreviewAccountOfficerModal({
           </div>
         </div>
 
-        {/* Deactivate Button */}
+        {/* 409 - customers must be reassigned first */}
+        {blocker && (
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-1">
+            <Text variant="small" weight="bold" color="primary">
+              {blocker.message}
+            </Text>
+            <Text variant="caption" color="muted">
+              Move {blocker.assignedCustomers}{" "}
+              {blocker.assignedCustomers === 1 ? "customer" : "customers"} from
+              the Customer Reassignment page, then try again.
+            </Text>
+          </div>
+        )}
+
+        {/* Deactivate / Reactivate Button */}
         <div className="pt-4 border-t border-muted/20">
           <Button
             variant="primary"
             fullWidth
-            loading={isDeactivating}
-            onClick={handleDeactivate}
+            loading={setActiveMutation.isPending}
+            onClick={handleToggleActive}
             className="bg-orange hover:bg-orange/90"
           >
-            Deactivate
+            {isActive ? "Deactivate" : "Reactivate"}
           </Button>
         </div>
       </div>

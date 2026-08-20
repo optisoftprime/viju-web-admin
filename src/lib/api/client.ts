@@ -84,6 +84,24 @@ export const createAxiosInstance = (): AxiosInstance => {
         config.headers.Authorization = `Bearer ${token}`;
       }
 
+      /**
+       * FormData must not inherit this instance's default JSON content type.
+       *
+       * axios decides how to serialise the body from the Content-Type header:
+       *
+       *   if (isFormData) return hasJSONContentType
+       *     ? JSON.stringify(formDataToJSON(data))   // <- silently destroys it
+       *     : data;
+       *
+       * With "application/json" set as an instance default, every FormData is
+       * flattened to a plain object and stringified - a File becomes `{}` and
+       * the server replies "No file provided". Clearing the header lets the
+       * browser set "multipart/form-data" with the boundary the parser needs.
+       */
+      if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+        delete config.headers["Content-Type"];
+      }
+
       return config;
     },
     (error) => {

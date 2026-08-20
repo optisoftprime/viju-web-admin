@@ -7,7 +7,9 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { officerCustomerService } from "@/services/officerCustomer.service";
-import { SendTicketReplyRequest } from "@/lib/api/types";
+import { SendTicketReplyRequest,
+  UploadFolder,
+} from "@/lib/api/types";
 
 /**
  * Get distributor overview
@@ -148,7 +150,7 @@ export const useUpdateTicketStatus = () => {
  */
 export const useFileUpload = () => {
   return useMutation({
-    mutationFn: (data: { file: File; folder?: string }) =>
+    mutationFn: (data: { file: File; folder?: UploadFolder }) =>
       officerCustomerService.uploadFile(data.file, data.folder),
   });
 };

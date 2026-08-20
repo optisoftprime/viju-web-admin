@@ -5,6 +5,7 @@
 
 import { apiClient } from "@/lib/api/client";
 import { endpoints } from "@/lib/api/endpoints";
+import { readUploadedUrl } from "@/utils/upload";
 import {
   DistributorOverview,
   OrdersResponse,
@@ -16,6 +17,7 @@ import {
   SendTicketReplyRequest,
   FileUploadResponse,
   TicketStatusUpdateResponse,
+  UploadFolder,
 } from "@/lib/api/types";
 
 export const officerCustomerService = {
@@ -132,17 +134,16 @@ export const officerCustomerService = {
    */
   uploadFile: async (
     file: File,
-    folder: string = "ticket-attachments",
+    folder: UploadFolder = "ticket-attachments",
   ): Promise<string> => {
     const formData = new FormData();
-    formData.append("file", file);
     formData.append("folder", folder);
-    const url = endpoints.uploads.file;
-    const response = await apiClient.post<{ url: string }>(url, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-    return response.data.url;
+    formData.append("file", file);
+
+    // folder must be on the query string - see chat.service.uploadFile
+    const url = `${endpoints.uploads.file}?folder=${encodeURIComponent(folder)}`;
+    const response = await apiClient.post<{ url: string }>(url, formData);
+
+    return readUploadedUrl(response?.data);
   },
 };

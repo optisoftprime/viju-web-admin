@@ -33,11 +33,12 @@ export const useDashboardStats = () => {
         return dashboardService.getAdminDashboard();
       case "OFFICER":
         return dashboardService.getOfficerDashboard();
-      case "REGIONAL_ADMIN":
-        // For regional admin, we need to know the region
-        // This would typically come from user profile or URL params
-        const response = await dashboardService.getRegionalDashboard("LAGOS");
-        return response.summary;
+      case "REGIONAL_ADMIN": {
+        // RA-03 - the server scopes by the token. Never send a region as a
+        // regional admin; passing one returns 403.
+        const response = await dashboardService.getRegionalDashboard();
+        return response?.summary ?? {};
+      }
       default:
         throw new Error(`Unknown role: ${user.role}`);
     }
@@ -84,7 +85,8 @@ export const useDashboardTableData = (params: DashboardTableParams = {}) => {
       case "ADMIN":
         return dashboardService.getAdminDashboard();
       case "REGIONAL_ADMIN":
-        return dashboardService.getRegionalDashboard("LAGOS");
+        // Region comes from the token - see RA-03
+        return dashboardService.getRegionalDashboard();
       default:
         return [];
     }

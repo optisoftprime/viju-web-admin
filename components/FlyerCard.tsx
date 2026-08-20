@@ -2,6 +2,7 @@
 
 import { Trash2, Edit } from "lucide-react";
 import { Text } from "@/components/common";
+import { useState } from "react";
 import Image, { StaticImageData } from "next/image";
 
 interface Flyer {
@@ -35,7 +36,11 @@ export default function FlyerCard({
   isToggling = false,
   onDelete,
 }: FlyerCardProps) {
-  const imageUrl = flyer.imageUrl || flyer.image;
+  // A flyer saved before the upload fix may still hold a data URI, and a CDN
+  // object can be deleted - either way the card must still render.
+  const [imageFailed, setImageFailed] = useState(false);
+  const rawUrl = flyer.imageUrl || flyer.image;
+  const imageUrl = imageFailed ? null : rawUrl;
   const position = flyer.position || flyer.sortOrder || 0;
 
   // Treat a missing flag as active, matching how the app renders flyers

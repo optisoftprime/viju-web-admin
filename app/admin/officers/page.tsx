@@ -7,14 +7,15 @@ import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
 import AddAccountOfficerFormModal from "@/components/AddAccountOfficerFormModal";
 import PreviewAccountOfficerModal from "@/components/PreviewAccountOfficerModal";
+import OfficerDetailsModal from "@/components/OfficerDetailsModal";
 import SuccessModal from "@/components/SuccessModal";
-import RowDetailsModal from "@/components/RowDetailsModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { usePagination } from "@/hooks/usePagination";
 import { useOfficers, useCreateOfficer } from "@/hooks/api/useOfficer";
 import plus from "@/assets/icons/plus.svg";
 import Image from "next/image";
 import { formatDateTime } from "@/src/utils/formatter";
+import { formatRegion } from "@/utils/formatter";
+import { safeText, safeNumber, safeDateText } from "@/utils/safe";
 
 // Interface for officer data structure (transformed from API)
 interface OfficerTableRow {
@@ -26,7 +27,9 @@ interface OfficerTableRow {
   phoneNo: string;
   distributors: number;
   tickets: number;
+  lastLogin: string;
   createdAt: string;
+  isActive: boolean;
   action: string;
 }
 
@@ -54,15 +57,15 @@ const tableColumns = [
   },
   {
     key: "distributors" as const,
-    title: "DISTRIBUTORS",
+    title: "CUSTOMERS",
   },
   {
     key: "tickets" as const,
     title: "TICKETS",
   },
   {
-    key: "createdAt" as const,
-    title: "CREATED AT",
+    key: "lastLogin" as const,
+    title: "LAST LOGIN",
   },
   {
     key: "action" as const,
@@ -81,19 +84,14 @@ function AccountOfficersContent() {
   const [selectedOfficer, setSelectedOfficer] =
     useState<OfficerTableRow | null>(null);
 
-  // State for the row details modal
+  // Row click opens the read-only profile; the ACTION button opens the
+  // deactivate flow, so the two are tracked separately
   const [detailsRow, setDetailsRow] = useState<OfficerTableRow | null>(null);
 
   // State for pagination
+  const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const {
-    currentPage,
-    pageSize: itemsPerPage,
-    setPageSize,
-    previousPage,
-    nextPage,
-    resetPage,
-  } = usePagination();
+  const itemsPerPage = 20;
 
   // Fetch officers from API
   const {
@@ -119,13 +117,19 @@ function AccountOfficersContent() {
       id: officer.id,
       name: officer.name,
       email: officer.email,
-      region: officer.region,
-      role: officer.isActive ? "Account Officer" : "Inactive",
-      phoneNo: officer.phone,
-      distributors: officer._count?.customers || 0,
-      tickets: 0, // Tickets count not in API response, using 0
-      createdAt: officer.createdAt ? formatDateTime(officer.createdAt) : "N/A",
-      action: "Deactivate",
+      region: formatRegion(officer.region),
+      role: officer.isActive === false ? "Inactive" : "Account Officer",
+      phoneNo: safeText(officer.phone),
+      distributors: safeNumber(officer._count?.customers, 0),
+      // AD-15 - real open-ticket count, no longer hardcoded to 0
+      tickets: safeNumber(officer._count?.supportTickets, 0),
+      // AD-15 - null until the officer has logged in at least once
+      lastLogin: officer.lastLoginAt
+        ? safeDateText(officer.lastLoginAt)
+        : "Never",
+      createdAt: safeDateText(officer.createdAt),
+      isActive: officer.isActive !== false,
+      action: officer.isActive === false ? "Reactivate" : "Deactivate",
     }));
   }, [officersData?.data]);
 
@@ -137,14 +141,14 @@ function AccountOfficersContent() {
    */
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-    resetPage();
+    setCurrentPage(1);
   };
 
   /**
    * Handle action button click on table rows
    */
   const handleActionClick = (action: string, row: OfficerTableRow) => {
-    if (action.includes("Deactivate")) {
+    if (action.includes("Deactivate") || action.includes("Reactivate")) {
       setSelectedOfficer(row);
       setIsPreviewModalOpen(true);
     }
@@ -153,12 +157,20 @@ function AccountOfficersContent() {
   /**
    * Handle previous page button click
    */
-  const handlePreviousPage = () => previousPage();
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
 
   /**
    * Handle next page button click
    */
-  const handleNextPage = () => nextPage(totalPages);
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
 
   /**
    * Handle new officer button click
@@ -251,11 +263,32 @@ function AccountOfficersContent() {
                 itemsPerPage={itemsPerPage}
                 onPrevious={handlePreviousPage}
                 onNext={handleNextPage}
-                onItemsPerPageChange={setPageSize}
               />
             </>
           )}
         </Card>
+
+        {/* Officer Details Modal - profile plus customer conversations */}
+        <OfficerDetailsModal
+          open={!!detailsRow}
+          onClose={() => setDetailsRow(null)}
+          officer={
+            detailsRow
+              ? {
+                  id: detailsRow.id,
+                  name: detailsRow.name,
+                  email: detailsRow.email,
+                  phone: detailsRow.phoneNo,
+                  region: detailsRow.region,
+                  status: detailsRow.isActive ? "Active" : "Inactive",
+                  customers: detailsRow.distributors,
+                  tickets: detailsRow.tickets,
+                  lastLogin: detailsRow.lastLogin,
+                  createdAt: detailsRow.createdAt,
+                }
+              : null
+          }
+        />
 
         {/* Add Account Officer Modal */}
         <AddAccountOfficerFormModal
@@ -276,47 +309,6 @@ function AccountOfficersContent() {
             onConfirm={handleOfficerDeactivated}
           />
         )}
-
-        {/* Row Details Modal - opened by clicking any table row */}
-        <RowDetailsModal
-          open={!!detailsRow}
-          onClose={() => setDetailsRow(null)}
-          title={detailsRow?.name || "Officer"}
-          subtitle="Account officer details"
-          sections={[
-            {
-              title: "Officer",
-              fields: [
-                { label: "Name", value: detailsRow?.name },
-                { label: "Role", value: detailsRow?.role, type: "status" },
-                { label: "Email", value: detailsRow?.email, fullWidth: true },
-                { label: "Phone Number", value: detailsRow?.phoneNo },
-                { label: "Region", value: detailsRow?.region },
-              ],
-            },
-            {
-              title: "Portfolio",
-              fields: [
-                { label: "Distributors", value: detailsRow?.distributors },
-                { label: "Tickets", value: detailsRow?.tickets },
-                { label: "Created At", value: detailsRow?.createdAt },
-              ],
-            },
-          ]}
-          footer={
-            <Button
-              variant="outline"
-              onClick={() => {
-                if (!detailsRow) return;
-                setSelectedOfficer(detailsRow);
-                setDetailsRow(null);
-                setIsPreviewModalOpen(true);
-              }}
-            >
-              Deactivate
-            </Button>
-          }
-        />
 
         {/* Success Modal */}
         <SuccessModal

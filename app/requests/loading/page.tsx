@@ -9,9 +9,14 @@ import AssignLoadingOfficerModal from "@/components/AssignLoadingOfficerModal";
 import LoadingOfficerSuccessModal from "@/components/LoadingOfficerSuccessModal";
 import RowDetailsModal from "@/components/RowDetailsModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { usePagination, getTotalPages } from "@/hooks/usePagination";
+import { usePagination } from "@/hooks/usePagination";
 import { useAuthStore } from "@/store/auth.store";
-import userIcon from "@/assets/icons/usersblack.svg";
+import {
+  useRegionalLoadingRequests,
+  useAssignLoadingOfficer,
+} from "@/hooks/api/useLoading";
+import { safeText, safeNumber, safeDateText, humanizeEnum } from "@/utils/safe";
+import type { LoadingRequest as ApiLoadingRequest } from "@/lib/api/types";
 
 interface LoadingRequest {
   id: string;
@@ -22,9 +27,21 @@ interface LoadingRequest {
   driver: string;
   submitted: string;
   officer: string;
+  /** Humanised for display; rawStatus keeps the API value for logic */
   status: string;
+  rawStatus: string;
+  quantity: string;
   action: string;
 }
+
+/** Tab value -> API status filter. "ALL" means send nothing. */
+const STATUS_TABS = [
+  { value: "ALL", label: "All" },
+  { value: "PENDING", label: "Pending" },
+  { value: "ASSIGNED", label: "Assigned" },
+  { value: "IN_PROGRESS", label: "Loading In Progress" },
+  { value: "COMPLETED", label: "Completed" },
+] as const;
 
 // Table columns definition
 const tableColumns = [
@@ -60,34 +77,18 @@ const tableColumns = [
     key: "status" as const,
     title: "STATUS",
   },
+  {
+    key: "action" as const,
+    title: "ACTION",
+  },
 ];
 
-// Mock loading requests data
-const mockLoadingRequests: LoadingRequest[] = Array.from(
-  { length: 25 },
-  (_, i) => ({
-    id: `${i + 1}`,
-    waybill: `WR-0099${i + 1}`,
-    distributor: "Alfaji Bello & Sons",
-    order: "ORD-0098",
-    truck: "LAG-234-XY",
-    driver: "John Dare",
-    submitted: "09:14 AM",
-    officer: i % 3 === 0 ? "James Okonkwo" : "",
-    status:
-      i % 4 === 0
-        ? "Pending"
-        : i % 4 === 1
-          ? "Assigned"
-          : i % 4 === 2
-            ? "Loading In Progress"
-            : "Completed",
-    action: "View",
-  }),
-);
-
 function LoadingRequestPageContent() {
-  const [selectedTab, setSelectedTab] = useState("all");
+  const [selectedTab, setSelectedTab] = useState<string>("ALL");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedRequest, setSelectedRequest] = useState<LoadingRequest | null>(
+    null,
+  );
   const [isAssignLoadingOfficerModalOpen, setIsAssignLoadingOfficerModalOpen] =
     useState(false);
   const [isLoadingOfficerSuccessOpen, setIsLoadingOfficerSuccessOpen] =
@@ -103,35 +104,67 @@ function LoadingRequestPageContent() {
   } = usePagination();
   const { user } = useAuthStore();
 
-  // Filter data based on selected tab
-  const filteredData = useMemo(() => {
-    if (selectedTab === "all") return mockLoadingRequests;
-    return mockLoadingRequests.filter(
-      (item) => item.status.toLowerCase() === selectedTab.toLowerCase(),
-    );
-  }, [selectedTab]);
+  /**
+   * RA-06 - region is derived from the token, never sent as a query param.
+   * The server paginates, so no client-side slicing.
+   */
+  const { data, isLoading, error } = useRegionalLoadingRequests({
+    page: currentPage,
+    pageSize: itemsPerPage,
+    search: searchTerm || undefined,
+    status: selectedTab,
+  });
 
-  // Calculate pagination
-  const totalItems = filteredData.length;
-  const paginatedData = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredData.slice(startIndex, endIndex);
-  }, [filteredData, currentPage, itemsPerPage]);
+  const assignMutation = useAssignLoadingOfficer();
+
+  const rows: ApiLoadingRequest[] = data?.data ?? [];
+
+  const paginatedData: LoadingRequest[] = useMemo(
+    () =>
+      rows.map((row) => ({
+        id: safeText(row.id, ""),
+        waybill: safeText(row.waybill, "-"),
+        distributor: safeText(row.distributorName, "Unknown distributor"),
+        // On this route the ERP reference lives in `reference`, NOT orderId
+        order: safeText(row.reference, "-"),
+        truck: safeText(row.truckPlateNumber),
+        driver: safeText(row.driverName),
+        submitted: safeDateText(row.submittedAt),
+        officer: safeText(row.assignedOfficer?.name, "Unassigned"),
+        status: humanizeEnum(row.status, "Pending"),
+        rawStatus: safeText(row.status, "PENDING").toUpperCase(),
+        quantity:
+          row.quantityCartons != null
+            ? `${safeNumber(row.quantityCartons)} Cartons`
+            : "N/A",
+        action:
+          safeText(row.status, "").toUpperCase() === "PENDING"
+            ? "Assign Officer"
+            : "View",
+      })),
+    [rows],
+  );
+
+  const totalItems = data?.meta.total ?? 0;
+  const totalPages = data?.meta.totalPages ?? 1;
 
   /**
-   * Handle search input
+   * Handle search input - server-side, so reset to page 1
    */
   const handleSearch = (value: string) => {
-    // Search logic can be implemented here
+    setSearchTerm(value);
+    resetPage();
   };
 
   /**
-   * Handle action button click
+   * Handle action button click - only PENDING rows can be assigned
    */
   const handleActionClick = (action: string, row: LoadingRequest) => {
-    if (row.status === "Pending") {
+    if (row.rawStatus === "PENDING") {
+      setSelectedRequest(row);
       setIsAssignLoadingOfficerModalOpen(true);
+    } else {
+      setDetailsRow(row);
     }
   };
 
@@ -143,18 +176,29 @@ function LoadingRequestPageContent() {
   /**
    * Handle next page button click
    */
-  const handleNextPage = () =>
-    nextPage(getTotalPages(totalItems, itemsPerPage));
+  const handleNextPage = () => nextPage(totalPages);
 
   /**
    * Handle loading officer assignment
    */
-  const handleLoadingOfficerAssigned = (officer: {
+  const handleLoadingOfficerAssigned = async (officer: {
     id: string;
     name: string;
     role: string;
   }) => {
-    setIsLoadingOfficerSuccessOpen(true);
+    if (!selectedRequest?.id) return;
+
+    try {
+      await assignMutation.mutateAsync({
+        requestId: selectedRequest.id,
+        body: { loadingOfficerId: officer.id },
+      });
+      setIsAssignLoadingOfficerModalOpen(false);
+      setSelectedRequest(null);
+      setIsLoadingOfficerSuccessOpen(true);
+    } catch {
+      // useAssignLoadingOfficer already surfaced the API message
+    }
   };
 
   return (
@@ -171,13 +215,7 @@ function LoadingRequestPageContent() {
           <div className="">
             {/* Tab Buttons */}
             <div className="flex items-center space-x-4">
-              {[
-                { value: "all", label: "All" },
-                { value: "pending", label: "Pending" },
-                { value: "assigned", label: "Assigned" },
-                { value: "loading in progress", label: "Loading In Progress" },
-                { value: "completed", label: "Completed" },
-              ].map((tab) => (
+              {STATUS_TABS.map((tab) => (
                 <Button
                   key={tab.value}
                   variant={selectedTab === tab.value ? "primary" : "outline"}
@@ -194,19 +232,56 @@ function LoadingRequestPageContent() {
                   {tab.label}
                 </Button>
               ))}
-              {/* Search Input Component */}
             </div>
           </div>
 
-          {/* Data Table */}
-          <div className="overflow-x-auto mt-6">
-            <Table
-              columns={tableColumns}
-              data={paginatedData}
-              onRowClick={setDetailsRow}
-              onActionClick={handleActionClick}
+          {/* Search Input Component */}
+          <div className="flex justify-end mt-4">
+            <SearchInput
+              placeholder="Search waybill, order, distributor, truck or driver"
+              onSearch={handleSearch}
+              debounceDelay={500}
             />
           </div>
+
+          {isLoading && (
+            <div className="py-8 text-center">
+              <Text variant="caption" color="muted">
+                Loading requests...
+              </Text>
+            </div>
+          )}
+
+          {!isLoading && error && (
+            <div className="py-8 text-center">
+              <Text variant="caption" color="muted">
+                Could not load loading requests. Please try again.
+              </Text>
+            </div>
+          )}
+
+          {!isLoading && !error && paginatedData.length === 0 && (
+            <div className="py-8 text-center">
+              <Text variant="body" weight="bold" color="foreground">
+                No loading requests
+              </Text>
+              <Text variant="caption" color="muted">
+                Requests submitted by distributors in your region appear here.
+              </Text>
+            </div>
+          )}
+
+          {/* Data Table */}
+          {!isLoading && !error && paginatedData.length > 0 && (
+            <div className="overflow-x-auto mt-6">
+              <Table
+                columns={tableColumns}
+                data={paginatedData}
+                onRowClick={setDetailsRow}
+                onActionClick={handleActionClick}
+              />
+            </div>
+          )}
 
           {/* Pagination Component */}
           <Pagination
@@ -271,6 +346,7 @@ function LoadingRequestPageContent() {
           isOpen={isAssignLoadingOfficerModalOpen}
           onClose={() => setIsAssignLoadingOfficerModalOpen(false)}
           onConfirm={handleLoadingOfficerAssigned}
+          isSubmitting={assignMutation.isPending}
           truckName="LAG-234-XY"
           driver="John Dare"
           date="Today, 14:00"

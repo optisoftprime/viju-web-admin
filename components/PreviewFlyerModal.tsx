@@ -62,6 +62,9 @@ export default function PreviewFlyerModal({
               alt={flyer.name}
               fill
               sizes="(max-width: 768px) 100vw, 512px"
+              unoptimized={
+                typeof imageUrl === "string" && imageUrl.startsWith("data:")
+              }
               className="object-contain"
             />
           ) : (

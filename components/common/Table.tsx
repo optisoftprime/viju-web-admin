@@ -19,6 +19,14 @@ export interface TableProps<T> {
   onActionClick?: (action: string, row: T) => void;
   className?: string;
   showSerialNumber?: boolean;
+  /**
+   * Sorting is server-side: the table only reports which column was clicked.
+   * Supply all three to enable it - without `onSort` the headers stay plain,
+   * so every existing table is unaffected.
+   */
+  sortKey?: string | null;
+  sortOrder?: "asc" | "desc";
+  onSort?: (key: string) => void;
 }
 
 // Type for status badge colors
@@ -99,6 +107,9 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps<any>>(
       loading = false,
       onRowClick,
       onActionClick,
+      sortKey,
+      sortOrder = "desc",
+      onSort,
       className = "",
       showSerialNumber = false,
     },
@@ -121,14 +132,42 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps<any>>(
               )}
 
               {/* Regular Column Headers */}
-              {columns.map((column) => (
-                <th
-                  key={String(column.key)}
-                  className="whitespace-nowrap text-[13px] font-bold text-muted p-3 text-left bg-[#F0F5F9]"
-                >
-                  {column.title}
-                </th>
-              ))}
+              {columns.map((column) => {
+                const canSort = Boolean(column.sortable && onSort);
+                const isActive = canSort && sortKey === String(column.key);
+
+                return (
+                  <th
+                    key={String(column.key)}
+                    className="whitespace-nowrap text-[13px] font-bold text-muted p-3 text-left bg-[#F0F5F9]"
+                    aria-sort={
+                      isActive
+                        ? sortOrder === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : undefined
+                    }
+                  >
+                    {canSort ? (
+                      <button
+                        type="button"
+                        onClick={() => onSort?.(String(column.key))}
+                        className={`inline-flex items-center gap-1 hover:text-primary ${
+                          isActive ? "text-primary" : ""
+                        }`}
+                      >
+                        {column.title}
+                        {/* Arrow shows direction on the active column only */}
+                        <span aria-hidden="true" className="text-[10px]">
+                          {isActive ? (sortOrder === "asc" ? "▲" : "▼") : "⇅"}
+                        </span>
+                      </button>
+                    ) : (
+                      column.title
+                    )}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
 

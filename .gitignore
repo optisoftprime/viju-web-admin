@@ -12,7 +12,8 @@
 
 # testing
 /coverage
-
+/document
+document
 # next.js
 /.next/
 /out/

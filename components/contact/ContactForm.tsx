@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { ArrowRight, Send } from "lucide-react";
 import SectionHeading from "./SectionHeading";
 import { ContactInput, ContactTextarea } from "./ContactField";
+import { contactService } from "@/services/contact.service";
+import { getErrorMessage } from "@/utils/apiError";
 
 // Validation schema
 const contactValidationSchema = yup.object({
@@ -40,9 +42,8 @@ export type ContactFormInputs = yup.InferType<typeof contactValidationSchema>;
 
 interface ContactFormProps {
   /**
-   * Where the enquiry is sent. There is no contact endpoint in
-   * `lib/api/endpoints.ts` yet, so the page leaves this unset and the form
-   * only reports what it collected - pass a handler once the API exists.
+   * Overrides the default POST /contact call. The public endpoint shipped in
+   * the backend handoff (CC-05), so the default path is the real one.
    */
   onSubmit?: (values: ContactFormInputs) => Promise<void>;
 }
@@ -65,18 +66,26 @@ export default function ContactForm({ onSubmit }: ContactFormProps) {
 
   const submitEnquiry = async (values: ContactFormInputs) => {
     try {
-      await onSubmit?.(values);
+      if (onSubmit) {
+        await onSubmit(values);
+      } else {
+        // CC-05 - public route, rate limited to 5 submissions per IP per hour
+        await contactService.submit(values);
+      }
 
       toast.success(
         "Thanks for reaching out. We'll get back to you within 24 hours.",
       );
       reset();
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Could not send your message. Please try again.",
-      );
+      // 400 returns a `message` ARRAY on validation failure, 429 a string -
+      // getErrorMessage handles the string case, so normalise the array here.
+      const raw = (error as any)?.response?.data?.message;
+      const message = Array.isArray(raw)
+        ? raw.filter(Boolean).join(" ")
+        : getErrorMessage(error);
+
+      toast.error(message || "Could not send your message. Please try again.");
     }
   };
 
