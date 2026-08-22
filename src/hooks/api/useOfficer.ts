@@ -7,7 +7,10 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { officerService } from "@/services/officer.service";
+import {
+  officerService,
+  type GetOfficersParams,
+} from "@/services/officer.service";
 import { queryKeys, assignmentQueryKeys } from "@/lib/api/queryKeys";
 import { getErrorMessage } from "@/utils/apiError";
 import {
@@ -16,33 +19,38 @@ import {
   UpdateOfficerRequest,
 } from "@/lib/api/types";
 
-interface GetOfficersParams {
-  page?: number;
-  pageSize?: number;
-  search?: string;
-  /** Scopes the list to one region - omitted for org-wide admins */
-  region?: string;
-}
-
 /**
- * Get Officers list with pagination
+ * Get Officers list with pagination.
+ *
+ * Every filter is forwarded verbatim so the cache key and the request stay in
+ * step. `managed: true` widens the page to all four managed roles (ADMIN
+ * only); `isActive` is omitted rather than defaulted, which is the unchanged
+ * "both statuses" behaviour.
  */
 export const useOfficers = (params: GetOfficersParams = {}) => {
+  const query: GetOfficersParams = {
+    ...params,
+    page: params.page ?? 1,
+    pageSize: params.pageSize ?? 20,
+  };
+
   return useQuery({
-    queryKey: queryKeys.officers.officersList(
-      params as Record<string, unknown>,
-    ),
-    queryFn: () =>
-      officerService.getOfficers({
-        page: params.page ?? 1,
-        pageSize: params.pageSize ?? 20,
-        search: params.search,
-        region: params.region,
-      }),
+    queryKey: queryKeys.officers.officersList(query as Record<string, unknown>),
+    queryFn: () => officerService.getOfficers(query),
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1,
   });
 };
+
+/**
+ * The Users screen: every managed role in one page.
+ * `managed=true` is ADMIN-only and is ignored for a regional admin, who gets
+ * their own region's officers back instead - the screen is gated on role, but
+ * the API is the control either way.
+ */
+export const useManagedUsers = (
+  params: Omit<GetOfficersParams, "managed"> = {},
+) => useOfficers({ ...params, managed: true });
 
 /**
  * Create a new Officer
@@ -59,6 +67,8 @@ export const useCreateOfficer = () => {
         queryKey: queryKeys.officers.all,
       });
     },
+    // No toast here: the form attaches EMAIL_IN_USE / PHONE_IN_USE to the
+    // field named by `field`, and renders the validation array inline.
   });
 };
 

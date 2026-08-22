@@ -6,7 +6,7 @@ import Pagination from "@/components/Pagination";
 import RowDetailsModal from "@/components/RowDetailsModal";
 import { DEFAULT_SECTION_PAGE_SIZE } from "@/constants/pagination";
 import { Order as APIOrder } from "@/src/lib/api/types";
-import { formatDateTime } from "@/src/utils/formatter";
+import { formatDateTime, formatToNairaExact } from "@/src/utils/formatter";
 
 interface Order {
   id: string;
@@ -261,7 +261,8 @@ const mapAPIOrderToOrder = (apiOrder: APIOrder): Order => {
     orderDate: apiOrder.orderDate,
     product: apiOrder.items?.[0]?.productName || "N/A",
     quantity: apiOrder.totalItems || 0,
-    totalValue: `₦${(apiOrder.totalValue || 0).toLocaleString()}`,
+    // Exact - toLocaleString() caps at 3 fraction digits and would round
+    totalValue: formatToNairaExact(apiOrder.totalValue || 0),
     status:
       apiOrder.status === "Delivered" || apiOrder.status === "Processing"
         ? apiOrder.status

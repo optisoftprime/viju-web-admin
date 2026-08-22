@@ -11,6 +11,8 @@ import {
   useSendMessage,
   useFileUpload,
 } from "@/hooks/api/useChat";
+import { resolveSenderLabel } from "@/utils/sender";
+import { useAuthStore } from "@/store/auth.store";
 
 interface ChatUIProps {
   profileName?: string;
@@ -23,6 +25,7 @@ export default function ChatUI({
   profileStatus = "Online",
   distributorId,
 }: ChatUIProps) {
+  const { user } = useAuthStore();
   const [messageInput, setMessageInput] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
@@ -176,6 +179,18 @@ export default function ChatUI({
             timestamp={new Date(message.createdAt).toLocaleTimeString()}
             isMine={message.senderType === "STAFF"}
             attachmentUrl={message.attachmentUrl}
+            // Names the role that wrote it, so an admin or regional admin
+            // answering this thread is not shown as a flat "Staff"
+            senderLabel={resolveSenderLabel({
+              senderType: message.senderType,
+              // staff.id first: on a customer row `staffId` is the officer
+              // the message was routed TO, not its author
+              staffId: message.staff?.id ?? message.staffId,
+              staffRole: message.staff?.role,
+              staffName: message.staff?.name,
+              viewer: user,
+              customerName: profileName,
+            })}
           />
         ))}
         <div ref={messagesEndRef} />

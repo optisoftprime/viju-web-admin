@@ -1,13 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { normalizeStaffRole, type StaffRole } from "@/constants/roles";
 
-export type PortalRole =
-  | "ADMIN"
-  | "OFFICER"
-  | "STAFF"
-  | "REGIONAL_ADMIN"
-  | "LOADING_OFFICER";
+/** @deprecated use StaffRole from @/constants/roles */
+export type PortalRole = StaffRole;
 
 /**
  * Returns the greeting that matches the given time of day.
@@ -44,8 +41,9 @@ export const useGreeting = (): string => {
  * Resolves the portal name for a role so branding stays consistent
  * across the sidebar, navbar and dashboard headers.
  */
-export const getPortalName = (role?: string): string => {
-  switch (role) {
+export const getPortalName = (role?: string | null): string => {
+  // "ACCOUNT_OFFICER" and "OFFICER" name the same role - collapse them first
+  switch (normalizeStaffRole(role)) {
     case "OFFICER":
       return "Account Officer Portal";
     case "ADMIN":
@@ -54,6 +52,8 @@ export const getPortalName = (role?: string): string => {
       return "Regional Admin Portal";
     case "LOADING_OFFICER":
       return "Loading Officer Portal";
+    case "WAREHOUSE_OFFICER":
+      return "Warehouse Officer Portal";
     default:
       return "Portal";
   }

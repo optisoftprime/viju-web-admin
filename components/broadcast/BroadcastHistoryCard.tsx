@@ -2,6 +2,7 @@
 
 import { Megaphone } from "lucide-react";
 import { Text } from "@/components/common/Text";
+import { formatToNairaExact } from "@/utils/formatter";
 
 interface BroadcastHistoryCardProps {
   code: string;
@@ -20,13 +21,9 @@ export function BroadcastHistoryCard({
   sentBy,
   time,
 }: BroadcastHistoryCardProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
+  // Exact - the currency style caps at 2 fraction digits and would round the
+  // allowance the API actually recorded
+  const formatCurrency = (value: number) => formatToNairaExact(value);
 
   return (
     <div className="bg-white border border-[#E5E7EB] rounded-lg p-2">

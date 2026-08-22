@@ -9,9 +9,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { customerService } from "@/services/customer.service";
 import { queryKeys, assignmentQueryKeys } from "@/lib/api/queryKeys";
-import { getErrorMessage } from "@/utils/apiError";
+import { getErrorMessage, isAlreadyAssignedError } from "@/utils/apiError";
 import { DEFAULT_PAGE_SIZE } from "@/constants/pagination";
 import {
+  BroadcastRegion,
   CustomerSortBy,
   ReassignCustomerRequest,
   SortOrder,
@@ -23,8 +24,12 @@ interface GetCustomersParams {
   region?: string;
   search?: string;
   hasOfficer?: boolean;
+  /** Include ERP customers not yet copied into the portal (union mode) */
+  includeUnprojected?: boolean;
   sortBy?: CustomerSortBy;
   sortOrder?: SortOrder;
+  /** Skip the request entirely, e.g. while a modal is closed */
+  enabled?: boolean;
 }
 
 /**
@@ -43,9 +48,61 @@ export const useCustomers = (params: GetCustomersParams = {}) => {
         region: params.region,
         search: params.search,
         hasOfficer: params.hasOfficer,
+        includeUnprojected: params.includeUnprojected,
         sortBy: params.sortBy,
         sortOrder: params.sortOrder,
       }),
+    enabled: params.enabled !== false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1,
+  });
+};
+
+interface GetRegionalCustomersParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  hasOfficer?: boolean;
+  includeUnprojected?: boolean;
+  sortBy?: CustomerSortBy;
+  sortOrder?: SortOrder;
+  /**
+   * ADMIN only. A REGIONAL_ADMIN must leave this undefined - their region
+   * comes from the token and naming another one is a 403.
+   */
+  region?: BroadcastRegion;
+  /** Skip the request entirely, e.g. before an admin has picked a region */
+  enabled?: boolean;
+}
+
+/**
+ * RA-07: every customer in the signed-in regional admin's own region
+ * GET /regional/customers
+ *
+ * Prefer this over useCustomers for the regional admin portal: the region is
+ * resolved from the caller's staff record, so the page never has to know,
+ * choose, or send it. The rows, filters, sorting and meta are identical to
+ * the admin list.
+ */
+export const useRegionalCustomers = (
+  params: GetRegionalCustomersParams = {},
+) => {
+  return useQuery({
+    queryKey: queryKeys.customers.regionalList(
+      params as Record<string, unknown>,
+    ),
+    queryFn: () =>
+      customerService.getRegionalCustomers({
+        page: params.page ?? 1,
+        pageSize: params.pageSize ?? DEFAULT_PAGE_SIZE,
+        search: params.search,
+        hasOfficer: params.hasOfficer,
+        includeUnprojected: params.includeUnprojected,
+        sortBy: params.sortBy,
+        sortOrder: params.sortOrder,
+        region: params.region,
+      }),
+    enabled: params.enabled !== false,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1,
   });
@@ -108,6 +165,13 @@ export const useCustomersForReassignment = useCustomers;
 /**
  * Assign / reassign a single customer to an officer
  * PATCH /admin/customers/{id}/reassign
+ *
+ * Works whether or not the customer already has an officer - the join row is
+ * upserted server-side - and the incoming officer is notified in-app and by
+ * web push on both paths.
+ *
+ * The 200 body carries `officerAssignments`, primary first, so a caller can
+ * update the OFFICERS cell from the response rather than waiting on a refetch.
  */
 export const useReassignCustomer = () => {
   const queryClient = useQueryClient();
@@ -127,6 +191,15 @@ export const useReassignCustomer = () => {
       );
     },
     onError: (error: unknown) => {
+      // 409 ALREADY_ASSIGNED means the customer already holds this officer.
+      // Nothing failed and nothing changed, so it is reported as a no-op
+      // rather than an error toast.
+      if (isAlreadyAssignedError(error)) {
+        toast.info(
+          getErrorMessage(error, "That officer is already assigned."),
+        );
+        return;
+      }
       toast.error(getErrorMessage(error) || "Failed to assign officer");
     },
   });

@@ -13,6 +13,8 @@ export interface PreviewFlyer {
   name: string;
   image?: string | StaticImageData;
   imageUrl?: string;
+  /** F-1: the flyer's own copy, shown under the artwork */
+  description?: string | null;
   position?: number;
   sortOrder?: number;
   status?: string;
@@ -40,6 +42,9 @@ export default function PreviewFlyerModal({
   const imageUrl = flyer.imageUrl || flyer.image;
   const position = flyer.position ?? flyer.sortOrder;
   const isActive = flyer.isActive !== false;
+  // Optional - a flyer can be pure artwork, so an empty block is skipped
+  // rather than left as a labelled gap
+  const description = flyer.description?.trim();
 
   return (
     <Modal open={isOpen} onClose={onClose}>
@@ -75,6 +80,23 @@ export default function PreviewFlyerModal({
             </div>
           )}
         </div>
+
+        {/* Details - the copy that runs under the artwork in the app */}
+        {description && (
+          <div>
+            <Text variant="small" weight="bold" color="foreground">
+              Details
+            </Text>
+            <Text
+              variant="caption"
+              weight="medium"
+              color="muted"
+              className="whitespace-pre-wrap block mt-1"
+            >
+              {description}
+            </Text>
+          </div>
+        )}
 
         {/* Meta */}
         <div className="flex items-center gap-6">

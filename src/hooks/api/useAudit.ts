@@ -8,7 +8,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { auditService } from "@/services/audit.service";
 import { queryKeys } from "@/lib/api/queryKeys";
-import { AuditTicketsListResponse } from "@/lib/api/types";
 
 interface GetAuditTicketsParams {
   page?: number;
@@ -22,6 +21,17 @@ interface GetAuditTicketsParams {
   /** B-4.2: exact UUID filters for the chat audit */
   officerId?: string;
   customerId?: string;
+  /**
+   * RA-T1: narrow to one or more ticket statuses. `meta.total` counts the
+   * filtered set, so the pager stays honest. Omit for every status.
+   */
+  status?: string[];
+  /**
+   * Skip the request entirely. The audits screen mounts both tabs' hooks and
+   * only the visible one should reach the network - an inactive tab must not
+   * spend a request or surface its own error banner.
+   */
+  enabled?: boolean;
 }
 
 /**
@@ -30,6 +40,7 @@ interface GetAuditTicketsParams {
 export const useAuditTickets = (params: GetAuditTicketsParams = {}) => {
   return useQuery({
     queryKey: queryKeys.audits.ticketsList(params as Record<string, unknown>),
+    enabled: params.enabled !== false,
     queryFn: () =>
       auditService.getTickets({
         page: params.page ?? 1,
@@ -40,6 +51,7 @@ export const useAuditTickets = (params: GetAuditTicketsParams = {}) => {
         keyword: params.keyword,
         startDate: params.startDate,
         endDate: params.endDate,
+        status: params.status,
       }),
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1,
@@ -53,6 +65,7 @@ export const useAuditTickets = (params: GetAuditTicketsParams = {}) => {
 export const useAuditChats = (params: GetAuditTicketsParams = {}) => {
   return useQuery({
     queryKey: ["audits", "chats", params as Record<string, unknown>],
+    enabled: params.enabled !== false,
     queryFn: () =>
       auditService.getChats({
         page: params.page ?? 1,

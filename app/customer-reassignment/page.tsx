@@ -306,7 +306,7 @@ function CustomerReassignmentContent() {
 
   return (
     <MainLayout>
-      <div className="p-4 space-y-6 overflow-y-auto h-screen bg-milkwhite/90">
+      <div className="px-4 pt-4 pb-30 space-y-6 overflow-y-auto h-screen bg-milkwhite/90">
         {/* Page Header Component */}
         <PageHeader
           title="Customer Reassignment"

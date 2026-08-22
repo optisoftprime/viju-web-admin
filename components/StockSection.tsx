@@ -5,6 +5,7 @@ import { Text } from "@/components/common";
 import Pagination from "@/components/Pagination";
 import RowDetailsModal from "@/components/RowDetailsModal";
 import { DEFAULT_SECTION_PAGE_SIZE } from "@/constants/pagination";
+import { formatNumberExact } from "@/utils/formatter";
 
 interface Stock {
   id: string;
@@ -275,7 +276,7 @@ export default function StockSection({
     const catalogueStocks: Stock[] = catalogue.map((item: any) => ({
       id: item.id || item.erpId,
       product: item.productName,
-      stockBalance: `${item.quantity || 0} Cartons`,
+      stockBalance: `${formatNumberExact(item.quantity || 0)} Cartons`,
       reservedStock: "0",
       awaitingLoading: "0",
       lastStockUpdate: item.updatedAt || new Date().toISOString(),

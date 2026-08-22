@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
 import { MainLayout } from "@/components/common";
 import { Text, Card, Button, Table, SearchInput } from "@/components/common";
 import StatCard from "@/components/StatCard";
@@ -13,6 +13,7 @@ import AssignLoadingOfficerModal from "@/components/AssignLoadingOfficerModal";
 import LoadingOfficerSuccessModal from "@/components/LoadingOfficerSuccessModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import RowDetailsModal from "@/components/RowDetailsModal";
+import AllCustomersModal from "@/components/AllCustomersModal";
 import { usePagination, getTotalPages } from "@/hooks/usePagination";
 import { DEFAULT_SECTION_PAGE_SIZE } from "@/constants/pagination";
 import OverviewSection from "@/components/OverviewSection";
@@ -21,30 +22,52 @@ import InvoicesSection from "@/components/InvoicesSection";
 import StockSection from "@/components/StockSection";
 import WaybillsSection from "@/components/WaybillsSection";
 import arrowRight from "@/assets/icons/arrow-right.svg";
+import { normalizeStaffRole } from "@/constants/roles";
+import { resolveRegion } from "@/constants/regions";
 import {
   useDashboardStats,
   useDashboardTableData,
+  useNextUnreadCustomer,
 } from "@/hooks/api/useDashboard";
+
 import {
   useDistributorOverview,
   useDistributorOrders,
   useDistributorInvoices,
   useDistributorStock,
   useDistributorWaybills,
+  useOfficerTickets,
 } from "@/hooks/api/useOfficerCustomer";
 import {
   AdminDashboardStats,
   OfficerDashboardStats,
   OfficerCustomer,
   OfficerCustomerFilter,
+  OfficerTicket,
   PendingLoadingRequest,
   RegionalAdminDashboardResponse,
 } from "@/lib/api/types";
-import userIcon from "@/assets/icons/usersblack.svg";
+import {
+  AlertCircle,
+  Boxes,
+  Loader2,
+  MessageSquare,
+  Ticket,
+  Truck,
+  UserCheck,
+  Users,
+  UserX,
+  Wallet,
+} from "lucide-react";
 import { TextExtremeEnd } from "@/components/common/TextExtremeEnd";
-import { formatToNaira } from "@/src/utils/formatter";
+import {
+  formatToNaira,
+  formatToNairaExact,
+  formatNumberExact,
+} from "@/src/utils/formatter";
+import { UNRESOLVED_TICKET_STATUSES } from "@/constants/tickets";
 import { useGreeting, getPortalName } from "@/src/utils/greeting";
-import { safeArray, safeNumber, safeText } from "@/utils/safe";
+import { safeArray, safeDateText, safeNumber, safeText } from "@/utils/safe";
 import { buildErpCaption } from "@/utils/erp";
 import Image from "next/image";
 import { useAuthStore } from "@/src/store/auth.store";
@@ -62,8 +85,12 @@ interface Distributor {
   name: string;
   account: string;
   balance: string;
+  /** AO-P2 - cartons paid for but not yet loaded */
+  stock: string;
   lastPurchase: string;
   openTickets: number;
+  /** AO-C1 - messages the distributor sent that are still unread */
+  unreadMessages: number;
   lastContact: string;
   status: string;
   action: string;
@@ -138,12 +165,21 @@ const officerTableColumns = [
     title: "BALANCE",
   },
   {
+    key: "stock" as const,
+    title: "STOCK",
+  },
+  {
     key: "lastPurchase" as const,
     title: "LAST PURCHASE",
   },
   {
     key: "openTickets" as const,
     title: "OPEN TICKET",
+  },
+  {
+    // AO-C1 - so the officer can see who is waiting without opening each row
+    key: "unreadMessages" as const,
+    title: "UNREAD",
   },
   {
     key: "lastContact" as const,
@@ -190,8 +226,10 @@ const mockDistributorData: Distributor[] = [
     name: "Ade Foods Ltd",
     account: "VJ-00987",
     balance: "₦1,240,000",
+    stock: "420 Cartons",
     lastPurchase: "2026-03-23",
     openTickets: 3,
+    unreadMessages: 0,
     lastContact: "2026-03-23",
     status: "Pending",
     action: "View",
@@ -201,8 +239,10 @@ const mockDistributorData: Distributor[] = [
     name: "KJ Fresh Mart",
     account: "VJ-00987",
     balance: "₦1,240,000",
+    stock: "310 Cartons",
     lastPurchase: "2026-03-23",
     openTickets: 3,
+    unreadMessages: 0,
     lastContact: "2026-03-23",
     status: "Success",
     action: "View",
@@ -262,6 +302,23 @@ function DashboardContent() {
   // State for the row details modal (regional admin loading requests)
   const [detailsRow, setDetailsRow] = useState<Distributor | null>(null);
 
+  // Opened by the Total Customers tile
+  const [isAllCustomersOpen, setIsAllCustomersOpen] = useState(false);
+
+  /**
+   * Ticket the Open Tickets tile is sending the officer to.
+   *
+   * `statFocusKey` re-keys TicketsUI so a second click on the tile reopens the
+   * thread even after the reader closed the first one.
+   */
+  const [autoOpenTicketId, setAutoOpenTicketId] = useState<string | null>(null);
+  const [statFocusKey, setStatFocusKey] = useState(0);
+
+  // Scroll target for the distributor detail panel, so a tile that selects a
+  // customer brings the conversation into view rather than leaving it below
+  // the fold
+  const detailSectionRef = useRef<HTMLDivElement | null>(null);
+
   // State for the admin CSV export
   const [isExporting, setIsExporting] = useState(false);
 
@@ -281,10 +338,41 @@ function DashboardContent() {
   });
   const { user } = useAuthStore();
 
+  /**
+   * The signed-in role, collapsed onto the wire vocabulary.
+   * "ACCOUNT_OFFICER" and "OFFICER" name the same role; every branch below
+   * tests this rather than user.role so neither spelling can miss.
+   */
+  const role = normalizeStaffRole(user?.role);
+
   // Greeting that follows the viewer's local time of day
   const greeting = useGreeting();
   const firstName = user?.name?.trim().split(" ")[0];
   const portalName = getPortalName(user?.role);
+
+  /**
+   * Backing data for the two officer tiles that jump to a customer.
+   *
+   * Both are now single, precise requests rather than a scan:
+   *  - AO-T1 gave /tickets/officer a `status` filter, so the API returns one
+   *    unresolved ticket instead of a page of 50 to sift through.
+   *  - AO-C1 gave /officers/customers an `unreadMessages` filter and a
+   *    `lastMessageAt` sort, so the distributor who has waited longest comes
+   *    back directly. That reads Message.readAt, so unlike the notification
+   *    feed it does not go stale when the officer marks the bell read.
+   *
+   * The unread lookup is a mutation rather than a query: the tile needs the
+   * answer at the moment it is clicked, and a cached one would send the
+   * officer to the wrong conversation.
+   */
+  const isOfficer = normalizeStaffRole(user?.role) === "OFFICER";
+
+  const { data: nextOpenTicketData } = useOfficerTickets(1, 1, {
+    enabled: isOfficer,
+    status: [...UNRESOLVED_TICKET_STATUSES],
+  });
+  const { mutateAsync: findNextUnreadCustomer, isPending: isFindingUnread } =
+    useNextUnreadCustomer();
 
   // Fetch officer customer data (Overview, Orders, Invoices, Stock)
   const {
@@ -322,43 +410,50 @@ function DashboardContent() {
    * ERP counts are still being reconciled, so a stat can arrive undefined or
    * null - render 0 rather than "NaN".
    */
-  const formatNumber = (num: unknown) => {
-    return new Intl.NumberFormat("en-NG").format(safeNumber(num, 0));
-  };
+  const formatNumber = (num: unknown) => formatNumberExact(safeNumber(num, 0));
 
-  // Helper function to format currency - same guard as formatNumber
-  const formatCurrency = (num: unknown) => {
-    return new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-    }).format(safeNumber(num, 0));
-  };
+  /**
+   * Money is rendered to the API's own precision.
+   *
+   * The currency style fixes the output at two decimals, which silently
+   * rounded ERP balances like -10,140,600.1232. Every wallet and balance in
+   * the app now goes through the exact formatter instead.
+   */
+  const formatCurrency = (num: unknown) =>
+    formatToNairaExact(safeNumber(num, 0));
 
-  // Helper function to format date
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString("en-NG");
-    } catch {
-      return dateString;
-    }
-  };
+  /**
+   * Helper function to format date.
+   * `lastPurchaseDate` is nullable - a distributor who has never ordered has
+   * none - so a missing value reads as "N/A" rather than "Invalid Date".
+   */
+  const formatDate = (dateString?: string | null) =>
+    safeDateText(dateString, "N/A");
 
   // Map officer customers to table format
   const mapOfficerCustomersToTable = (
     customers: OfficerCustomer[],
   ): Distributor[] => {
-    return customers.map((customer) => ({
-      id: customer.id,
-      name: customer.name,
-      account: customer.accountNumber,
-      balance: formatCurrency(customer.walletBalance),
-      lastPurchase: formatDate(customer.lastPurchaseDate),
-      openTickets: customer.openTickets,
-      lastContact: formatDate(customer.lastContactDate),
-      status: customer.accountStatus,
-      action: "View",
-    }));
+    return customers.map((customer) => {
+      const cartons = safeNumber(customer?.stockBalanceCartons, 0);
+
+      return {
+        id: customer.id,
+        name: customer.name,
+        account: customer.accountNumber,
+        balance: formatCurrency(customer.walletBalance),
+        // AO-P2 - always a number on this route, so no em-dash branch
+        stock: `${formatNumberExact(cartons)} ${
+          cartons === 1 ? "Carton" : "Cartons"
+        }`,
+        lastPurchase: formatDate(customer.lastPurchaseDate),
+        openTickets: safeNumber(customer?.openTickets, 0),
+        unreadMessages: safeNumber(customer?.unreadMessages, 0),
+        lastContact: formatDate(customer.lastContactDate),
+        status: customer.accountStatus,
+        action: "View",
+      };
+    });
   };
 
   /**
@@ -384,7 +479,7 @@ function DashboardContent() {
   };
 
   const adminCardData = useMemo(() => {
-    if (user?.role === "ADMIN" && dashboardStats) {
+    if (role === "ADMIN" && dashboardStats) {
       return mapAdminDashboardDataToCard(dashboardStats as AdminDashboardStats);
     }
     return [];
@@ -398,9 +493,13 @@ function DashboardContent() {
       id: request.id,
       name: request.distributorName,
       account: request.reference,
-      balance: `${request.quantityCartons} Cartons`,
+      balance: `${formatNumberExact(request.quantityCartons)} Cartons`,
+      // A loading request is not a customer row - the officer-only columns
+      // have no meaning here and the regional table never renders them
+      stock: "N/A",
       lastPurchase: formatDate(request.loadingDate),
-      openTickets: 0, // Not applicable for waybills
+      openTickets: 0,
+      unreadMessages: 0,
       lastContact: formatDate(request.submittedAt),
       status: request.status,
       action: "View",
@@ -410,20 +509,19 @@ function DashboardContent() {
   // Transform table data based on role
   const transformedTableData: Distributor[] | AdminDashboardCard[] =
     useMemo(() => {
-      if (user?.role === "OFFICER" && Array.isArray(tableData)) {
+      if (role === "OFFICER" && Array.isArray(tableData)) {
         return mapOfficerCustomersToTable(tableData as OfficerCustomer[]);
       }
 
-      if (user?.role === "ADMIN") {
+      if (role === "ADMIN") {
         return mapAdminDashboardDataToCard(tableData as AdminDashboardStats);
       }
 
       // RA-02 - live branch. pendingLoadingRequests stays empty until
       // distributors submit loading requests, so guard for a missing array.
-      if ((user?.role as any) === "REGIONAL_ADMIN") {
+      if (role === "REGIONAL_ADMIN") {
         const regionalData = tableData as
-          | RegionalAdminDashboardResponse
-          | undefined;
+          RegionalAdminDashboardResponse | undefined;
         return mapPendingLoadingRequestsToTable(
           Array.isArray(regionalData?.pendingLoadingRequests)
             ? regionalData.pendingLoadingRequests
@@ -432,7 +530,7 @@ function DashboardContent() {
       }
 
       return mockDistributorData;
-    }, [tableData, user?.role]);
+    }, [tableData, role]);
 
   // Calculate pagination
   const totalItems = transformedTableData?.length || 0;
@@ -447,10 +545,10 @@ function DashboardContent() {
     if (statsLoading) {
       return (
         <>
-          <StatCard icon={userIcon} label="Loading..." value="..." />
-          <StatCard icon={userIcon} label="Loading..." value="..." />
-          <StatCard icon={userIcon} label="Loading..." value="..." />
-          <StatCard icon={userIcon} label="Loading..." value="..." />
+          <StatCard icon={Loader2} label="Loading..." value="..." />
+          <StatCard icon={Loader2} label="Loading..." value="..." />
+          <StatCard icon={Loader2} label="Loading..." value="..." />
+          <StatCard icon={Loader2} label="Loading..." value="..." />
         </>
       );
     }
@@ -458,81 +556,104 @@ function DashboardContent() {
     if (statsError || !dashboardStats) {
       return (
         <>
-          <StatCard icon={userIcon} label="Error Loading" value="N/A" />
-          <StatCard icon={userIcon} label="Error Loading" value="N/A" />
-          <StatCard icon={userIcon} label="Error Loading" value="N/A" />
-          <StatCard icon={userIcon} label="Error Loading" value="N/A" />
+          <StatCard icon={AlertCircle} label="Error Loading" value="N/A" />
+          <StatCard icon={AlertCircle} label="Error Loading" value="N/A" />
+          <StatCard icon={AlertCircle} label="Error Loading" value="N/A" />
+          <StatCard icon={AlertCircle} label="Error Loading" value="N/A" />
         </>
       );
     }
 
-    if (user?.role === "ADMIN") {
+    if (role === "ADMIN") {
       const stats = dashboardStats as AdminDashboardStats;
       return (
         <>
           <StatCard
-            icon={userIcon}
+            icon={Users}
             label="Total Customers"
-            value={formatNumber(stats.totalCustomers)}
+            value={formatNumber(stats.totalActiveCustomers)}
             // caption={buildErpCaption(stats)} client said - do not show this
+            onClick={() => setIsAllCustomersOpen(true)}
+            actionLabel="View all customers"
           />
           {/* B-1.2 - pairs with the "Unassigned only" filter on the customer list */}
           <StatCard
-            icon={userIcon}
+            icon={UserX}
             label="Unassigned Customers"
             value={formatNumber(stats.customersWithoutOfficer)}
+            onClick={() => router.push("/admin/reassignment")}
+            actionLabel="Go to reassignment"
           />
+          {/* Both tiles land on the Interaction Audit screen with the matching
+              tab already selected - see `?tab=` on @app/admin/audits */}
           <StatCard
-            icon={userIcon}
+            icon={MessageSquare}
             label="Unread Messages"
             value={formatNumber(stats.unReadMessage)}
+            onClick={() => router.push("/admin/audits?tab=chat")}
+            actionLabel="View chat audit"
           />
           <StatCard
-            icon={userIcon}
+            icon={Ticket}
             label="Open Tickets"
             value={formatNumber(stats.openTickets)}
+            onClick={() => router.push("/admin/audits?tab=ticket")}
+            actionLabel="View ticket audit"
           />
         </>
       );
     }
 
-    if (user?.role === "OFFICER") {
+    if (role === "OFFICER") {
       const stats = dashboardStats as OfficerDashboardStats;
       return (
         <>
           <StatCard
-            icon={userIcon}
-            label="Total Distributors"
+            icon={Users}
+            label="Total Customers"
             value={formatNumber(stats.totalDistributors)}
+            onClick={() => setIsAllCustomersOpen(true)}
+            actionLabel="View my customers"
           />
           <StatCard
-            icon={userIcon}
+            icon={Wallet}
             label="Overdue Balances"
             value={formatCurrency(stats.overdueBalances)}
+            onClick={() => {
+              setSelectedTab("overdue");
+              resetPage();
+            }}
+            actionLabel="Filter overdue customers"
           />
+          {/* Both tiles select the owning customer, switch to the right tab
+              and show the conversation - no manual row hunting */}
           <StatCard
-            icon={userIcon}
+            icon={Ticket}
             label="Open Tickets"
             value={formatNumber(stats.openTickets)}
+            onClick={handleOpenTicketsStat}
+            actionLabel="Open the next ticket"
           />
           <StatCard
-            icon={userIcon}
+            icon={MessageSquare}
             label="Unread Messages"
             value={formatNumber(stats.unreadMessages)}
+            onClick={handleUnreadMessagesStat}
+            actionLabel="Open the next chat"
           />
         </>
       );
     }
 
     // REGIONAL_ADMIN stats from API response
-    if ((user?.role as any) === "REGIONAL_ADMIN") {
+    if (role === "REGIONAL_ADMIN") {
       if (!tableData || !("summary" in tableData)) {
         return (
           <>
-            <StatCard icon={userIcon} label="Error Loading" value="N/A" />
-            <StatCard icon={userIcon} label="Error Loading" value="N/A" />
-            <StatCard icon={userIcon} label="Error Loading" value="N/A" />
-            <StatCard icon={userIcon} label="Error Loading" value="N/A" />
+            <StatCard icon={AlertCircle} label="Error Loading" value="N/A" />
+            <StatCard icon={AlertCircle} label="Error Loading" value="N/A" />
+            <StatCard icon={AlertCircle} label="Error Loading" value="N/A" />
+            <StatCard icon={AlertCircle} label="Error Loading" value="N/A" />
           </>
         );
       }
@@ -540,25 +661,34 @@ function DashboardContent() {
       const summary = regionalData.summary;
       return (
         <>
+          {/* The customer list is scoped server-side from the token, so the
+              modal is opened without a region - sending one is a 403 for a
+              regional admin (see BACKEND_API_REQUESTS.md, RA-C1) */}
           <StatCard
-            icon={userIcon}
-            label="Total Distributors"
+            icon={Users}
+            label="Total Customers"
             value={formatNumber(summary.totalDistributors)}
+            onClick={() => setIsAllCustomersOpen(true)}
+            actionLabel="View all customers"
           />
           <StatCard
-            icon={userIcon}
+            icon={Ticket}
             label="Open Tickets"
             value={formatNumber(summary.openTickets)}
+            onClick={() => router.push("/regional-admin/tickets")}
+            actionLabel="Go to open tickets"
           />
           <StatCard
-            icon={userIcon}
+            icon={Truck}
             label="Pending Waybills"
             value={formatNumber(summary.pendingWaybills)}
           />
           <StatCard
-            icon={userIcon}
+            icon={UserCheck}
             label="Active Officers"
             value={formatNumber(summary.activeOfficers)}
+            onClick={() => router.push("/regional-admin/officers")}
+            actionLabel="Go to officers"
           />
         </>
       );
@@ -567,14 +697,10 @@ function DashboardContent() {
     // Default stats
     return (
       <>
-        <StatCard icon={userIcon} label="Total Distributions" value="256" />
-        <StatCard
-          icon={userIcon}
-          label="Overdue Balance"
-          value="₦190,980,000"
-        />
-        <StatCard icon={userIcon} label="Unread Messages" value="40" />
-        <StatCard icon={userIcon} label="Open Tickets" value="4" />
+        <StatCard icon={Boxes} label="Total Distributions" value="256" />
+        <StatCard icon={Wallet} label="Overdue Balance" value="₦190,980,000" />
+        <StatCard icon={MessageSquare} label="Unread Messages" value="40" />
+        <StatCard icon={Ticket} label="Open Tickets" value="4" />
       </>
     );
   };
@@ -663,11 +789,115 @@ function DashboardContent() {
     setSelectedDetailTab("Overview"); // Reset to Overview tab when a new distributor is selected
     setOrderPage(1); // Reset order page
     setWaybillPage(1); // Reset waybill page
+    setAutoOpenTicketId(null);
+  };
+
+  /**
+   * Select a customer and land on a specific detail tab.
+   *
+   * The row is taken from the table when the customer is already listed, so
+   * the balances and dates stay real; otherwise a minimal row is built from
+   * whatever the ticket or notification carried. Every panel below fetches by
+   * `selectedDistributorId`, so a thin row is enough to open the detail view -
+   * which is what lets a tile jump to a customer who is not on the current
+   * page or filter.
+   */
+  const focusCustomer = (
+    customer: { id: string; name?: string | null },
+    detailTab: string,
+  ) => {
+    const existing = (transformedTableData as Distributor[]).find(
+      (row) => row?.id === customer.id,
+    );
+
+    setSelectedDistributor(
+      existing ?? {
+        id: customer.id,
+        name: safeText(customer.name, "Customer"),
+        account: "N/A",
+        balance: "N/A",
+        stock: "N/A",
+        lastPurchase: "N/A",
+        openTickets: 0,
+        unreadMessages: 0,
+        lastContact: "N/A",
+        status: "",
+        action: "View",
+      },
+    );
+    setSelectedDistributorId(customer.id);
+    setSelectedDetailTab(detailTab);
+    setOrderPage(1);
+    setWaybillPage(1);
+
+    // The panel mounts on this state change, so the scroll waits a frame
+    requestAnimationFrame(() => {
+      detailSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  };
+
+  /**
+   * Open Tickets tile - jump to a customer with an unresolved ticket, land on
+   * the Tickets tab and open that ticket's thread straight away.
+   *
+   * The table is switched to the Active Ticket filter at the same time, so the
+   * list underneath shows the customers that actually have tickets rather than
+   * leaving the officer to guess which row it came from.
+   */
+  const handleOpenTicketsStat = () => {
+    const ticket = safeArray<OfficerTicket>(nextOpenTicketData?.data)[0];
+
+    if (!ticket?.customerId) {
+      toast.info("No open tickets right now.");
+      return;
+    }
+
+    setSelectedTab("activeTickets");
+    resetPage();
+    focusCustomer(
+      { id: ticket.customerId, name: ticket.customer?.name },
+      "Tickets",
+    );
+    setAutoOpenTicketId(ticket.id);
+    setStatFocusKey((key) => key + 1);
+  };
+
+  /**
+   * Unread Messages tile - jump to the distributor who has been waiting
+   * longest on an unread message and land on the Chat tab, where the thread
+   * loads on its own.
+   *
+   * The table switches to the matching "Unread Messages" filter at the same
+   * time, so the list underneath shows exactly who else is waiting.
+   */
+  const handleUnreadMessagesStat = async () => {
+    if (isFindingUnread) return;
+
+    try {
+      const customer = await findNextUnreadCustomer();
+
+      if (!customer?.id) {
+        toast.info("No unread customer messages right now.");
+        return;
+      }
+
+      setSelectedTab("unreadMessages");
+      resetPage();
+      focusCustomer({ id: customer.id, name: customer.name }, "Chat");
+      setAutoOpenTicketId(null);
+    } catch (error) {
+      toast.error(
+        getErrorMessage(error, "Could not open the next unread conversation"),
+      );
+    }
   };
   return (
     <MainLayout>
       <div className="px-4 pt-4 pb-30 space-y-6 overflow-y-auto h-screen bg-milkwhite/90">
-        {(user?.role as any) !== "LOADING_OFFICER" && (
+        {role !== "LOADING_OFFICER" && (
           <>
             {/* Page Header Component */}
             <div className="flex items-center justify-between ">
@@ -676,7 +906,7 @@ function DashboardContent() {
                 subtitle={`Welcome back to the Viju ${portalName}`}
               />
 
-              {(user?.role as any) === "ADMIN" && (
+              {role === "ADMIN" && (
                 <ExportRecord onClick={handleExport} isLoading={isExporting} />
               )}
             </div>
@@ -685,7 +915,7 @@ function DashboardContent() {
             {/* Stats Cards Grid - admin carries one extra tile */}
             <div
               className={`grid grid-cols-1 gap-4 md:grid-cols-4 ${
-                user?.role === "ADMIN" ? "lg:grid-cols-4" : ""
+                role === "ADMIN" ? "lg:grid-cols-4" : ""
               }`}
             >
               {renderStats()}
@@ -693,7 +923,7 @@ function DashboardContent() {
           </>
         )}
 
-        {user?.role === "ADMIN" && (
+        {role === "ADMIN" && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-14">
             {adminCardData?.map((stat, i) => (
               <div
@@ -705,7 +935,7 @@ function DashboardContent() {
                   leftVariant="body"
                   leftColor="foreground"
                   leftWeight="bold"
-                  right={`Dist - ${stat.region.dist}`}
+                  right={`Customers - ${stat.region.dist}`}
                 />
                 <TextExtremeEnd
                   left="Wallet"
@@ -715,7 +945,16 @@ function DashboardContent() {
                 <TextExtremeEnd left="Officers" right={stat.activeOfficers} />
                 <div
                   onClick={() => {
-                    router.push(`/admin/distributors`);
+                    // The tile carries a display label ("Lagos"); the table
+                    // filter wants the enum. An unresolvable label simply
+                    // opens the table unfiltered rather than sending a value
+                    // the API answers 400 for.
+                    const regionValue = resolveRegion(stat.region.name);
+                    router.push(
+                      regionValue
+                        ? `/admin/distributors?region=${encodeURIComponent(regionValue)}`
+                        : "/admin/distributors",
+                    );
                   }}
                   className="flex gap-1 mt-3 items-center text-orange"
                 >
@@ -741,7 +980,7 @@ function DashboardContent() {
         )}
 
         {/* for the account officer   */}
-        {user?.role === "OFFICER" && (
+        {role === "OFFICER" && (
           <div>
             {/* Distributor List Card */}
             <Card border={false}>
@@ -784,6 +1023,20 @@ function DashboardContent() {
                   >
                     Active Ticket
                   </Button>
+                  {/* AO-C1 - the "waiting on me" list, filtered server-side */}
+                  <Button
+                    variant={
+                      selectedTab === "unreadMessages" ? "primary" : "outline"
+                    }
+                    onClick={() => handleTabChange("unreadMessages")}
+                    className={`whitespace-nowrap ${
+                      selectedTab === "unreadMessages"
+                        ? "bg-primary text-white border border-primary"
+                        : "bg-white border border-muted/30 hover:border-primary hover:bg-primary hover:text-white"
+                    }`}
+                  >
+                    Unread Messages
+                  </Button>
                 </div>
                 {/* Search Input Component */}
                 <SearchInput
@@ -794,7 +1047,7 @@ function DashboardContent() {
                 />
               </div>
 
-              {/* Data Table */}
+              {/* Account office customer's data table */}
               <div className="overflow-x-auto mt-6">
                 {tableLoading ? (
                   <div className="flex items-center justify-center h-64">
@@ -831,220 +1084,226 @@ function DashboardContent() {
 
             {/* Distributor Details Section */}
             {selectedDistributor ? (
-              <Card border={false}>
-                <div className=" pt-6 space-y-4 pb-12">
-                  {/* Distributor Header */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Text variant="h3" weight="bold">
-                        {selectedDistributor.name}
-                      </Text>
-                      <Text variant="small" color="muted">
-                        Assigned to {user?.name} • last updated{" "}
-                        {selectedDistributor.lastContact}
-                      </Text>
-                    </div>
-                    {/* <Button
+              <div ref={detailSectionRef}>
+                <Card border={false}>
+                  <div className=" pt-6 space-y-4 pb-12">
+                    {/* Distributor Header */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Text variant="h3" weight="bold">
+                          {selectedDistributor.name}
+                        </Text>
+                        <Text variant="small" color="muted">
+                          Assigned to {user?.name} • last updated{" "}
+                          {selectedDistributor.lastContact}
+                        </Text>
+                      </div>
+                      {/* <Button
                       variant="primary"
                       onClick={() => setIsAssignOfficerModalOpen(true)}
                     >
                       Assign Officer
                     </Button> */}
-                  </div>
+                    </div>
 
-                  {/* Detail Tabs Navigation */}
-                  <div className="flex items-center md:grid grid-cols-7 gap-2 pt-4 overflow-x-auto w-full">
-                    {[
-                      "Overview",
-                      "Orders",
-                      "Invoices",
-                      "Stock",
-                      "Chat",
-                      "Tickets",
-                      "Waybills",
-                    ].map((tab) => (
-                      <Button
-                        key={tab}
-                        variant={"outline"}
-                        onClick={() => setSelectedDetailTab(tab)}
-                        className={`whitespace-nowrap md:w-max  ${
-                          selectedDetailTab === tab
-                            ? "bg-primary text-white hover:text-primary border border-primary"
-                            : "bg-white border border-muted/30 hover:border-primary hover:bg-primary text-black hover:text-white"
-                        }`}
-                      >
-                        {tab}
-                      </Button>
-                    ))}
-                  </div>
+                    {/* Detail Tabs Navigation */}
+                    <div className="flex items-center md:grid grid-cols-7 gap-2 pt-4 overflow-x-auto w-full">
+                      {[
+                        "Overview",
+                        "Orders",
+                        "Invoices",
+                        "Stock",
+                        "Chat",
+                        "Tickets",
+                        "Waybills",
+                      ].map((tab) => (
+                        <Button
+                          key={tab}
+                          variant={"outline"}
+                          onClick={() => setSelectedDetailTab(tab)}
+                          className={`whitespace-nowrap md:w-max  ${
+                            selectedDetailTab === tab
+                              ? "bg-primary text-white hover:text-primary border border-primary"
+                              : "bg-white border border-muted/30 hover:border-primary hover:bg-primary text-black hover:text-white"
+                          }`}
+                        >
+                          {tab}
+                        </Button>
+                      ))}
+                    </div>
 
-                  {/* Detail Tab Content */}
-                  <div className="min-h-100 overflow-y-auto mt-4">
-                    {selectedDetailTab === "Overview" &&
-                      (overviewLoading ? (
-                        <div className="flex items-center justify-center h-64">
-                          <Text variant="caption" color="muted">
-                            Loading overview...
-                          </Text>
-                        </div>
-                      ) : overviewError ? (
-                        <div className="flex items-center justify-center h-64">
-                          <Text variant="caption" color="muted">
-                            Error loading overview. Please try again.
-                          </Text>
-                        </div>
-                      ) : overviewData ? (
-                        <OverviewSection
-                          distributorName={overviewData.name}
-                          phoneNumber={overviewData.phone || "N/A"}
-                          emailAddress={overviewData.email || "N/A"}
-                          region={overviewData.region}
-                          accountOfficer={
-                            overviewData.assignedOfficers?.[0]?.name || "N/A"
-                          }
-                          accountBalance={formatCurrency(
-                            overviewData.walletBalance,
-                          )}
-                          stockBalance="420 Cartons"
-                          lastActivity={formatDate(overviewData.lastUpdated)}
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-64">
-                          <Text variant="caption" color="muted">
-                            No overview data available
-                          </Text>
-                        </div>
-                      ))}
-                    {selectedDetailTab === "Orders" &&
-                      (ordersLoading ? (
-                        <div className="flex items-center justify-center h-64">
-                          <Text variant="caption" color="muted">
-                            Loading orders...
-                          </Text>
-                        </div>
-                      ) : ordersError ? (
-                        <div className="flex items-center justify-center h-64">
-                          <Text variant="caption" color="muted">
-                            Error loading orders. Please try again.
-                          </Text>
-                        </div>
-                      ) : ordersData && ordersData.data.length > 0 ? (
-                        <OrdersSection
-                          orders={ordersData.data}
-                          currentPage={orderPage}
-                          totalPages={ordersData.meta.totalPages}
-                          totalItems={ordersData.meta.total}
-                          onPageChange={setOrderPage}
-                          pageSize={orderPageSize}
-                          onPageSizeChange={setOrderPageSize}
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-64">
-                          <Text variant="caption" color="muted">
-                            No orders found
-                          </Text>
-                        </div>
-                      ))}
-                    {selectedDetailTab === "Invoices" &&
-                      (invoicesLoading ? (
-                        <div className="flex items-center justify-center h-64">
-                          <Text variant="caption" color="muted">
-                            Loading invoices...
-                          </Text>
-                        </div>
-                      ) : invoicesError ? (
-                        <div className="flex items-center justify-center h-64">
-                          <Text variant="caption" color="muted">
-                            Error loading invoices. Please try again.
-                          </Text>
-                        </div>
-                      ) : invoicesData && invoicesData.invoices.length > 0 ? (
-                        <InvoicesSection
-                          invoices={invoicesData.invoices}
-                          paymentHistory={invoicesData.paymentHistory}
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-64">
-                          <Text variant="caption" color="muted">
-                            No invoices found
-                          </Text>
-                        </div>
-                      ))}
-                    {selectedDetailTab === "Stock" &&
-                      (stockLoading ? (
-                        <div className="flex items-center justify-center h-64">
-                          <Text variant="caption" color="muted">
-                            Loading stock...
-                          </Text>
-                        </div>
-                      ) : stockError ? (
-                        <div className="flex items-center justify-center h-64">
-                          <Text variant="caption" color="muted">
-                            Error loading stock. Please try again.
-                          </Text>
-                        </div>
-                      ) : stockData ? (
-                        <StockSection
-                          catalogue={stockData.catalogue}
-                          /* Backend handoff: there is no top-level
+                    {/* Detail Tab Content */}
+                    <div className="min-h-100 overflow-y-auto mt-4">
+                      {selectedDetailTab === "Overview" &&
+                        (overviewLoading ? (
+                          <div className="flex items-center justify-center h-64">
+                            <Text variant="caption" color="muted">
+                              Loading overview...
+                            </Text>
+                          </div>
+                        ) : overviewError ? (
+                          <div className="flex items-center justify-center h-64">
+                            <Text variant="caption" color="muted">
+                              Error loading overview. Please try again.
+                            </Text>
+                          </div>
+                        ) : overviewData ? (
+                          <OverviewSection
+                            distributorName={overviewData.name}
+                            phoneNumber={overviewData.phone || "N/A"}
+                            emailAddress={overviewData.email || "N/A"}
+                            region={overviewData.region}
+                            accountOfficer={
+                              overviewData.assignedOfficers?.[0]?.name || "N/A"
+                            }
+                            accountBalance={formatCurrency(
+                              overviewData.walletBalance,
+                            )}
+                            stockBalance="420 Cartons"
+                            lastActivity={formatDate(overviewData.lastUpdated)}
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-64">
+                            <Text variant="caption" color="muted">
+                              No overview data available
+                            </Text>
+                          </div>
+                        ))}
+                      {selectedDetailTab === "Orders" &&
+                        (ordersLoading ? (
+                          <div className="flex items-center justify-center h-64">
+                            <Text variant="caption" color="muted">
+                              Loading orders...
+                            </Text>
+                          </div>
+                        ) : ordersError ? (
+                          <div className="flex items-center justify-center h-64">
+                            <Text variant="caption" color="muted">
+                              Error loading orders. Please try again.
+                            </Text>
+                          </div>
+                        ) : ordersData && ordersData.data.length > 0 ? (
+                          <OrdersSection
+                            orders={ordersData.data}
+                            currentPage={orderPage}
+                            totalPages={ordersData.meta.totalPages}
+                            totalItems={ordersData.meta.total}
+                            onPageChange={setOrderPage}
+                            pageSize={orderPageSize}
+                            onPageSizeChange={setOrderPageSize}
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-64">
+                            <Text variant="caption" color="muted">
+                              No orders found
+                            </Text>
+                          </div>
+                        ))}
+                      {selectedDetailTab === "Invoices" &&
+                        (invoicesLoading ? (
+                          <div className="flex items-center justify-center h-64">
+                            <Text variant="caption" color="muted">
+                              Loading invoices...
+                            </Text>
+                          </div>
+                        ) : invoicesError ? (
+                          <div className="flex items-center justify-center h-64">
+                            <Text variant="caption" color="muted">
+                              Error loading invoices. Please try again.
+                            </Text>
+                          </div>
+                        ) : invoicesData && invoicesData.invoices.length > 0 ? (
+                          <InvoicesSection
+                            invoices={invoicesData.invoices}
+                            paymentHistory={invoicesData.paymentHistory}
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-64">
+                            <Text variant="caption" color="muted">
+                              No invoices found
+                            </Text>
+                          </div>
+                        ))}
+                      {selectedDetailTab === "Stock" &&
+                        (stockLoading ? (
+                          <div className="flex items-center justify-center h-64">
+                            <Text variant="caption" color="muted">
+                              Loading stock...
+                            </Text>
+                          </div>
+                        ) : stockError ? (
+                          <div className="flex items-center justify-center h-64">
+                            <Text variant="caption" color="muted">
+                              Error loading stock. Please try again.
+                            </Text>
+                          </div>
+                        ) : stockData ? (
+                          <StockSection
+                            catalogue={stockData.catalogue}
+                            /* Backend handoff: there is no top-level
                              awaitingLoading array any more - it is a field on
                              each catalogue row. Kept optional for older
                              deployments that still send it. */
-                          awaitingLoading={stockData.awaitingLoading}
+                            awaitingLoading={stockData.awaitingLoading}
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-64">
+                            <Text variant="caption" color="muted">
+                              No stock data available
+                            </Text>
+                          </div>
+                        ))}
+                      {selectedDetailTab === "Chat" && (
+                        <ChatUI
+                          profileName={selectedDistributor.name}
+                          profileStatus="Online"
+                          distributorId={selectedDistributorId}
                         />
-                      ) : (
-                        <div className="flex items-center justify-center h-64">
-                          <Text variant="caption" color="muted">
-                            No stock data available
-                          </Text>
-                        </div>
-                      ))}
-                    {selectedDetailTab === "Chat" && (
-                      <ChatUI
-                        profileName={selectedDistributor.name}
-                        profileStatus="Online"
-                        distributorId={selectedDistributorId}
-                      />
-                    )}
-                    {selectedDetailTab === "Tickets" && (
-                      <TicketsUI
-                        distributorId={selectedDistributorId}
-                        distributorName={selectedDistributor?.name}
-                      />
-                    )}
-                    {selectedDetailTab === "Waybills" &&
-                      (waybillsLoading ? (
-                        <div className="flex items-center justify-center h-64">
-                          <Text variant="caption" color="muted">
-                            Loading waybills...
-                          </Text>
-                        </div>
-                      ) : waybillsError ? (
-                        <div className="flex items-center justify-center h-64">
-                          <Text variant="caption" color="muted">
-                            Error loading waybills. Please try again.
-                          </Text>
-                        </div>
-                      ) : waybillsData && waybillsData.data.length > 0 ? (
-                        <WaybillsSection
-                          waybills={waybillsData.data}
-                          currentPage={waybillPage}
-                          totalPages={waybillsData.meta.totalPages}
-                          totalItems={waybillsData.meta.total}
-                          onPageChange={setWaybillPage}
-                          pageSize={waybillPageSize}
-                          onPageSizeChange={setWaybillPageSize}
+                      )}
+                      {selectedDetailTab === "Tickets" && (
+                        <TicketsUI
+                          // Re-keyed by the Open Tickets tile so a repeat click
+                          // reopens the thread after the reader closed it
+                          key={`tickets-${statFocusKey}`}
+                          distributorId={selectedDistributorId}
+                          distributorName={selectedDistributor?.name}
+                          autoOpenTicketId={autoOpenTicketId}
                         />
-                      ) : (
-                        <div className="flex items-center justify-center h-64">
-                          <Text variant="caption" color="muted">
-                            No waybills found
-                          </Text>
-                        </div>
-                      ))}
+                      )}
+                      {selectedDetailTab === "Waybills" &&
+                        (waybillsLoading ? (
+                          <div className="flex items-center justify-center h-64">
+                            <Text variant="caption" color="muted">
+                              Loading waybills...
+                            </Text>
+                          </div>
+                        ) : waybillsError ? (
+                          <div className="flex items-center justify-center h-64">
+                            <Text variant="caption" color="muted">
+                              Error loading waybills. Please try again.
+                            </Text>
+                          </div>
+                        ) : waybillsData && waybillsData.data.length > 0 ? (
+                          <WaybillsSection
+                            waybills={waybillsData.data}
+                            currentPage={waybillPage}
+                            totalPages={waybillsData.meta.totalPages}
+                            totalItems={waybillsData.meta.total}
+                            onPageChange={setWaybillPage}
+                            pageSize={waybillPageSize}
+                            onPageSizeChange={setWaybillPageSize}
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-64">
+                            <Text variant="caption" color="muted">
+                              No waybills found
+                            </Text>
+                          </div>
+                        ))}
+                    </div>
                   </div>
-                </div>
-              </Card>
+                </Card>
+              </div>
             ) : (
               <Card>
                 <div className="p-6 flex items-center justify-center min-h-50">
@@ -1065,7 +1324,7 @@ function DashboardContent() {
           </div>
         )}
 
-        {(user?.role as any) === "REGIONAL_ADMIN" && (
+        {role === "REGIONAL_ADMIN" && (
           <div className="pb-30">
             <Card border={false}>
               <div className="flex justify-between px-2 items-center">
@@ -1185,7 +1444,14 @@ function DashboardContent() {
           </div>
         )}
 
-        {(user?.role as any) === "LOADING_OFFICER" && <LoadingOfficer />}
+        {role === "LOADING_OFFICER" && <LoadingOfficer />}
+
+        {/* All Customers - opened from the Total Customers tile (admin only,
+            but mounted outside the role branches so it always renders) */}
+        <AllCustomersModal
+          open={isAllCustomersOpen}
+          onClose={() => setIsAllCustomersOpen(false)}
+        />
       </div>
     </MainLayout>
   );

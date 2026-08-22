@@ -5,17 +5,19 @@ import { MainLayout } from "@/components/common";
 import { Card, Button, Table, SearchInput } from "@/components/common";
 import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
-import AddAccountOfficerFormModal from "@/components/AddAccountOfficerFormModal";
+import AddManagedUserModal from "@/components/AddAccountOfficerFormModal";
 import PreviewAccountOfficerModal from "@/components/PreviewAccountOfficerModal";
 import OfficerDetailsModal from "@/components/OfficerDetailsModal";
 import SuccessModal from "@/components/SuccessModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { useOfficers, useCreateOfficer } from "@/hooks/api/useOfficer";
+import { useOfficers } from "@/hooks/api/useOfficer";
 import plus from "@/assets/icons/plus.svg";
 import Image from "next/image";
-import { formatDateTime } from "@/src/utils/formatter";
 import { formatRegion } from "@/utils/formatter";
 import { safeText, safeNumber, safeDateText } from "@/utils/safe";
+import { formatRole, formatRoleScope } from "@/constants/roles";
+import { STATUS_FILTER_OPTIONS } from "@/constants/roles";
+import type { CreateOfficerResponse } from "@/lib/api/types";
 
 // Interface for officer data structure (transformed from API)
 interface OfficerTableRow {
@@ -24,9 +26,12 @@ interface OfficerTableRow {
   email: string;
   region: string;
   role: string;
+  /** Wire value behind the label, e.g. "OFFICER" */
+  roleValue: string;
   phoneNo: string;
   distributors: number;
   tickets: number;
+  status: string;
   lastLogin: string;
   createdAt: string;
   isActive: boolean;
@@ -64,6 +69,10 @@ const tableColumns = [
     title: "TICKETS",
   },
   {
+    key: "status" as const,
+    title: "STATUS",
+  },
+  {
     key: "lastLogin" as const,
     title: "LAST LOGIN",
   },
@@ -79,6 +88,8 @@ function AccountOfficersContent() {
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  // false only means the credentials email did not go out - the account exists
+  const [credentialsEmailSent, setCredentialsEmailSent] = useState(true);
 
   // State for selected officer
   const [selectedOfficer, setSelectedOfficer] =
@@ -91,9 +102,12 @@ function AccountOfficersContent() {
   // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  // "" means no isActive filter at all, which is the API's default
+  const [statusFilter, setStatusFilter] = useState("");
   const itemsPerPage = 20;
 
-  // Fetch officers from API
+  // Fetch officers from API. No `role` is sent: the endpoint defaults to
+  // OFFICER, which is exactly what this screen lists.
   const {
     data: officersData,
     isLoading,
@@ -102,10 +116,8 @@ function AccountOfficersContent() {
     page: currentPage,
     pageSize: itemsPerPage,
     search: searchTerm || undefined,
+    isActive: statusFilter === "" ? undefined : statusFilter === "true",
   });
-
-  // Create officer mutation
-  const createOfficerMutation = useCreateOfficer();
 
   /**
    * Transform API response to table format
@@ -113,24 +125,33 @@ function AccountOfficersContent() {
   const tableData: OfficerTableRow[] = useMemo(() => {
     if (!officersData?.data) return [];
 
-    return officersData.data.map((officer) => ({
-      id: officer.id,
-      name: officer.name,
-      email: officer.email,
-      region: formatRegion(officer.region),
-      role: officer.isActive === false ? "Inactive" : "Account Officer",
-      phoneNo: safeText(officer.phone),
-      distributors: safeNumber(officer._count?.customers, 0),
-      // AD-15 - real open-ticket count, no longer hardcoded to 0
-      tickets: safeNumber(officer._count?.supportTickets, 0),
-      // AD-15 - null until the officer has logged in at least once
-      lastLogin: officer.lastLoginAt
-        ? safeDateText(officer.lastLoginAt)
-        : "Never",
-      createdAt: safeDateText(officer.createdAt),
-      isActive: officer.isActive !== false,
-      action: officer.isActive === false ? "Reactivate" : "Deactivate",
-    }));
+    return officersData.data.map((officer) => {
+      const roleValue = safeText(officer.role, "OFFICER");
+      const isActive = officer.isActive !== false;
+
+      return {
+        id: officer.id,
+        name: officer.name,
+        email: officer.email,
+        // An ADMIN has no region; every other role does
+        region: formatRoleScope(roleValue, formatRegion(officer.region)),
+        // Role and status are separate facts - never fold one into the other
+        role: formatRole(roleValue),
+        roleValue,
+        phoneNo: safeText(officer.phone),
+        distributors: safeNumber(officer._count?.customers, 0),
+        // AD-15 - real open-ticket count, no longer hardcoded to 0
+        tickets: safeNumber(officer._count?.supportTickets, 0),
+        status: isActive ? "Active" : "Inactive",
+        // AD-15 - null until the officer has logged in at least once
+        lastLogin: officer.lastLoginAt
+          ? safeDateText(officer.lastLoginAt)
+          : "Never",
+        createdAt: safeDateText(officer.createdAt),
+        isActive,
+        action: isActive ? "Deactivate" : "Reactivate",
+      };
+    });
   }, [officersData?.data]);
 
   const totalItems = officersData?.meta.total || 0;
@@ -141,6 +162,14 @@ function AccountOfficersContent() {
    */
   const handleSearch = (value: string) => {
     setSearchTerm(value);
+    setCurrentPage(1);
+  };
+
+  /**
+   * Handle status filter change
+   */
+  const handleStatusFilter = (value: string) => {
+    setStatusFilter(value);
     setCurrentPage(1);
   };
 
@@ -182,7 +211,8 @@ function AccountOfficersContent() {
   /**
    * Handle successful officer creation
    */
-  const handleOfficerCreated = () => {
+  const handleOfficerCreated = (created: CreateOfficerResponse) => {
+    setCredentialsEmailSent(created?.emailSent !== false);
     setSuccessMessage("Officer Created Successfully");
     setIsSuccessModalOpen(true);
   };
@@ -195,6 +225,8 @@ function AccountOfficersContent() {
     setIsSuccessModalOpen(true);
   };
 
+  const wasDeactivation = successMessage.includes("Deactivated");
+
   return (
     <MainLayout>
       <div className="p-4 overflow-y-auto space-y-6 pb-30 h-screen bg-milkwhite/90">
@@ -202,7 +234,7 @@ function AccountOfficersContent() {
         <div className="flex flex-col-reverse md:flex-row justify-between md:items-center items-end gap-4">
           <PageHeader
             title="Account Officers"
-            subtitle="Manage account officer portfolio. Phone numbers are fixed once set - password is via OTP to registered phone or email."
+            subtitle="Manage account officer portfolio. Officers sign in with their email address and password."
           />
           <Button
             variant="primary"
@@ -240,7 +272,21 @@ function AccountOfficersContent() {
           {/* Data Table */}
           {!isLoading && !error && (
             <>
-              <div className="flex justify-end mt-4">
+              <div className="flex flex-wrap justify-end items-center gap-3 mt-4">
+                {/* Status filter - omitted entirely means "both", the default */}
+                <select
+                  value={statusFilter}
+                  onChange={(event) => handleStatusFilter(event.target.value)}
+                  aria-label="Filter by status"
+                  className="px-3 py-2 rounded-md border border-muted/50 bg-white text-[13px] font-medium"
+                >
+                  {STATUS_FILTER_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+
                 <SearchInput
                   placeholder="Search officers"
                   onSearch={handleSearch}
@@ -280,7 +326,8 @@ function AccountOfficersContent() {
                   email: detailsRow.email,
                   phone: detailsRow.phoneNo,
                   region: detailsRow.region,
-                  status: detailsRow.isActive ? "Active" : "Inactive",
+                  role: detailsRow.roleValue,
+                  status: detailsRow.status,
                   customers: detailsRow.distributors,
                   tickets: detailsRow.tickets,
                   lastLogin: detailsRow.lastLogin,
@@ -290,11 +337,12 @@ function AccountOfficersContent() {
           }
         />
 
-        {/* Add Account Officer Modal */}
-        <AddAccountOfficerFormModal
+        {/* Add Account Officer Modal - this screen only creates officers */}
+        <AddManagedUserModal
           isOpen={isAddOfficerModalOpen}
           onClose={() => setIsAddOfficerModalOpen(false)}
           onSuccess={handleOfficerCreated}
+          roles={["OFFICER"]}
         />
 
         {/* Preview/Deactivate Officer Modal */}
@@ -316,16 +364,19 @@ function AccountOfficersContent() {
           onClose={() => {
             setIsSuccessModalOpen(false);
             setSuccessMessage("");
+            setCredentialsEmailSent(true);
           }}
           title={
-            successMessage.includes("Deactivated")
+            wasDeactivation
               ? "Officer Deactivated Successfully"
               : "Officer Created Successfully"
           }
           message={
-            successMessage.includes("Deactivated")
+            wasDeactivation
               ? "The officer account has been deactivated successfully. Platform access has been revoked, and all historical records remain available for audit purposes."
-              : "The new officer account has been created successfully. They will receive an email with their login credentials."
+              : credentialsEmailSent
+                ? "The new officer account has been created successfully. They will receive an email with their login credentials."
+                : "The officer account has been created. The credentials email could not be sent, so pass the password on directly."
           }
         />
       </div>

@@ -1,6 +1,10 @@
 "use client";
 
 import { Text } from "@/components/common";
+import {
+  TICKET_STATUS_OPTIONS,
+  formatTicketStatus,
+} from "@/constants/tickets";
 
 interface TicketCardProps {
   ticketId: string;
@@ -13,17 +17,9 @@ interface TicketCardProps {
   isUpdatingStatus?: boolean;
 }
 
-const statusOptions = [
-  { label: "Open", value: "OPEN" },
-  { label: "In Progress", value: "IN_PROGRESS" },
-  { label: "Awaiting Customer", value: "AWAITING_CUSTOMER" },
-  { label: "Resolved", value: "RESOLVED" },
-];
-
-const getStatusLabel = (status: string) => {
-  const option = statusOptions.find((item) => item.value === status);
-  return option?.label ?? status;
-};
+// Vocabulary lives in @/constants/tickets so the card, the detail modal and
+// the regional Open Tickets screen can never drift apart
+const statusOptions = TICKET_STATUS_OPTIONS;
 
 export default function TicketCard({
   ticketId,
@@ -71,7 +67,7 @@ export default function TicketCard({
       <div className="flex items-center justify-between w-full">
         <div className="flex gap-2 items-center">
           <span className="flex items-center justify-center text-[12px] text-[#3F79FA] font-bold px-2 py-1 rounded-md bg-[#D3E0FF]">
-            {getStatusLabel(status)}
+            {formatTicketStatus(status)}
           </span>
           <span className="flex items-center justify-center text-[12px] text-[#7F8DA1] font-bold px-2 py-1 rounded-md bg-[#DFE1E3]">
             {repliesUpdated} replies updated

@@ -30,6 +30,16 @@ export const queryKeys = {
       "list",
       filters,
     ],
+    /**
+     * RA-07: GET /regional/customers. Kept under ["customers"] so an
+     * assignment still invalidates it, but separate from the admin list -
+     * the two are scoped differently and must not share a cache entry.
+     */
+    regionalList: (filters: Record<string, unknown>) => [
+      "customers",
+      "regional",
+      filters,
+    ],
   },
   officers: {
     all: ["officers"],

@@ -12,6 +12,7 @@ import { useOfficers } from "@/hooks/api/useOfficer";
 import { useAuthStore } from "@/store/auth.store";
 import { formatDateTime, formatRegion } from "@/utils/formatter";
 import { safeText, safeNumber, safeDateText } from "@/utils/safe";
+import { formatRole } from "@/constants/roles";
 
 // Row shape rendered by the table (flattened from the API officer)
 interface OfficerRow {
@@ -19,6 +20,9 @@ interface OfficerRow {
   officer: string;
   email: string;
   region: string;
+  role: string;
+  /** Wire role value behind the label */
+  roleValue: string;
   phoneNo: string;
   customers: number;
   tickets: number;
@@ -40,6 +44,10 @@ const tableColumns = [
   {
     key: "region" as const,
     title: "REGION",
+  },
+  {
+    key: "role" as const,
+    title: "ROLE",
   },
   {
     key: "phoneNo" as const,
@@ -74,10 +82,13 @@ function RegionalAdminOfficersContent() {
   } = usePagination();
 
   /**
-   * A regional admin only ever lists their own region. The region travels to
-   * the API rather than being filtered here, so paging totals stay correct.
+   * The signed-in admin's own region, used for the page copy only.
+   *
+   * It is NOT sent to the API: GET /admin/officers derives the scope from the
+   * token and merely tolerates a `region` param, so sending one adds nothing
+   * and would drift from the customer list, which refuses it outright.
    */
-  const region = user?.region;
+  const region = user?.region ?? undefined;
 
   const {
     data: officersData,
@@ -87,7 +98,6 @@ function RegionalAdminOfficersContent() {
     page: currentPage,
     pageSize: itemsPerPage,
     search: searchTerm || undefined,
-    region,
   });
 
   /**
@@ -101,6 +111,8 @@ function RegionalAdminOfficersContent() {
       officer: officer.name,
       email: officer.email,
       region: formatRegion(officer.region),
+      role: formatRole(officer.role, "Account Officer"),
+      roleValue: safeText(officer.role, "OFFICER"),
       phoneNo: safeText(officer.phone),
       customers: safeNumber(officer._count?.customers, 0),
       tickets: safeNumber(officer._count?.supportTickets, 0),
@@ -222,6 +234,7 @@ function RegionalAdminOfficersContent() {
                   email: detailsRow.email,
                   phone: detailsRow.phoneNo,
                   region: detailsRow.region,
+                  role: detailsRow.roleValue,
                   status: detailsRow.status,
                   customers: detailsRow.customers,
                   tickets: detailsRow.tickets,

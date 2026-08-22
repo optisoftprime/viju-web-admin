@@ -9,14 +9,14 @@
  */
 
 import { safeDate, safeNumber } from "@/utils/safe";
-import { formatRelativeTime } from "@/utils/formatter";
+import { formatRelativeTime, formatNumberExact } from "@/utils/formatter";
 import type { AdminDashboardStats, ErpReconciliation } from "@/lib/api/types";
 
 /**
  * Format a count with thousands separators, tolerating null/undefined/NaN.
  */
 const formatCount = (value: unknown): string =>
-  new Intl.NumberFormat("en-NG").format(safeNumber(value, 0));
+  formatNumberExact(safeNumber(value, 0));
 
 /**
  * "3h ago" for a timestamp the ERP reported, or null when there is none or it

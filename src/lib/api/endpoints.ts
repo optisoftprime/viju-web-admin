@@ -89,6 +89,13 @@ export const endpoints = {
   regional: {
     loadingRequests: "/regional/loading-requests",
     assignLoadingRequest: "/regional/loading-requests/{id}/assign",
+    /**
+     * RA-07: every customer in the caller's own region. Same rows, filters,
+     * sorting and meta as /admin/customers - only the path and the region
+     * handling differ. A REGIONAL_ADMIN must NOT send `region` (it comes from
+     * the token); an ADMIN must, since they have no home region.
+     */
+    customers: "/regional/customers",
   },
   // LO-02..LO-05: loading / warehouse officer queue
   loading: {

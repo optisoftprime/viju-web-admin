@@ -27,6 +27,17 @@ export interface TableProps<T> {
   sortKey?: string | null;
   sortOrder?: "asc" | "desc";
   onSort?: (key: string) => void;
+  /**
+   * Extra classes for a single row, e.g. dimming a read-only record.
+   * Returns nothing for rows that need no special treatment.
+   */
+  rowClassName?: (row: T) => string | undefined;
+  /**
+   * Stable identity for a row. Defaults to the array index, which is fine for
+   * a static table but wrong when rows can carry a null id - pass the field
+   * that is unique across the result set.
+   */
+  rowKey?: (row: T, index: number) => string;
 }
 
 // Type for status badge colors
@@ -110,6 +121,8 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps<any>>(
       sortKey,
       sortOrder = "desc",
       onSort,
+      rowClassName,
+      rowKey,
       className = "",
       showSerialNumber = false,
     },
@@ -195,10 +208,10 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps<any>>(
 
                 return (
                   <tr
-                    key={rowIdx}
+                    key={rowKey ? rowKey(row, rowIdx) : rowIdx}
                     className={`${bgColor} ${borderClass} ${
                       onRowClick ? " cursor-pointer" : ""
-                    }`}
+                    } ${rowClassName?.(row) ?? ""}`.trim()}
                     onClick={() => onRowClick?.(row)}
                   >
                     {/* Serial Number Column */}

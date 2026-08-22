@@ -9,6 +9,7 @@ import LogoutModal from "./LogoutModal";
 import { useAuthStore } from "@/store/auth.store";
 import { getPortalName } from "@/src/utils/greeting";
 import { formatRegion } from "@/src/utils/formatter";
+import { formatRole, normalizeStaffRole } from "@/constants/roles";
 
 interface NavLinkItem {
   name: string;
@@ -31,6 +32,7 @@ const getIconComponent = (iconName: string) => {
     Truck: LucideIcons.Truck,
     Users: LucideIcons.Users,
     UserCheck: LucideIcons.UserCheck,
+    Ticket: LucideIcons.Ticket,
     ClipboardList: LucideIcons.ClipboardList,
     Globe: LucideIcons.Globe,
     Megaphone: LucideIcons.Megaphone,
@@ -92,7 +94,7 @@ export default function Sidebar({ showSidebar }: { showSidebar: boolean }) {
         },
         { name: "Loading Request", url: "/requests/loading", icon: "Truck" },
         {
-          name: "Distributors",
+          name: "Customers",
           url: "/regional-admin/distributors",
           icon: "Users",
         },
@@ -100,6 +102,11 @@ export default function Sidebar({ showSidebar }: { showSidebar: boolean }) {
           name: "Officers",
           url: "/regional-admin/officers",
           icon: "UserCheck",
+        },
+        {
+          name: "Open Tickets",
+          url: "/regional-admin/tickets",
+          icon: "Ticket",
         },
       ],
     },
@@ -135,6 +142,7 @@ export default function Sidebar({ showSidebar }: { showSidebar: boolean }) {
           url: "/admin/reassignment",
           icon: "Users",
         },
+        { name: "Users", url: "/admin/users", icon: "Users" },
         { name: "Officers", url: "/admin/officers", icon: "UserCheck" },
         {
           name: "Product Flyers",
@@ -143,13 +151,22 @@ export default function Sidebar({ showSidebar }: { showSidebar: boolean }) {
         },
       ],
     },
-  ].filter((type) => type.type === user?.role);
+  ].filter((type) => type.type === normalizeStaffRole(user?.role));
 
   const navigationData: NavCategory[] = sidebarNavigationData;
 
   return (
+    /*
+     * h-screen, not min-h-screen: min-h lets the element grow past the
+     * viewport, so overflow-y-auto has nothing to clip against and the menu
+     * items below the fold become unreachable. Fixing the height to the
+     * viewport makes this element the scroll container for its own content.
+     *
+     * overscroll-contain stops the scroll chaining to the page once the
+     * sidebar hits top or bottom.
+     */
     <aside
-      className={`${showSidebar ? "absolute" : "hidden md:static md:block"}  bg-primary z-20 p-6 min-h-screen overflow-y-auto`}
+      className={`${showSidebar ? "absolute inset-y-0 left-0" : "hidden md:static md:block"} bg-primary z-20 p-6 h-screen overflow-y-auto overscroll-contain [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.35)_transparent]`}
     >
       {/* Brand Identity Section */}
       <div className="flex z-20 items-center gap-2 mb-6">
@@ -180,7 +197,7 @@ export default function Sidebar({ showSidebar }: { showSidebar: boolean }) {
       )}
 
       {/* Navigation Links Section */}
-      <nav className="flex-1 overflow-y-auto space-y-2">
+      <nav className="space-y-2">
         {navigationData.map((category: NavCategory, categoryIndex: number) => (
           <div key={categoryIndex} className="mb-6">
             <Text
@@ -226,10 +243,8 @@ export default function Sidebar({ showSidebar }: { showSidebar: boolean }) {
             <span className="text-sm font-semibold text-white">
               {user?.name || "User"}
             </span>
-            <span className="text-xs text-white capitalize">
-              {user?.role?.toLowerCase() === "officer"
-                ? "Account Officer"
-                : user?.role?.toLowerCase() || "Staff"}
+            <span className="text-xs text-white">
+              {formatRole(user?.role, "Staff")}
             </span>
           </div>
         </div>
