@@ -21,10 +21,20 @@ import {
   VerifyOTPRequest,
   VerifyOTPResponse,
 } from "@/lib/api/types";
-import { getErrorMessage } from "@/utils/apiError";
+import { getErrorMessage, getErrorStatus } from "@/utils/apiError";
 
 /**
  * Login Mutation Hook
+ *
+ * One form, one request. POST /auth/staff/web-login still takes
+ * { username, code } - the KEYS did not change - but for the four managed
+ * roles those now carry an email address and a password. The same route
+ * still serves an ERP WAREHOUSE_OFFICER; the backend decides which path to
+ * take from the account it finds.
+ *
+ * There is deliberately no second attempt on failure: a wrong password can no
+ * longer fall through to the ERP, so retrying only turns one clear error into
+ * a confusing one.
  */
 export const useLogin = () => {
   const router = useRouter();
@@ -32,46 +42,56 @@ export const useLogin = () => {
 
   return useMutation({
     mutationFn: (credentials: LoginCredentials) =>
-      authService.login(credentials),
+      authService.loginTwo({
+        username: credentials.email.trim(),
+        code: credentials.password,
+      }),
     onSuccess: (data: AuthResponse) => {
-      // Save user and token to store (including refresh token if provided)
       setAuthData(
-        data.user,
+        data.user as User,
         data.access_token,
         data.refresh_token,
         data.expires_in,
       );
-      // Show success toast
       toast.success(`Welcome back, ${data?.user?.name}!`);
-      // Redirect to dashboard
       router.push("/dashboard");
     },
-    onError: async (error: unknown, payload: LoginCredentials) => {
-      const loginTwo = await authService.loginTwo({
-        username: payload.email,
-        code: payload.password,
-      });
-      console.log({ loginTwo, error });
-
-      if (loginTwo) {
-        // Save user and token to store (including refresh token if provided)
-        setAuthData(
-          loginTwo.user,
-          loginTwo.access_token,
-          loginTwo.refresh_token,
-          loginTwo.expires_in,
-        );
-        // Show success toast
-        toast.success(`Welcome back, ${loginTwo?.user?.name}!`);
-        // Redirect to dashboard
-        router.push("/dashboard");
-      } else {
-        const errorMessage = getErrorMessage(error);
-        toast.error(errorMessage);
-      }
+    onError: (error: unknown) => {
+      // The API's wording is written for the user - 403 "deactivated",
+      // 401 "no account exists", 401 "no password yet" all need to reach them
+      // verbatim. The form renders it inline; the toast is the echo.
+      toast.error(getLoginErrorMessage(error));
     },
   });
 };
+
+/**
+ * Turns a failed sign-in into the message to show.
+ *
+ * Every documented failure carries wording meant to be rendered as-is; only a
+ * transport failure with no body needs one of our own.
+ */
+export const getLoginErrorMessage = (error: unknown): string => {
+  const message = getErrorMessage(error);
+  if (message) {
+    // Soften only the generic credential rejection, which is written in the
+    // API's own vocabulary ("username or code") rather than the user's.
+    return message === "Invalid username or code."
+      ? "Incorrect email or password."
+      : message;
+  }
+
+  return getErrorStatus(error)
+    ? "Could not sign you in. Please try again."
+    : "Could not reach the server. Check your connection and try again.";
+};
+
+/**
+ * True for the account that exists but has never had a local password - the
+ * login screen surfaces the "Forgot password" link prominently for it.
+ */
+export const isPasswordNotSetError = (error: unknown): boolean =>
+  getErrorMessage(error).startsWith("This account has no password yet.");
 
 /**
  * Logout Mutation Hook

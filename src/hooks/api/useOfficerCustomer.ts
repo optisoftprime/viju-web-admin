@@ -7,7 +7,10 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { officerCustomerService } from "@/services/officerCustomer.service";
-import { SendTicketReplyRequest,
+import {
+  SendTicketReplyRequest,
+  SendTicketReplyResponse,
+  TicketThread,
   UploadFolder,
 } from "@/lib/api/types";
 
@@ -89,10 +92,35 @@ export const useDistributorWaybills = (
 /**
  * Get tickets assigned to the current officer
  */
-export const useOfficerTickets = (page: number = 1, pageSize: number = 20) => {
+export const useOfficerTickets = (
+  page: number = 1,
+  pageSize: number = 20,
+  options: {
+    enabled?: boolean;
+    /** AO-T1: narrow to one distributor, for the Tickets tab in a detail view */
+    customerId?: string | null;
+    /** AO-T1: one or more ticket statuses; omit for every status */
+    status?: string[];
+  } = {},
+) => {
+  const { customerId, status } = options;
+
   return useQuery({
-    queryKey: ["officerTickets", page, pageSize],
-    queryFn: () => officerCustomerService.getOfficerTickets(page, pageSize),
+    queryKey: [
+      "officerTickets",
+      page,
+      pageSize,
+      customerId ?? "",
+      (status ?? []).join(","),
+    ],
+    queryFn: () =>
+      officerCustomerService.getOfficerTickets(page, pageSize, {
+        customerId,
+        status,
+      }),
+    // The dashboard mounts this for the Open Tickets tile, which only exists
+    // for an OFFICER - no other role should spend the request
+    enabled: options.enabled !== false,
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
@@ -112,7 +140,12 @@ export const useTicketThread = (ticketId: string | null) => {
 };
 
 /**
- * Send a reply to a ticket
+ * Send a reply to a ticket.
+ *
+ * The 201 body IS the updated thread, so it is written straight into the
+ * thread cache - the reply appears without a second round trip. The list
+ * queries are still invalidated because their reply counts and `updatedAt`
+ * change too.
  */
 export const useSendTicketReply = (ticketId: string) => {
   const queryClient = useQueryClient();
@@ -120,9 +153,15 @@ export const useSendTicketReply = (ticketId: string) => {
   return useMutation({
     mutationFn: (request: SendTicketReplyRequest) =>
       officerCustomerService.sendTicketReply(ticketId, request),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ticketThread", ticketId] });
+    onSuccess: (response: SendTicketReplyResponse) => {
+      // The body IS the thread - `reply` is just an echo of the new row
+      // alongside it, so the whole object can be cached as-is
+      queryClient.setQueryData<TicketThread>(
+        ["ticketThread", ticketId],
+        response,
+      );
       queryClient.invalidateQueries({ queryKey: ["officerTickets"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
     },
   });
 };
@@ -136,11 +175,22 @@ export const useUpdateTicketStatus = () => {
   return useMutation({
     mutationFn: ({ ticketId, status }: { ticketId: string; status: string }) =>
       officerCustomerService.updateTicketStatus(ticketId, status),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ["ticketThread", variables.ticketId],
-      });
+    onSuccess: (updated, variables) => {
+      // Patch the status onto the cached thread so the select settles
+      // immediately, then let the lists refetch their own counts
+      queryClient.setQueryData<TicketThread | undefined>(
+        ["ticketThread", variables.ticketId],
+        (thread) =>
+          thread
+            ? {
+                ...thread,
+                status: updated?.status ?? variables.status,
+                updatedAt: updated?.updatedAt ?? thread.updatedAt,
+              }
+            : thread,
+      );
       queryClient.invalidateQueries({ queryKey: ["officerTickets"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
     },
   });
 };

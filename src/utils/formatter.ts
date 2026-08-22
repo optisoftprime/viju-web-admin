@@ -12,6 +12,53 @@ export const formatToNaira = (value: number | string): string => {
 };
 
 /**
+ * Naira with the API's own precision preserved.
+ *
+ * `formatToNaira` goes through the currency style, which fixes the output at
+ * two decimals - so an ERP balance of -10140600.1232 is silently rounded to
+ * -10,140,600.12. Wallet columns must show exactly what the API sent, so this
+ * variant keeps every decimal digit the value carries (up to the 20 the Intl
+ * spec allows) while still grouping the integer part.
+ */
+export const formatToNairaExact = (value: number | string): string => {
+  const numberValue = typeof value === "string" ? Number(value) : value;
+
+  if (typeof numberValue !== "number" || !Number.isFinite(numberValue)) {
+    return "₦0.00";
+  }
+
+  // Digits after the decimal point in the value as received, so a whole
+  // number still renders as "0.00" rather than losing the kobo columns
+  const decimals = String(numberValue).split(".")[1]?.length ?? 0;
+
+  return `₦${new Intl.NumberFormat("en-NG", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: Math.min(Math.max(decimals, 2), 20),
+  }).format(numberValue)}`;
+};
+
+/**
+ * A plain number with thousands separators and every decimal it carries.
+ *
+ * `Intl.NumberFormat` defaults to at most 3 fraction digits, so a raw
+ * `toLocaleString()` quietly rounds anything longer. Counts are unaffected;
+ * a fractional quantity is shown exactly as the API sent it.
+ */
+export const formatNumberExact = (value: number | string): string => {
+  const numberValue = typeof value === "string" ? Number(value) : value;
+
+  if (typeof numberValue !== "number" || !Number.isFinite(numberValue)) {
+    return "0";
+  }
+
+  const decimals = String(numberValue).split(".")[1]?.length ?? 0;
+
+  return new Intl.NumberFormat("en-NG", {
+    maximumFractionDigits: Math.min(decimals, 20),
+  }).format(numberValue);
+};
+
+/**
  * Human friendly age of a timestamp: "3hrs ago", "Yesterday", "2 days ago"
  * Falls back to an absolute date once it is over a month old
  */

@@ -11,7 +11,13 @@ export type SelectOption = {
 
 export interface SelectProps<T extends FieldValues> {
   name: Path<T>;
-  control: Control<T>;
+  /**
+   * Widened past `Control<T>` so a form that declares a separate transformed
+   * output type - useForm<Values, Context, Output> - can still pass its
+   * control here. The field itself is still typed by `name`.
+   */
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  control: Control<T, any, any>;
   label?: string;
   options: SelectOption[];
   error?: string;

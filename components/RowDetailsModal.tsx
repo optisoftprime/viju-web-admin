@@ -4,7 +4,7 @@ import React from "react";
 import { Modal } from "@/components/common/Modal";
 import { Text } from "@/components/common/Text";
 import { getStatusBadgeStyle } from "@/components/common/Table";
-import { formatToNaira, formatDateTime } from "@/utils/formatter";
+import { formatToNairaExact, formatDateTime } from "@/utils/formatter";
 
 /**
  * How a field's value should be presented.
@@ -84,7 +84,9 @@ const renderValue = (field: DetailField): React.ReactNode => {
   if (type === "amount") {
     return (
       <Text variant="caption" weight="medium" color="foreground">
-        {typeof value === "number" ? formatToNaira(value) : String(value)}
+        {/* Exact, not rounded - an amount here is an ERP figure and the
+            tables it opens from now render every decimal the API sent */}
+        {typeof value === "number" ? formatToNairaExact(value) : String(value)}
       </Text>
     );
   }

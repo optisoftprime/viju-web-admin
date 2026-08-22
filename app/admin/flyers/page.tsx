@@ -75,13 +75,18 @@ export default function FlyerPage() {
   const handleAddFlyer = async (flyerData: {
     name: string;
     imageUrl: string;
+    /** F-1: optional free text - blank means the flyer is pure artwork */
+    description: string;
   }) => {
+    const { description, ...core } = flyerData;
+
     try {
       if (editingFlyer) {
-        // Update mode
+        // Update mode - an empty string is meaningful here, it clears the
+        // details server-side, so it is sent rather than dropped
         await updateFlyerMutation.mutateAsync({
           id: editingFlyer.id,
-          data: flyerData,
+          data: { ...core, description },
         });
         setSuccessModal({
           isOpen: true,
@@ -89,14 +94,21 @@ export default function FlyerPage() {
           message: "Your flyer has been updated.",
         });
       } else {
-        // Create mode
-        await createFlyerMutation.mutateAsync(flyerData);
+        // Create mode - nothing to clear, so a blank details box sends no
+        // field at all
+        await createFlyerMutation.mutateAsync({
+          ...core,
+          ...(description ? { description } : {}),
+        });
         setSuccessModal({
           isOpen: true,
           title: "Flyer Created Successfully",
           message: "Your new flyer has been added to the system.",
         });
       }
+
+      // F-1: `description` is a real column now, so the "details were not
+      // kept" notice that used to follow a save is gone - the copy persists.
     } catch (err) {
       setSuccessModal({
         isOpen: true,
@@ -115,6 +127,7 @@ export default function FlyerPage() {
     id: string;
     name: string;
     imageUrl?: string;
+    description?: string | null;
     isActive?: boolean;
   }) => {
     // Guard against a second click while this flyer's request is in flight
@@ -129,6 +142,11 @@ export default function FlyerPage() {
         data: {
           name: flyer.name,
           imageUrl: flyer.imageUrl,
+          // Sent back unchanged - this call rewrites the fields it names, so
+          // omitting the details would risk clearing them on a mere toggle
+          ...(flyer.description != null
+            ? { description: flyer.description }
+            : {}),
           isActive: nextIsActive,
         },
       });

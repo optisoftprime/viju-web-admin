@@ -1,42 +1,109 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Button, Input, Modal, Select, Text } from "./common";
 import { useCreateOfficer } from "@/hooks/api/useOfficer";
-import { BroadcastRegion } from "@/lib/api/types";
+import {
+  BroadcastRegion,
+  CreateOfficerRequest,
+  CreateOfficerResponse,
+} from "@/lib/api/types";
 import { REGIONS } from "@/constants/regions";
+import {
+  CREATE_ROLE_OPTIONS,
+  ManagedRole,
+  ROLE_LABELS,
+  roleRequiresRegion,
+} from "@/constants/roles";
+import {
+  getErrorCode,
+  getErrorField,
+  getErrorMessages,
+} from "@/utils/apiError";
 
-interface AddAccountOfficerModalProps {
+interface AddManagedUserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
+  onSuccess?: (created: CreateOfficerResponse) => void;
+  /**
+   * Which roles the picker offers. The Officers screen passes ["OFFICER"] so
+   * it keeps creating account officers only; the Users screen passes nothing
+   * and gets all four. With a single role the picker is not rendered at all.
+   */
+  roles?: ManagedRole[];
+  title?: string;
 }
 
-// Validation schema
+/**
+ * Phone shape the API accepts: an optional leading "+", then 7-20 characters
+ * that must start with a digit and may contain digits, spaces and hyphens.
+ * No parentheses. Separators count toward the 20, so the service strips them
+ * before sending; validating the typed value against the same shape keeps the
+ * message accurate either way.
+ */
+const PHONE_PATTERN = /^\+?[0-9][0-9\s-]{6,19}$/;
+
 const schema = yup.object({
-  fullName: yup.string().required("Full Name is required").min(3),
+  fullName: yup
+    .string()
+    .trim()
+    .required("Full Name is required")
+    .min(2, "Full Name must be at least 2 characters")
+    .max(120, "Full Name must be at most 120 characters"),
   emailAddress: yup
     .string()
+    .trim()
+    .required("Email Address is required")
     .email("Invalid email")
-    .required("Email Address is required"),
-  region: yup.string().required("Region is required"),
+    .max(255, "Email must be at most 255 characters"),
+  role: yup.string().required("Role is required"),
+  /**
+   * An ADMIN is organisation-wide: the API rejects a region on one outright,
+   * so the field is only required - and only sent - for the other three.
+   * Expressed as a test rather than .when() so the field stays optional in
+   * the inferred type and the form keeps one shape across both branches.
+   */
+  region: yup
+    .string()
+    .test("region-required", "Region is required", function (value) {
+      return roleRequiresRegion(this.parent?.role) ? Boolean(value?.trim()) : true;
+    }),
   phoneNumber: yup
     .string()
+    .trim()
     .required("Phone Number is required")
-    .matches(/^\d{10,}$/, "Phone number must be at least 10 digits"),
+    .matches(PHONE_PATTERN, "Enter a valid phone number, e.g. +2348012345678"),
   temporaryPassword: yup
     .string()
     .required("Temporary Password is required")
-    .min(8),
+    .min(8, "Password must be at least 8 characters")
+    .max(72, "Password must be at most 72 characters"),
   confirmPassword: yup
     .string()
     .required("Confirm Password is required")
     .oneOf([yup.ref("temporaryPassword")], "Passwords must match"),
 });
+
+/**
+ * Two shapes, because yup and react-hook-form disagree about `region`.
+ *
+ * The raw form always has the key (it is a rendered input, empty for an
+ * ADMIN); the validated output has it optional. Passing both to useForm keeps
+ * the resolver, the controls and the submit handler on the same page.
+ */
+type FormValues = {
+  fullName: string;
+  emailAddress: string;
+  role: string;
+  region: string | undefined;
+  phoneNumber: string;
+  temporaryPassword: string;
+  confirmPassword: string;
+};
 
 type FormData = yup.InferType<typeof schema>;
 
@@ -53,12 +120,43 @@ const generatePassword = () => {
   return password;
 };
 
-export default function AddAccountOfficerModal({
+/**
+ * Maps the API's `field` onto the form control that holds it, so a duplicate
+ * email lands under the email input rather than in a toast.
+ */
+const FIELD_TO_INPUT: Record<string, keyof FormValues> = {
+  email: "emailAddress",
+  phone: "phoneNumber",
+  name: "fullName",
+  role: "role",
+  region: "region",
+  password: "temporaryPassword",
+};
+
+export default function AddManagedUserModal({
   isOpen,
   onClose,
   onSuccess,
-}: AddAccountOfficerModalProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  roles,
+  title,
+}: AddManagedUserModalProps) {
+  const roleOptions = useMemo(
+    () =>
+      roles?.length
+        ? roles.map((role) => ({ value: role, label: ROLE_LABELS[role] }))
+        : CREATE_ROLE_OPTIONS,
+    [roles],
+  );
+
+  /**
+   * The API defaults an omitted role to OFFICER, so the picker does too. A
+   * screen that restricts the list gets the first role it allowed instead.
+   */
+  const defaultRole: string = roles?.length ? roles[0] : "OFFICER";
+
+  // Validation failures arrive as an array of strings with no field attached
+  const [formErrors, setFormErrors] = useState<string[]>([]);
+
   const createOfficerMutation = useCreateOfficer();
   const {
     register,
@@ -66,38 +164,78 @@ export default function AddAccountOfficerModal({
     watch,
     control,
     setValue,
+    setError,
     reset,
-    formState: { errors },
-  } = useForm<FormData>({
+    formState: { errors, isSubmitting },
+  } = useForm<FormValues, unknown, FormData>({
     resolver: yupResolver(schema),
+    defaultValues: { role: defaultRole, region: "" },
   });
 
-  const temporaryPassword = watch("temporaryPassword");
+  const selectedRole = watch("role") || defaultRole;
+  const needsRegion = roleRequiresRegion(selectedRole);
+
+  // Switching to ADMIN must not leave a stale region behind to be submitted
+  useEffect(() => {
+    if (!needsRegion) setValue("region", "");
+  }, [needsRegion, setValue]);
+
+  // A reopened modal starts clean rather than showing the last attempt
+  useEffect(() => {
+    if (!isOpen) {
+      reset({ role: defaultRole, region: "" });
+      setFormErrors([]);
+    }
+  }, [isOpen, reset, defaultRole]);
 
   const handleGeneratePassword = () => {
-    const newPassword = generatePassword();
-    setValue("temporaryPassword", newPassword);
+    setValue("temporaryPassword", generatePassword());
   };
 
   const onSubmit = async (data: FormData) => {
-    setIsSubmitting(true);
-    try {
-      await createOfficerMutation.mutateAsync({
-        name: data.fullName,
-        email: data.emailAddress,
-        phone: data.phoneNumber,
-        region: data.region as BroadcastRegion,
-        password: data.temporaryPassword,
-      });
+    setFormErrors([]);
 
-      reset();
-      setIsSubmitting(false);
-      onSuccess?.();
+    // Exactly the declared keys - the API rejects any property it does not
+    // know, so nothing from the form model is spread in wholesale.
+    const payload: CreateOfficerRequest = {
+      name: data.fullName.trim(),
+      email: data.emailAddress.trim(),
+      phone: data.phoneNumber.trim(),
+      role: selectedRole as CreateOfficerRequest["role"],
+      password: data.temporaryPassword,
+    };
+
+    if (needsRegion && data.region) {
+      payload.region = data.region as BroadcastRegion;
+    }
+
+    try {
+      const created = await createOfficerMutation.mutateAsync(payload);
+      reset({ role: defaultRole, region: "" });
+      onSuccess?.(created);
       onClose();
     } catch (error) {
-      setIsSubmitting(false);
+      const code = getErrorCode(error);
+      const field = getErrorField(error);
+      const messages = getErrorMessages(error);
+
+      // A business rule names the input it belongs to; a pipe failure does not
+      const input = field ? FIELD_TO_INPUT[field] : undefined;
+      if (code && input && messages[0]) {
+        setError(input, { type: "server", message: messages[0] });
+        return;
+      }
+
+      setFormErrors(
+        messages.length
+          ? messages
+          : ["Could not create this user. Please try again."],
+      );
     }
   };
+
+  const isBusy = isSubmitting || createOfficerMutation.isPending;
+  const singleRole = roleOptions.length === 1;
 
   return (
     <Modal open={isOpen} onClose={onClose}>
@@ -105,7 +243,7 @@ export default function AddAccountOfficerModal({
         {/* Modal Header */}
         <div className="flex items-center justify-between pb-4 border-b border-muted/20">
           <Text variant="body" weight="bold">
-            Add Account Officer
+            {title ?? (singleRole ? "Add Account Officer" : "Add User")}
           </Text>
         </div>
 
@@ -136,17 +274,42 @@ export default function AddAccountOfficerModal({
             />
           </div>
 
-          {/* Region */}
-          <div>
-            <Select
-              name="region"
-              control={control}
-              label="Region"
-              options={regions}
-              error={errors.region?.message}
-              placeholder="Select Region"
-            />
-          </div>
+          {/* Role - omitted when the screen only ever creates one kind */}
+          {singleRole ? (
+            <input type="hidden" {...register("role")} />
+          ) : (
+            <div>
+              <Select
+                name="role"
+                control={control}
+                label="Role"
+                options={roleOptions}
+                error={errors.role?.message}
+                placeholder="Select Role"
+              />
+            </div>
+          )}
+
+          {/* Region - hidden for an ADMIN, who is organisation-wide */}
+          {needsRegion ? (
+            <div>
+              <Select
+                name="region"
+                control={control}
+                label="Region"
+                options={regions}
+                error={errors.region?.message}
+                placeholder="Select Region"
+              />
+            </div>
+          ) : (
+            <div className="mt-2 rounded-lg bg-muted/10 px-3 py-2">
+              <Text variant="caption" color="muted">
+                An admin works across the whole organisation and is not scoped
+                to a region.
+              </Text>
+            </div>
+          )}
 
           {/* Phone Number */}
           <div className="mt-2 space-y-2">
@@ -154,7 +317,7 @@ export default function AddAccountOfficerModal({
               Phone Number
             </Text>
             <Input
-              placeholder="Enter phone number"
+              placeholder="e.g. +2348012345678"
               {...register("phoneNumber")}
               error={errors.phoneNumber?.message}
             />
@@ -198,8 +361,24 @@ export default function AddAccountOfficerModal({
             />
           </div>
 
+          {/* Validation failures that name no single field */}
+          {formErrors.length > 0 && (
+            <div className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 space-y-1">
+              {formErrors.map((message) => (
+                <Text
+                  key={message}
+                  variant="caption"
+                  weight="medium"
+                  color="primary"
+                >
+                  {message}
+                </Text>
+              ))}
+            </div>
+          )}
+
           <Text variant="caption" weight="medium" color="foreground">
-            The officer will receive an email with their login credentials
+            The user will receive an email with their login credentials
           </Text>
 
           {/* Action Buttons */}
@@ -214,7 +393,7 @@ export default function AddAccountOfficerModal({
             <Button
               variant="primary"
               type="submit"
-              loading={isSubmitting}
+              loading={isBusy}
               className="gradient"
             >
               Create Account

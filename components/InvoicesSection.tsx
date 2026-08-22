@@ -6,7 +6,7 @@ import Pagination from "@/components/Pagination";
 import RowDetailsModal from "@/components/RowDetailsModal";
 import { DEFAULT_SECTION_PAGE_SIZE } from "@/constants/pagination";
 import { Order as APIOrder } from "@/src/lib/api/types";
-import { formatDateTime } from "@/src/utils/formatter";
+import { formatDateTime, formatToNairaExact } from "@/src/utils/formatter";
 
 interface Invoice {
   id: string;
@@ -279,9 +279,10 @@ const mapAPIOrderToInvoice = (apiOrder: APIOrder): Invoice => {
     invoiceNo: apiOrder.erpId || apiOrder.id,
     walletBalance: "₦0", // Not available in API Order
     invoiceDate: apiOrder.orderDate,
-    invoiceAmount: `₦${(apiOrder.totalValue || 0).toLocaleString()}`,
+    // Exact - toLocaleString() caps at 3 fraction digits and would round
+    invoiceAmount: formatToNairaExact(apiOrder.totalValue || 0),
     amountPaid: "₦0", // Not available in API Order
-    outstandingAmount: `₦${(apiOrder.totalValue || 0).toLocaleString()}`,
+    outstandingAmount: formatToNairaExact(apiOrder.totalValue || 0),
     paymentStatus: "Part Paid" as const,
   };
 };

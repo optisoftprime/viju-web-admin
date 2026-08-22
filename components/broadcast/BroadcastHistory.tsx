@@ -9,7 +9,7 @@ import {
 } from "@/hooks/api/useBroadcast";
 import { Modal } from "@/components/common/Modal";
 import { BroadcastHistoryItem, BroadcastRegion } from "@/lib/api/types";
-import { formatRegion } from "@/src/utils/formatter";
+import { formatRegion, formatToNairaExact } from "@/src/utils/formatter";
 
 const formatRegions = (regions: BroadcastRegion[]) =>
   regions.map(formatRegion).join(", ");
@@ -77,13 +77,9 @@ export function BroadcastHistory() {
     setSelectedBroadcastId(null);
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
+  // Exact - the currency style caps at 2 fraction digits and would round the
+  // allowance the API actually recorded
+  const formatCurrency = (value: number) => formatToNairaExact(value);
 
   return (
     <>

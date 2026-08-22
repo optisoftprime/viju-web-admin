@@ -16,6 +16,8 @@ interface Flyer {
   id?: string;
   name: string;
   imageUrl?: string;
+  /** F-1: the flyer's own copy, shown under the artwork */
+  description?: string | null;
   sortOrder?: number;
   isActive?: boolean;
 }
@@ -23,9 +25,16 @@ interface Flyer {
 interface AddFlyerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (flyerData: { name: string; imageUrl: string }) => void;
+  onSubmit: (flyerData: {
+    name: string;
+    imageUrl: string;
+    description: string;
+  }) => void;
   flyer?: Flyer | null;
 }
+
+/** Enough room for a promotion's copy without becoming an article */
+const MAX_DESCRIPTION_LENGTH = 500;
 
 export default function AddFlyerModal({
   isOpen,
@@ -38,6 +47,7 @@ export default function AddFlyerModal({
   const [formData, setFormData] = useState({
     name: "",
     imageUrl: "",
+    description: "",
   });
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -45,9 +55,11 @@ export default function AddFlyerModal({
   // "Preview flyer before publishing" - shows exactly what the distributor
   // will see, using the same modal the flyers grid uses.
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [errors, setErrors] = useState<{ name?: string; imageUrl?: string }>(
-    {},
-  );
+  const [errors, setErrors] = useState<{
+    name?: string;
+    imageUrl?: string;
+    description?: string;
+  }>({});
 
   // Initialize form data when modal opens or flyer changes
   useEffect(() => {
@@ -55,10 +67,13 @@ export default function AddFlyerModal({
       setFormData({
         name: flyer.name,
         imageUrl: flyer.imageUrl || "",
+        // Absent on a flyer saved before the details field existed, and on
+        // every flyer until the API persists it - both read as empty
+        description: flyer.description ?? "",
       });
       setImagePreview(flyer.imageUrl || null);
     } else if (isOpen) {
-      setFormData({ name: "", imageUrl: "" });
+      setFormData({ name: "", imageUrl: "", description: "" });
       setImagePreview(null);
     }
     setErrors({});
@@ -71,6 +86,21 @@ export default function AddFlyerModal({
     // Clear error if field is filled
     if (value.trim()) {
       setErrors({ ...errors, name: undefined });
+    }
+  };
+
+  /**
+   * F-1: the flyer's details. Optional - a flyer can be pure artwork - so the
+   * only rule is the length cap, cleared as soon as the text is back inside it.
+   */
+  const handleDescriptionChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>,
+  ) => {
+    const value = e.target.value;
+    setFormData((prev) => ({ ...prev, description: value }));
+
+    if (value.length <= MAX_DESCRIPTION_LENGTH) {
+      setErrors((prev) => ({ ...prev, description: undefined }));
     }
   };
 
@@ -150,10 +180,19 @@ export default function AddFlyerModal({
   };
 
   const validateForm = () => {
-    const newErrors: { name?: string; imageUrl?: string } = {};
+    const newErrors: {
+      name?: string;
+      imageUrl?: string;
+      description?: string;
+    } = {};
 
     if (!formData.name.trim()) {
       newErrors.name = "Flyer Name is required";
+    }
+
+    // Optional, so only the cap is enforced
+    if (formData.description.length > MAX_DESCRIPTION_LENGTH) {
+      newErrors.description = `Flyer Details must be ${MAX_DESCRIPTION_LENGTH} characters or fewer`;
     }
 
     if (isUploading) {
@@ -171,9 +210,11 @@ export default function AddFlyerModal({
 
   const handleSubmit = () => {
     if (validateForm()) {
-      onSubmit(formData);
+      // Trimmed here so a details box holding only whitespace is saved as
+      // empty rather than as blank copy under the artwork
+      onSubmit({ ...formData, description: formData.description.trim() });
       // Reset form
-      setFormData({ name: "", imageUrl: "" });
+      setFormData({ name: "", imageUrl: "", description: "" });
       setImagePreview(null);
       setErrors({});
       onClose();
@@ -181,7 +222,7 @@ export default function AddFlyerModal({
   };
 
   const handleClose = () => {
-    setFormData({ name: "", imageUrl: "" });
+    setFormData({ name: "", imageUrl: "", description: "" });
     setImagePreview(null);
     setIsUploading(false);
     setErrors({});
@@ -217,6 +258,42 @@ export default function AddFlyerModal({
                 {errors.name}
               </Text>
             )}
+          </div>
+
+          {/* Flyer Details - the promotion's own copy. Optional: a flyer can
+              be pure artwork, so this never blocks a save. */}
+          <div className="space-y-2">
+            <label
+              htmlFor="flyer-description"
+              className="block text-sm font-semibold text-muted"
+            >
+              Flyer Details{" "}
+              <span className="font-normal text-muted/70">(optional)</span>
+            </label>
+            <textarea
+              id="flyer-description"
+              name="description"
+              rows={4}
+              maxLength={MAX_DESCRIPTION_LENGTH}
+              placeholder="What is this flyer about? Offer, dates, terms..."
+              value={formData.description}
+              onChange={handleDescriptionChange}
+              className={`w-full px-4 py-2 rounded-lg text-sm border bg-gray-50 resize-y focus:outline-none ${
+                errors.description ? "border-red-500" : "border-muted/50"
+              }`}
+            />
+            <div className="flex items-start justify-between gap-3">
+              {errors.description ? (
+                <Text variant="small" className="text-red-500">
+                  {errors.description}
+                </Text>
+              ) : (
+                <span />
+              )}
+              <Text variant="caption" color="muted">
+                {formData.description.length}/{MAX_DESCRIPTION_LENGTH}
+              </Text>
+            </div>
           </div>
 
           {/* Flyer Image Upload */}
@@ -308,6 +385,7 @@ export default function AddFlyerModal({
         flyer={{
           id: flyer?.id || "preview",
           name: formData.name || "Untitled flyer",
+          description: formData.description,
           imageUrl: imagePreview || formData.imageUrl || undefined,
           sortOrder: flyer?.sortOrder,
           isActive: flyer?.isActive,

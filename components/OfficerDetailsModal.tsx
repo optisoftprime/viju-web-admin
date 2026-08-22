@@ -7,7 +7,12 @@ import { useAuditChats } from "@/hooks/api/useAudit";
 import { useOfficer } from "@/hooks/api/useOfficer";
 import { formatRegion } from "@/utils/formatter";
 import { safeArray, safeText, safeNumber, safeDateText } from "@/utils/safe";
-import type { AuditChatThread, AuditChatMessage } from "@/lib/api/types";
+import { formatRole, formatRoleScope } from "@/constants/roles";
+import type {
+  AuditChatThread,
+  AuditChatMessage,
+  StaffActor,
+} from "@/lib/api/types";
 
 export interface OfficerProfile {
   id: string;
@@ -15,6 +20,8 @@ export interface OfficerProfile {
   email?: string | null;
   phone?: string | null;
   region?: string | null;
+  /** Wire role value from the list row, e.g. "OFFICER" */
+  role?: string | null;
   status?: string | null;
   customers?: number | null;
   tickets?: number | null;
@@ -26,6 +33,20 @@ interface OfficerDetailsModalProps {
   open: boolean;
   onClose: () => void;
   officer: OfficerProfile | null;
+}
+
+/**
+ * Who performed an audited action.
+ *
+ * Every *By object is nullable - an account that predates managed users has
+ * no creator, and an admin whose own record was removed leaves null behind.
+ * That is a dash, not "Unknown admin".
+ */
+function actorText(actor?: StaffActor | null): string {
+  const name = safeText(actor?.name, "");
+  const email = safeText(actor?.email, "");
+  if (name && email) return `${name} (${email})`;
+  return name || email || "-";
 }
 
 /** One label/value pair in the profile grid */
@@ -192,6 +213,18 @@ export default function OfficerDetailsModal({
     ? safeDateText(detail.lastLoginAt)
     : (officer?.lastLogin ?? "Never");
 
+  const roleValue = detail?.role ?? officer?.role;
+  const roleLabel = formatRole(roleValue, "Account Officer");
+
+  /**
+   * The audit block only makes sense for an account this portal manages. A
+   * WAREHOUSE_OFFICER is still ERP-sourced and carries none of these stamps.
+   */
+  const isManaged = detail?.isManaged === true;
+  const hasAuditTrail =
+    isManaged ||
+    Boolean(detail?.createdBy || detail?.deactivatedAt || detail?.reactivatedAt);
+
   return (
     <Modal open={open} onClose={onClose}>
       <div className="w-full max-w-lg mx-auto max-h-[80vh] overflow-y-auto p-1">
@@ -201,7 +234,7 @@ export default function OfficerDetailsModal({
             {safeText(officer?.name, "Officer")}
           </Text>
           <Text variant="caption" weight="medium" color="muted">
-            Account officer profile
+            {roleLabel} profile
           </Text>
         </div>
 
@@ -224,7 +257,11 @@ export default function OfficerDetailsModal({
               label="Phone Number"
               value={safeText(detail?.phone ?? officer?.phone)}
             />
-            <Field label="Region" value={formatRegion(region)} />
+            <Field label="Role" value={roleLabel} />
+            <Field
+              label="Region"
+              value={formatRoleScope(roleValue, formatRegion(region))}
+            />
             <Field label="Status" value={safeText(status)} />
             <Field label="Customers" value={safeNumber(customerCount, 0)} />
             <Field label="Open Tickets" value={safeNumber(ticketCount, 0)} />
@@ -239,6 +276,43 @@ export default function OfficerDetailsModal({
             />
           </div>
         </div>
+
+        {/* Audit trail - who created this account, and who last changed it */}
+        {hasAuditTrail && (
+          <div className="space-y-3 pt-6">
+            <Text
+              variant="caption"
+              weight="bold"
+              color="muted"
+              className="uppercase tracking-wider"
+            >
+              Account History
+            </Text>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+              <Field
+                label="Created"
+                value={safeDateText(detail?.createdAt, "-")}
+              />
+              <Field label="Created By" value={actorText(detail?.createdBy)} />
+              <Field
+                label="Deactivated"
+                value={safeDateText(detail?.deactivatedAt, "-")}
+              />
+              <Field
+                label="Deactivated By"
+                value={actorText(detail?.deactivatedBy)}
+              />
+              <Field
+                label="Reactivated"
+                value={safeDateText(detail?.reactivatedAt, "-")}
+              />
+              <Field
+                label="Reactivated By"
+                value={actorText(detail?.reactivatedBy)}
+              />
+            </div>
+          </div>
+        )}
 
         {/* A 403/404 on the profile leaves the clicked row's values in place */}
         {detailError ? (

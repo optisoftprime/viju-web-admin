@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import TicketCard from "./TicketCard";
 import TicketDetailModal from "./TicketDetailModal";
 import { Text } from "@/components/common";
+import { getErrorMessage } from "@/utils/apiError";
 import {
   useOfficerTickets,
   useUpdateTicketStatus,
@@ -12,26 +13,56 @@ import {
 interface TicketsUIProps {
   distributorId?: string | null;
   distributorName?: string;
+  /**
+   * Open this ticket's thread as soon as the list renders.
+   *
+   * Set by the dashboard's Open Tickets tile, which already knows which ticket
+   * the officer is being sent to - so the conversation appears without them
+   * having to find the row and click it.
+   *
+   * Remount the component (change its `key`) to trigger a fresh auto-open
+   * after the reader has closed one.
+   */
+  autoOpenTicketId?: string | null;
 }
 
 export default function TicketsUI({
-  distributorId: _distributorId,
+  distributorId,
   distributorName,
+  autoOpenTicketId,
 }: TicketsUIProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  /**
+   * null means the reader has not opened or closed anything yet, which is what
+   * lets `autoOpenTicketId` decide. Any click - on a row or on close - takes
+   * ownership from then on, so the auto-opened modal stays closed once
+   * dismissed. Derived rather than synced in an effect.
+   */
+  const [pickedTicketId, setPickedTicketId] = useState<{
+    id: string | null;
+  } | null>(null);
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
-  const { data, isLoading, error } = useOfficerTickets(page, pageSize);
+  const selectedTicketId = pickedTicketId
+    ? pickedTicketId.id
+    : (autoOpenTicketId ?? null);
+  const isModalOpen = Boolean(selectedTicketId);
+
+  /**
+   * This tab lives inside a distributor's detail view, so it asks for that
+   * distributor's tickets. `customerId` is applied in SQL (AO-T1), so
+   * `meta.total` counts the filtered set and the pager agrees with the rows.
+   */
+  const { data, isLoading, error } = useOfficerTickets(page, pageSize, {
+    customerId: distributorId ?? undefined,
+  });
   const { mutate: updateStatus, isPending: isUpdatingStatus } =
     useUpdateTicketStatus();
 
-  const tickets = useMemo(() => data?.data ?? [], [data]);
+  const tickets = data?.data ?? [];
 
   const handleTicketClick = (ticketId: string) => {
-    setSelectedTicketId(ticketId);
-    setIsModalOpen(true);
+    setPickedTicketId({ id: ticketId });
   };
 
   const handlePrevPage = () => {
@@ -62,10 +93,15 @@ export default function TicketsUI({
             </div>
           )}
 
+          {/* A customerId outside the officer's own book is a deliberate 400
+              rather than an empty list, so the message is worth showing */}
           {!isLoading && error && (
-            <div className="flex items-center justify-center h-full">
-              <Text variant="caption" color="muted">
-                Error loading tickets. Please try again.
+            <div className="flex items-center justify-center h-full px-4">
+              <Text variant="caption" color="muted" className="text-center">
+                {getErrorMessage(
+                  error,
+                  "Tickets could not be loaded. Please try again.",
+                )}
               </Text>
             </div>
           )}
@@ -91,12 +127,14 @@ export default function TicketsUI({
           {!isLoading && !error && tickets.length === 0 && (
             <div className="flex items-center justify-center h-full">
               <Text variant="caption" color="muted">
-                No tickets found
+                {distributorId
+                  ? "This customer has no tickets."
+                  : "No tickets found"}
               </Text>
             </div>
           )}
 
-          {!isLoading && !error && tickets.length > 0 && data?.meta && (
+          {!isLoading && !error && data?.meta && (
             <div className="flex items-center justify-between px-4 py-3 border-t border-[#E0E0E0] bg-[#FAFBFC]">
               <Text variant="caption" color="muted">
                 Page {data.meta.page} of {data.meta.totalPages}
@@ -126,12 +164,9 @@ export default function TicketsUI({
 
       <TicketDetailModal
         open={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedTicketId(null);
-        }}
+        onClose={() => setPickedTicketId({ id: null })}
         ticketId={selectedTicketId}
-        distributorId={_distributorId || null}
+        distributorId={distributorId || null}
         distributorName={distributorName}
       />
     </>

@@ -15,6 +15,7 @@ import {
   OfficerTicketsResponse,
   TicketThread,
   SendTicketReplyRequest,
+  SendTicketReplyResponse,
   FileUploadResponse,
   TicketStatusUpdateResponse,
   UploadFolder,
@@ -84,11 +85,23 @@ export const officerCustomerService = {
   getOfficerTickets: async (
     page: number = 1,
     pageSize: number = 20,
+    filters: { customerId?: string | null; status?: string[] } = {},
   ): Promise<OfficerTicketsResponse> => {
+    const { customerId, status } = filters;
+    // Blanks are dropped - an empty list means "every status", which is the
+    // API default and must not go on the wire as an empty value
+    const statuses = (status ?? []).filter(Boolean);
+
     const response = await apiClient.get<OfficerTicketsResponse>(
       endpoints.officerCustomers.list,
       {
-        params: { page, pageSize },
+        params: {
+          page,
+          pageSize,
+          // AO-T1: both applied in SQL, so meta.total counts the filtered set
+          ...(customerId ? { customerId } : {}),
+          ...(statuses.length ? { status: statuses.join(",") } : {}),
+        },
       },
     );
     return response.data;
@@ -104,14 +117,22 @@ export const officerCustomerService = {
   },
 
   /**
-   * Send a reply to a ticket
+   * Send a reply to a ticket.
+   *
+   * The 201 body is the WHOLE thread with the new reply appended, plus a
+   * `reply` key for the row just created - so `data.id` is the ticket id, not
+   * the reply id. The caller writes this straight into the thread cache
+   * instead of refetching.
    */
   sendTicketReply: async (
     ticketId: string,
     request: SendTicketReplyRequest,
-  ): Promise<TicketThread> => {
+  ): Promise<SendTicketReplyResponse> => {
     const url = endpoints.officerCustomers.sendReply.replace("{id}", ticketId);
-    const response = await apiClient.post<TicketThread>(url, request);
+    const response = await apiClient.post<SendTicketReplyResponse>(
+      url,
+      request,
+    );
     return response.data;
   },
 
@@ -123,6 +144,8 @@ export const officerCustomerService = {
     status: string,
   ): Promise<TicketStatusUpdateResponse> => {
     const url = endpoints.officerCustomers.status.replace("{id}", ticketId);
+    // The body is the updated ticket - a superset of { id, status, updatedAt },
+    // which is all the status control binds to
     const response = await apiClient.patch<TicketStatusUpdateResponse>(url, {
       status,
     });

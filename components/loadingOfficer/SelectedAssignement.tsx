@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { Button, Text } from "../common";
@@ -32,21 +32,94 @@ const STEPS = [
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB, matching the UI hint
 
+type StagedStatus = "IN_PROGRESS" | "COMPLETED";
+
+/**
+ * One assignment, with its status control and its waybill upload.
+ *
+ * NOTHING here talks to the API until the primary button is pressed. Choosing
+ * "Mark Loading in Progress" / "Mark Completed" only stages the intent, and
+ * picking a file only previews it locally - so an officer can change their
+ * mind, or attach the proof after choosing the status, without either action
+ * having already been written. Attaching a file used to complete the load as
+ * a side effect; now the status route and the waybill route are called from
+ * one place, handleSubmitWaybill.
+ *
+ * Proof of loading is OPTIONAL when marking a load in progress and REQUIRED to
+ * complete one, since the waybill is the document the distributor is shown.
+ */
 const SelectedAssignement = ({ assignmentId }: SelectedAssignementProps) => {
   const { data, isLoading, error } = useLoadingQueueItem(assignmentId);
   const updateStatus = useUpdateLoadingStatus();
   const createWaybill = useCreateLoadingWaybill();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null);
-  const [attachmentName, setAttachmentName] = useState<string>("");
+  /** The status the officer picked but has not submitted yet */
+  const [stagedStatus, setStagedStatus] = useState<StagedStatus | null>(null);
+  /** The chosen file, held in the browser until submit - never uploaded early */
+  const [stagedFile, setStagedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Reset the staged upload whenever a different assignment is opened
+  /**
+   * Everything staged belongs to ONE assignment, so opening a different row
+   * discards it. Reset during render rather than in an effect - an effect
+   * would paint the previous row's staged status against the new row first.
+   */
+  const [stagedFor, setStagedFor] = useState<string | null>(assignmentId);
+  if (stagedFor !== assignmentId) {
+    setStagedFor(assignmentId);
+    setStagedStatus(null);
+    setStagedFile(null);
+  }
+
+  /**
+   * A local preview, so the officer sees what they attached without anything
+   * having been uploaded. A PDF has no inline preview and falls back to a
+   * labelled tile.
+   */
+  const previewUrl = useMemo(
+    () =>
+      stagedFile && stagedFile.type.startsWith("image/")
+        ? URL.createObjectURL(stagedFile)
+        : null,
+    [stagedFile],
+  );
+
+  // An object URL has to be released or every re-pick leaks one
   useEffect(() => {
-    setAttachmentUrl(null);
-    setAttachmentName("");
-  }, [assignmentId]);
+    if (!previewUrl) return;
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
+
+  const status = safeText(data?.status, "ASSIGNED").toUpperCase();
+  const isCompleted = status === "COMPLETED";
+  const isInProgress = status === "IN_PROGRESS";
+  const isBusy = updateStatus.isPending || createWaybill.isPending || isUploading;
+
+  /**
+   * Pressing the primary button with nothing staged means "submit the
+   * waybill", and recording a waybill completes the load - so an unstaged
+   * submit is a completion and carries the completion's rules.
+   */
+  const targetStatus: StagedStatus = stagedStatus ?? "COMPLETED";
+  const isCompleting = targetStatus === "COMPLETED";
+
+  /** Proof already on file from an earlier visit counts towards the requirement */
+  const existingAttachmentUrl = safeText(data?.attachmentUrl, "");
+  const hasProof = Boolean(stagedFile || existingAttachmentUrl);
+
+  /** The step the indicator highlights - the staged pick, else what is saved */
+  const highlightedStep = stagedStatus ?? status;
+
+  const submitHint = useMemo(() => {
+    if (isCompleted) return "This load is complete.";
+    if (isCompleting) {
+      return hasProof
+        ? "Submitting records the waybill and completes this load."
+        : "Attach the proof of loading - it is required to complete a load.";
+    }
+    return "Submitting marks this load as Loading in Progress. Proof of loading is optional at this step.";
+  }, [isCompleted, isCompleting, hasProof]);
 
   if (!assignmentId) {
     return (
@@ -80,60 +153,68 @@ const SelectedAssignement = ({ assignmentId }: SelectedAssignementProps) => {
     );
   }
 
-  const status = safeText(data.status, "ASSIGNED").toUpperCase();
-  const isCompleted = status === "COMPLETED";
-  const isInProgress = status === "IN_PROGRESS";
-  const isBusy = updateStatus.isPending || createWaybill.isPending || isUploading;
-
-  const advance = async (next: "IN_PROGRESS" | "COMPLETED") => {
-    if (isBusy) return;
-    try {
-      await updateStatus.mutateAsync({
-        id: assignmentId,
-        body: { status: next },
-      });
-      toast.success(
-        next === "COMPLETED" ? "Load marked complete." : "Loading started.",
-      );
-    } catch {
-      // useUpdateLoadingStatus already surfaced the API message
-    }
+  /**
+   * Staging only. The API is untouched until the primary button is pressed,
+   * so a mis-click costs nothing - pressing the same button again clears it.
+   */
+  const stageStatus = (next: StagedStatus) => {
+    if (isBusy || isCompleted) return;
+    setStagedStatus((current) => (current === next ? null : next));
   };
 
-  const handleFilePick = async (file?: File | null) => {
+  /**
+   * Staging only - the file is held and previewed in the browser. Uploading
+   * on pick is what used to complete the load as a side effect of attaching.
+   */
+  const handleFilePick = (file?: File | null) => {
     if (!file) return;
 
     if (file.size > MAX_UPLOAD_BYTES) {
       toast.error("File must be 10MB or smaller.");
+      setStagedFile(null);
       return;
     }
 
-    setIsUploading(true);
-    try {
-      // POST /uploads now requires the Authorization header - chatService uses
-      // apiClient, whose interceptor attaches it automatically.
-      const url = await chatService.uploadFile(file, "waybill-documents");
-      if (!url) throw new Error("Upload did not return a URL");
-      setAttachmentUrl(url);
-      setAttachmentName(file.name);
-      toast.success("Proof of loading attached.");
-    } catch (uploadError) {
-      toast.error(
-        getErrorMessage(uploadError) || "Could not upload that file.",
-      );
-    } finally {
-      setIsUploading(false);
-      // Allow re-picking the same file after a failure
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
+    setStagedFile(file);
   };
 
   /**
-   * LO-05 - recording the waybill ALSO completes the load, so there is no
-   * follow-up call to the status route.
+   * The file input is keyed on what is staged, so dropping the file remounts
+   * it empty - which is what lets the same file be picked again afterwards.
+   */
+  const clearStagedFile = () => setStagedFile(null);
+
+  /**
+   * The one place either route is called.
+   *
+   *   IN_PROGRESS -> PATCH /loading/queue/{id}/status. The status route takes
+   *     no attachment, so a staged file is deliberately left staged rather
+   *     than uploaded into nothing - it is still there to complete with.
+   *   COMPLETED   -> upload the proof, then POST /loading/queue/{id}/waybill,
+   *     which records the document AND completes the load in one call.
    */
   const handleSubmitWaybill = async () => {
-    if (isBusy) return;
+    if (isBusy || isCompleted) return;
+
+    if (!isCompleting) {
+      try {
+        await updateStatus.mutateAsync({
+          id: assignmentId,
+          body: { status: "IN_PROGRESS" },
+        });
+        setStagedStatus(null);
+        toast.success("Loading started.");
+      } catch {
+        // useUpdateLoadingStatus already surfaced the API message
+      }
+      return;
+    }
+
+    // Completing: the waybill document is required
+    if (!hasProof) {
+      toast.error("Attach the proof of loading before completing this load.");
+      return;
+    }
 
     const truckPlateNumber = safeText(data.truckPlateNumber, "");
     const driverName = safeText(data.driverName, "");
@@ -144,6 +225,29 @@ const SelectedAssignement = ({ assignmentId }: SelectedAssignementProps) => {
         "This load is missing truck, driver or quantity details. Contact your regional admin.",
       );
       return;
+    }
+
+    let attachmentUrl = existingAttachmentUrl;
+
+    if (stagedFile) {
+      setIsUploading(true);
+      try {
+        // POST /uploads requires the Authorization header - chatService uses
+        // apiClient, whose interceptor attaches it automatically.
+        const uploaded = await chatService.uploadFile(
+          stagedFile,
+          "waybill-documents",
+        );
+        if (!uploaded) throw new Error("Upload did not return a URL");
+        attachmentUrl = uploaded;
+      } catch (uploadError) {
+        toast.error(
+          getErrorMessage(uploadError) || "Could not upload that file.",
+        );
+        return;
+      } finally {
+        setIsUploading(false);
+      }
     }
 
     try {
@@ -157,8 +261,8 @@ const SelectedAssignement = ({ assignmentId }: SelectedAssignementProps) => {
         },
       });
       toast.success("Waybill recorded. This load is now complete.");
-      setAttachmentUrl(null);
-      setAttachmentName("");
+      setStagedStatus(null);
+      clearStagedFile();
     } catch {
       // useCreateLoadingWaybill already surfaced the API message
     }
@@ -222,13 +326,18 @@ const SelectedAssignement = ({ assignmentId }: SelectedAssignementProps) => {
 
         <div className="grid grid-cols-3 gap-2">
           {STEPS.map((step) => {
-            const isActive = step.key === status;
+            const isActive = step.key === highlightedStep;
+            // A staged step is highlighted but dashed - it is a choice, not a
+            // saved state, until the primary button is pressed
+            const isStaged = isActive && step.key === stagedStatus;
             return (
               <div
                 key={step.key}
                 className={`flex items-center py-2 justify-center gap-1 rounded-md ${
                   isActive
-                    ? "border border-blue-700 bg-blue-700"
+                    ? isStaged
+                      ? "border border-dashed border-blue-700 bg-blue-700/80"
+                      : "border border-blue-700 bg-blue-700"
                     : "border border-muted/30 bg-gray-100"
                 }`}
               >
@@ -256,20 +365,34 @@ const SelectedAssignement = ({ assignmentId }: SelectedAssignementProps) => {
           <Button
             variant="outline"
             disabled={isBusy || isInProgress || isCompleted}
-            onClick={() => advance("IN_PROGRESS")}
-            className="w-full border-muted/30 bg-white"
+            onClick={() => stageStatus("IN_PROGRESS")}
+            className={`w-full ${
+              stagedStatus === "IN_PROGRESS"
+                ? "border-blue-700 bg-blue-700/10"
+                : "border-muted/30 bg-white"
+            }`}
           >
             Mark Loading in Progress
           </Button>
           <Button
             variant="outline"
             disabled={isBusy || isCompleted}
-            onClick={() => advance("COMPLETED")}
-            className="w-full border-muted/30 bg-white"
+            onClick={() => stageStatus("COMPLETED")}
+            className={`w-full ${
+              stagedStatus === "COMPLETED"
+                ? "border-blue-700 bg-blue-700/10"
+                : "border-muted/30 bg-white"
+            }`}
           >
             Mark Completed
           </Button>
         </div>
+
+        {stagedStatus && !isCompleted && (
+          <Text variant="caption" color="orange" className="mt-3 block">
+            Not saved yet - press the button below to apply this status.
+          </Text>
+        )}
 
         {isCompleted && (
           <Text variant="caption" color="muted" className="mt-3 block">
@@ -285,13 +408,14 @@ const SelectedAssignement = ({ assignmentId }: SelectedAssignementProps) => {
         </Text>
         <Text variant="caption" color="muted" weight="medium" className="mb-2">
           Upload the issued document. It becomes visible in the distributor&apos;s
-          mobile app.
+          mobile app. Required to complete a load, optional to mark one in
+          progress.
         </Text>
 
         {/* Already captured on a previous visit */}
-        {data.attachmentUrl && !attachmentUrl && (
+        {existingAttachmentUrl && !stagedFile && (
           <a
-            href={data.attachmentUrl}
+            href={existingAttachmentUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-primary underline"
@@ -317,7 +441,7 @@ const SelectedAssignement = ({ assignmentId }: SelectedAssignementProps) => {
             <Text variant="caption" color="foreground" weight="medium">
               {isUploading
                 ? "Uploading..."
-                : attachmentName || "Drop file or click to upload"}
+                : stagedFile?.name || "Drop file or click to upload"}
             </Text>
             <Text variant="thinnote" color="muted" weight="medium">
               PDF, JPG, PNG - up to 10MB
@@ -325,7 +449,45 @@ const SelectedAssignement = ({ assignmentId }: SelectedAssignementProps) => {
           </div>
         </button>
 
+        {/* Local preview - nothing has been sent anywhere yet */}
+        {stagedFile && (
+          <div className="mt-3 flex items-start gap-3 rounded-lg border border-muted/20 p-3">
+            {previewUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={previewUrl}
+                alt={stagedFile.name}
+                className="h-20 w-20 rounded-md object-cover"
+              />
+            ) : (
+              <div className="flex h-20 w-20 items-center justify-center rounded-md bg-gray-100">
+                <Text variant="caption" color="muted" weight="medium">
+                  PDF
+                </Text>
+              </div>
+            )}
+
+            <div className="min-w-0 flex-1">
+              <Text variant="caption" color="foreground" weight="medium">
+                {stagedFile.name}
+              </Text>
+              <Text variant="thinnote" color="muted" className="block">
+                Attached but not uploaded - it is sent when you submit.
+              </Text>
+              <button
+                type="button"
+                onClick={clearStagedFile}
+                disabled={isBusy}
+                className="mt-1 text-primary underline text-xs disabled:opacity-50"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        )}
+
         <input
+          key={`${assignmentId}-${stagedFile?.name ?? "empty"}`}
           ref={fileInputRef}
           hidden
           type="file"
@@ -339,12 +501,16 @@ const SelectedAssignement = ({ assignmentId }: SelectedAssignementProps) => {
       <Button
         variant="primary"
         fullWidth
-        loading={createWaybill.isPending}
+        loading={isBusy}
         disabled={isBusy || isCompleted}
         onClick={handleSubmitWaybill}
       >
         {isCompleted ? "Completed" : "Submit Waybill"}
       </Button>
+
+      <Text variant="caption" color="muted" className="mt-2 block text-center">
+        {submitHint}
+      </Text>
     </div>
   );
 };

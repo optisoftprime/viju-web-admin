@@ -11,6 +11,9 @@ import {
   CustomerSortBy,
   CustomerWithOfficers,
   ReassignCustomerRequest,
+  ReassignCustomerResponse,
+  RegionalCustomersQuery,
+  RegionalCustomersResponse,
   UnmappedCustomer,
   ErpSyncStatus,
   SortOrder,
@@ -23,6 +26,13 @@ interface GetCustomersParams {
   search?: string;
   /** B-1.1: server-side assignment filter - replaces client-side filtering */
   hasOfficer?: boolean;
+  /**
+   * Include ERP customers not yet copied into the portal. With this on,
+   * meta.total matches the dashboard's Total Customers tile.
+   * NOTE hasOfficer=true collapses the result to projected rows regardless -
+   * an ERP-only row can never have an officer.
+   */
+  includeUnprojected?: boolean;
   sortBy?: CustomerSortBy;
   sortOrder?: SortOrder;
 }
@@ -50,6 +60,9 @@ const buildCustomerQuery = (params: GetCustomersParams): string => {
   if (typeof params.hasOfficer === "boolean") {
     queryParams.append("hasOfficer", String(params.hasOfficer));
   }
+  if (params.includeUnprojected === true) {
+    queryParams.append("includeUnprojected", "true");
+  }
   if (params.sortBy) {
     queryParams.append("sortBy", params.sortBy);
     queryParams.append("sortOrder", params.sortOrder === "asc" ? "asc" : "desc");
@@ -73,6 +86,30 @@ export const customerService = {
     // usable envelope rather than throwing inside the render
     const { data: rows, meta } = safeList<CustomerWithOfficers>(data);
     return { data: rows, meta } as CustomersListResponse;
+  },
+
+  /**
+   * RA-07: every customer in the caller's own region.
+   * GET /regional/customers
+   *
+   * Same rows, filters, sorting and meta as getCustomers - only the path and
+   * the region handling differ, so the shared table renders both with no
+   * branching.
+   *
+   * `region` must be left off for a REGIONAL_ADMIN (it is resolved from their
+   * staff record; another region is a 403) and must be supplied by an ADMIN,
+   * who has no home region. Sending a blank value would be an undeclared
+   * param, so buildCustomerQuery drops it.
+   */
+  getRegionalCustomers: async (
+    params: RegionalCustomersQuery = {},
+  ): Promise<RegionalCustomersResponse> => {
+    const { data } = await apiClient.get(
+      `${endpoints.regional.customers}?${buildCustomerQuery(params)}`,
+    );
+
+    const { data: rows, meta } = safeList<CustomerWithOfficers>(data);
+    return { data: rows, meta } as RegionalCustomersResponse;
   },
 
   /**
@@ -122,17 +159,25 @@ export const customerService = {
   },
 
   /**
-   * Reassign customer to a new officer
+   * Assign or reassign a customer to an officer.
+   *
+   * Accepts a customer with no officer as well as one being moved. The 200
+   * body carries `customerId` and the resulting `officerAssignments`
+   * (primary first), so the caller can render the new assignment without a
+   * second request.
    */
   reassignCustomer: async (
     customerId: string,
     request: ReassignCustomerRequest,
-  ) => {
+  ): Promise<ReassignCustomerResponse> => {
     const url = endpoints.customers.reassign.replace(
       "{id}",
       encodeURIComponent(customerId),
     );
-    const { data } = await apiClient.patch(url, request);
+    const { data } = await apiClient.patch<ReassignCustomerResponse>(
+      url,
+      request,
+    );
     return data;
   },
 

@@ -2,6 +2,10 @@
  * API Response Types
  */
 
+import type { StaffRole } from "@/constants/roles";
+
+export type { StaffRole };
+
 export interface AuthResponse {
   access_token: string;
   refresh_token?: string;
@@ -10,8 +14,13 @@ export interface AuthResponse {
   user: {
     id: string;
     name: string;
-    role: "ADMIN" | "OFFICER" | "STAFF" | "REGIONAL_ADMIN";
-    region?: BroadcastRegion;
+    /**
+     * Wire value - an account officer is "OFFICER", never "ACCOUNT_OFFICER".
+     * Render it through formatRole() rather than the raw value.
+     */
+    role: StaffRole | string;
+    email?: string;
+    region?: BroadcastRegion | null;
   };
 }
 
@@ -32,18 +41,48 @@ export interface ForgotPasswordRequest {
 export interface User {
   id: string;
   name: string;
-  role: "ADMIN" | "OFFICER" | "STAFF" | "REGIONAL_ADMIN" | "LOADING_OFFICER";
+  /** Wire value - "OFFICER" is the account officer, labelled via formatRole() */
+  role: StaffRole | string;
   email?: string;
-  // Staff region - absent for org-wide admins and for tokens issued before
-  // the login response started returning it
-  region?: BroadcastRegion;
+  // Staff region - null/absent for org-wide admins and for tokens issued
+  // before the login response started returning it
+  region?: BroadcastRegion | null;
 }
 
+/**
+ * Two error shapes come back from the admin routes:
+ *   - validation failures from the pipe carry a `message` ARRAY
+ *   - business rules carry a `message` string plus a `code` (and often `field`)
+ * Always test Array.isArray(message) before rendering.
+ */
 export interface ApiErrorResponse {
-  message: string;
+  message: string | string[];
   statusCode?: number;
+  code?: string;
+  field?: string;
+  error?: string;
   errors?: Record<string, string>;
 }
+
+/** Business-rule codes returned by POST/PATCH /admin/officers */
+export type ManagedUserErrorCode =
+  | "EMAIL_IN_USE"
+  | "PHONE_IN_USE"
+  | "ROLE_NOT_SUPPORTED"
+  | "REGION_REQUIRED"
+  | "REGION_NOT_ALLOWED"
+  | "ROLE_NOT_MANAGED"
+  | "SELF_DEACTIVATION"
+  | "OFFICER_HAS_CUSTOMERS"
+  | "LAST_ACTIVE_ADMIN";
+
+/**
+ * The exact message the API returns on every surface once an account has been
+ * deactivated - 401 on an authenticated request, 403 on POST /auth/refresh.
+ * The interceptor matches on this rather than on the status alone.
+ */
+export const DEACTIVATED_ACCOUNT_MESSAGE =
+  "This account has been deactivated. Contact an administrator.";
 
 export interface AuthContextType {
   user: User | null;
@@ -171,10 +210,32 @@ export interface OfficerCustomer {
   accountNumber: string;
   phone: string;
   region: string;
+  /** Full precision - never pre-rounded or pre-formatted (AO-D1) */
   walletBalance: number;
+  /**
+   * AO-P2: cartons paid for but not yet loaded, floored at 0. Computed by the
+   * same helper that backs /admin/customers, so the STOCK column means the
+   * same number everywhere. Always a number on this route - an officer's rows
+   * always have a local record.
+   */
+  stockBalanceCartons: number;
   accountStatus: string;
+  /** OPEN tickets only */
   openTickets: number;
-  lastPurchaseDate: string;
+  /**
+   * AO-C1: messages the DISTRIBUTOR sent that are still unread. Always
+   * present; 0 when nothing is waiting, never omitted. Summed across the
+   * portfolio this equals the dashboard's unreadMessages tile.
+   */
+  unreadMessages: number;
+  /**
+   * AO-C1: most recent message on the thread, either side. null on an empty
+   * thread - which is what makes it correct to sort on, unlike
+   * `lastContactDate`, which falls back to customer.updatedAt so its column is
+   * never blank.
+   */
+  lastMessageAt: string | null;
+  lastPurchaseDate: string | null;
   lastContactDate: string;
 }
 
@@ -182,7 +243,22 @@ export interface OfficerCustomer {
  * Officer dashboard tab filter (UI-level value)
  * Translated to the endpoint's boolean flags before the request is sent
  */
-export type OfficerCustomerFilter = "all" | "activeTickets" | "overdue";
+export type OfficerCustomerFilter =
+  | "all"
+  | "activeTickets"
+  | "overdue"
+  | "unreadMessages";
+
+/** Sortable columns accepted by GET /officers/customers (AO-C1) */
+export type OfficerCustomerSortBy =
+  | "name"
+  | "accountNumber"
+  | "walletBalance"
+  | "lastPurchaseDate"
+  | "openTickets"
+  | "lastContactDate"
+  | "unreadMessages"
+  | "lastMessageAt";
 
 /**
  * Query params supported by GET /officers/customers
@@ -190,9 +266,15 @@ export type OfficerCustomerFilter = "all" | "activeTickets" | "overdue";
 export interface OfficerCustomersParams {
   page?: number;
   pageSize?: number;
+  /** Partial, case-insensitive match on name, account number AND phone */
   search?: string;
   overdue?: boolean;
   activeTickets?: boolean;
+  /** AO-C1: only distributors with an unread message waiting */
+  unreadMessages?: boolean;
+  sortBy?: OfficerCustomerSortBy;
+  /** Only applied alongside sortBy; defaults to desc server-side */
+  sortOrder?: SortOrder;
 }
 
 export interface PendingLoadingRequest {
@@ -359,10 +441,8 @@ export interface AuditTicketReply {
   content: string;
   attachmentUrl?: string;
   createdAt: string;
-  staff?: {
-    id: string;
-    name: string;
-  };
+  /** S-1: `role` joins the id/name the audit route already returned */
+  staff?: StaffSender | null;
 }
 
 export interface AuditTicketCustomer {
@@ -399,16 +479,27 @@ export interface AuditTicketsListResponse {
 }
 
 // Officer Types
+/**
+ * A row from GET /admin/officers. With ?managed=true the page mixes all four
+ * managed roles, so `role` has to be read rather than assumed.
+ */
 export interface Officer {
   id: string;
   name: string;
   email: string;
   phone: string;
-  region: BroadcastRegion;
+  /** null for an ADMIN - the role is organisation-wide */
+  region: BroadcastRegion | null;
+  /** Wire value: "OFFICER" for an account officer */
+  role?: StaffRole | string | null;
   isActive: boolean;
   createdAt?: string;
   /** AD-15 - null until the officer has logged in at least once */
   lastLoginAt?: string | null;
+  /** Set the last time an admin deactivated this account */
+  deactivatedAt?: string | null;
+  /** Set the last time an admin reactivated this account */
+  reactivatedAt?: string | null;
   _count?: {
     customers?: number;
     /** AD-15 - OPEN tickets across that officer's customers */
@@ -429,6 +520,17 @@ export interface OfficersListResponse {
 }
 
 /**
+ * One actor on an audit stamp. Every *By object is nullable: accounts that
+ * predate managed users have no creator, and a removed admin leaves null
+ * behind. Fall back to a dash, never to "Unknown admin".
+ */
+export interface StaffActor {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+}
+
+/**
  * B-4.1: GET /admin/officers/{id}
  * `role` is "OFFICER" (not "ACCOUNT_OFFICER"). `distributors`/`openTickets`
  * are deprecated aliases of the _count fields - read _count.
@@ -439,8 +541,19 @@ export interface OfficerDetail {
   email?: string | null;
   phone?: string | null;
   region?: BroadcastRegion | null;
-  role?: string | null;
+  role?: StaffRole | string | null;
   isActive?: boolean | null;
+  /**
+   * The flag to gate the Deactivate / Reactivate controls on. A
+   * WAREHOUSE_OFFICER is still ERP-managed and comes back false; the backend
+   * refuses the call for those regardless of what the UI shows.
+   */
+  isManaged?: boolean | null;
+  createdBy?: StaffActor | null;
+  deactivatedAt?: string | null;
+  deactivatedBy?: StaffActor | null;
+  reactivatedAt?: string | null;
+  reactivatedBy?: StaffActor | null;
   /** null until the officer has logged in at least once - render "Never" */
   lastLoginAt?: string | null;
   createdAt?: string | null;
@@ -461,19 +574,60 @@ export interface OfficerDetail {
   openTickets?: number | null;
 }
 
+/**
+ * POST /admin/officers - creates one of the four managed users.
+ *
+ * The API rejects any property it does not declare, so send exactly these
+ * keys and nothing else: no id, isActive, erpCode, createdById or username.
+ * `region` must be OMITTED (not null, not "") for an ADMIN.
+ */
 export interface CreateOfficerRequest {
   name: string;
   email: string;
+  /** ^\+?[0-9][0-9\s-]{6,19}$ - separators count toward the 20, so strip them */
   phone: string;
-  region: BroadcastRegion;
+  /** Omit for OFFICER; ACCOUNT_OFFICER is accepted here (and only here) */
+  role?: ManagedRoleInput;
+  /** Required for REGIONAL_ADMIN / OFFICER / LOADING_OFFICER, omitted for ADMIN */
+  region?: BroadcastRegion;
+  /** 8-72 chars, emailed to the user verbatim - treat as one-time */
   password: string;
+}
+
+/** Roles POST /admin/officers accepts, including the PRD alias */
+export type ManagedRoleInput =
+  | "ADMIN"
+  | "REGIONAL_ADMIN"
+  | "OFFICER"
+  | "ACCOUNT_OFFICER"
+  | "LOADING_OFFICER";
+
+/** 201 body from POST /admin/officers */
+export interface CreateOfficerResponse {
+  id: string;
+  name: string;
+  /** Lower-cased server-side - render this, not what was typed */
+  email: string;
+  phone: string;
+  region: BroadcastRegion | null;
+  role: StaffRole | string;
+  isActive: boolean;
+  createdAt?: string | null;
+  createdById?: string | null;
+  /** The account exists either way; false only means the email did not go out */
+  emailSent?: boolean;
 }
 
 // Customer with Officer Assignments
 // Every field past `id` is optional: the ERP projector is still catching up, so
 // a row can legitimately arrive with most values null.
 export interface CustomerWithOfficers {
-  id: string;
+  /**
+   * null when isProjected is false - an ERP-only row has no portal record.
+   * Anything keyed on the id (detail, reassign, individual broadcast) is
+   * unavailable for those rows.
+   */
+  id: string | null;
   name: string;
   erpId: string;
   phone: string;
@@ -486,6 +640,12 @@ export interface CustomerWithOfficers {
   lastSyncedAt?: string | null;
   /** B-1.1: mirrors the ?hasOfficer= filter so the column needs no lookup */
   hasOfficer?: boolean | null;
+  /**
+   * false = the customer exists in the ERP feed but has not been copied into
+   * the portal. Only erpId, name, phone, region and lastSyncedAt are populated
+   * on those rows. Absent in default mode, where every row is projected.
+   */
+  isProjected?: boolean;
   assignedOfficerId?: string | null;
   createdAt?: string | null;
   _count?: {
@@ -560,7 +720,57 @@ export interface CustomersListResponse {
     totalPages: number;
     hasNextPage: boolean;
     hasPreviousPage: boolean;
+    /**
+     * Present only when includeUnprojected=true. Environments with no ERP
+     * feed return unprojectedTotal 0, so branch on the value being > 0 rather
+     * than on the key existing.
+     */
+    projectedTotal?: number;
+    unprojectedTotal?: number;
   };
+}
+
+/**
+ * Narrowing helper - a customer that has a portal record, and therefore an id
+ * that is safe to put in a URL. Use this instead of asserting on id.
+ */
+export type ProjectedCustomer = CustomerWithOfficers & {
+  id: string;
+  isProjected: true;
+};
+
+export const isProjectedCustomer = (
+  customer: CustomerWithOfficers,
+): customer is ProjectedCustomer =>
+  customer?.isProjected !== false && typeof customer?.id === "string";
+
+/**
+ * RA-07: GET /regional/customers
+ *
+ * The rows are produced by the same service that backs GET /admin/customers,
+ * so the envelope, the row shape, the sort columns and the ERP-derived columns
+ * are identical - the shared customer table renders both with no branching.
+ */
+export type RegionalCustomerRow = CustomerWithOfficers;
+
+export type RegionalCustomersResponse = CustomersListResponse;
+
+/**
+ * Query for GET /regional/customers. `region` is intentionally optional and
+ * must be left off by a REGIONAL_ADMIN - it comes from the token, and sending
+ * another region is a 403. An ADMIN has no home region, so on this route they
+ * must name one.
+ */
+export interface RegionalCustomersQuery {
+  search?: string;
+  hasOfficer?: boolean;
+  sortBy?: CustomerSortBy;
+  sortOrder?: SortOrder;
+  page?: number;
+  pageSize?: number;
+  includeUnprojected?: boolean;
+  /** ADMIN only - a REGIONAL_ADMIN must omit this */
+  region?: BroadcastRegion;
 }
 
 export interface ReassignCustomerRequest {
@@ -569,10 +779,28 @@ export interface ReassignCustomerRequest {
 
 /**
  * PATCH /admin/customers/{id}/reassign
- * Moves a single customer to a new officer
+ *
+ * Assigns a customer to an officer, whether or not one is already on the
+ * record - the join row is upserted server-side, so a first assignment and a
+ * move take the same path. The incoming officer is notified in-app and by web
+ * push on both.
+ *
+ * `officerAssignments` is primary-first and lets the OFFICERS cell update
+ * without a refetch.
  */
 export interface ReassignCustomerResponse {
   message: string;
+  customerId?: string;
+  officerAssignments?: Array<{
+    id?: string;
+    isPrimary?: boolean;
+    assignedAt?: string | null;
+    staff?: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+    } | null;
+  }>;
 }
 
 /**
@@ -594,9 +822,18 @@ export interface Flyer {
   id: string;
   name: string;
   imageUrl: string;
+  /**
+   * F-1: the flyer's own copy - what the promotion actually says, shown under
+   * the artwork and carried through to the distributor app's home carousel.
+   *
+   * Always present, capped at 500 characters. `null` when blank, and on every
+   * flyer created before the column existed - never absent.
+   */
+  description: string | null;
   sortOrder: number;
   isActive: boolean;
-  createdById: string;
+  /** Null for a flyer whose creator's staff record was removed */
+  createdById: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -604,11 +841,23 @@ export interface Flyer {
 export interface CreateFlyerRequest {
   name: string;
   imageUrl: string;
+  /**
+   * F-1: optional free text, max 500 characters. Omitted when blank - sending
+   * "" stores null just the same, so either is safe.
+   */
+  description?: string;
 }
 
 export interface UpdateFlyerRequest {
   name?: string;
   imageUrl?: string;
+  /**
+   * F-1: three distinct cases, max 500 characters.
+   *   omitted    -> the stored copy is left unchanged
+   *   ""         -> cleared to null (whitespace-only counts as blank)
+   *   "text"     -> replaced, trimmed server-side
+   */
+  description?: string;
   isActive?: boolean;
 }
 
@@ -748,12 +997,13 @@ export interface WaybillsResponse {
 }
 
 // Officer Tickets Types
+/** AO-T1: widened from { name, erpId } - the row can now render the header */
 export interface OfficerTicketCustomer {
   id: string;
   erpId: string;
   name: string;
-  phone?: string;
-  email?: string;
+  phone: string;
+  email: string | null;
 }
 
 export interface OfficerTicket {
@@ -768,7 +1018,8 @@ export interface OfficerTicket {
   createdAt: string;
   updatedAt: string;
   customer: OfficerTicketCustomer;
-  repliesCount?: number;
+  /** AO-T1: replies on the thread, so a list can badge it without opening it */
+  repliesCount: number;
 }
 
 export interface OfficerTicketsResponse {
@@ -783,6 +1034,30 @@ export interface OfficerTicketsResponse {
   };
 }
 
+/**
+ * S-1: who actually wrote a staff-authored reply or chat message.
+ *
+ * Present on every row where `senderType === "STAFF"`, on the live ticket and
+ * chat routes and on both audit routes. `role` is the wire enum - no display
+ * text comes from the API, so backend copy can never drift into our labels.
+ *
+ * **`null` on a customer-authored row - branch on this, never on `staffId`.**
+ * A chat message written by a distributor still carries a `staffId`: that is
+ * the officer the message was routed TO, not its author. Naming them as the
+ * sender would be wrong.
+ *
+ * One further null case, which this portal never hits: PRD F6 says a
+ * distributor sees the single label "Viju Account Officer" and never an
+ * individual staff name, so a CUSTOMER caller on the chat routes gets
+ * `staff: null` on every row. Every staff caller gets the full block.
+ */
+export interface StaffSender {
+  id: string;
+  name: string;
+  /** Wire role value: "ADMIN" | "REGIONAL_ADMIN" | "OFFICER" | "LOADING_OFFICER" */
+  role: StaffRole | string;
+}
+
 export interface TicketReply {
   id: string;
   ticketId: string;
@@ -792,6 +1067,8 @@ export interface TicketReply {
   content: string;
   attachmentUrl?: string;
   createdAt: string;
+  /** S-1: the author. Null on a customer reply - see StaffSender. */
+  staff?: StaffSender | null;
 }
 
 export interface TicketCustomer {
@@ -831,6 +1108,21 @@ export interface SendTicketReplyRequest {
   attachmentUrl?: string;
 }
 
+/**
+ * 201 body from POST /tickets/{id}/replies.
+ *
+ * BREAKING as of the 22 Aug 2026 backend handoff (section 3.1): this used to
+ * be the bare `TicketReply`. It is now the whole thread with the new reply
+ * already appended, plus a `reply` key echoing the row just created.
+ *
+ * So `response.id` is the TICKET id, not the reply id - anything that wants
+ * the reply must read `response.reply`. Render the thread straight from this
+ * rather than refetching.
+ */
+export interface SendTicketReplyResponse extends TicketThread {
+  reply: TicketReply;
+}
+
 export interface TicketStatusUpdateRequest {
   status: string;
 }
@@ -851,6 +1143,12 @@ export interface ChatMessage {
   attachmentUrl?: string;
   createdAt: string;
   readAt?: string | null;
+  /**
+   * S-1: the author. Null on a customer message - and `staffId` above is the
+   * officer the message was routed TO on those rows, so it must not be read
+   * as the sender. See StaffSender.
+   */
+  staff?: StaffSender | null;
 }
 
 export interface SendMessageRequest {
@@ -921,9 +1219,32 @@ export interface CurrentUser {
   profilePhotoUrl?: string | null;
 }
 
-/** AD-18: PATCH /admin/officers/{id} */
+/** AD-18: PATCH /admin/officers/{id}. Must be a real boolean, not "false" */
 export interface UpdateOfficerRequest {
   isActive: boolean;
+}
+
+/**
+ * 200 body from PATCH /admin/officers/{id}.
+ *
+ * `changed` is the idempotency flag: sending a status the account already has
+ * is a 200 with changed:false and no audit stamp. Do NOT pre-check the status
+ * and skip the call - send it and read `changed`.
+ */
+export interface UpdateOfficerResponse {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  region?: BroadcastRegion | null;
+  role?: StaffRole | string | null;
+  isActive: boolean;
+  changed?: boolean;
+  deactivatedAt?: string | null;
+  deactivatedById?: string | null;
+  reactivatedAt?: string | null;
+  reactivatedById?: string | null;
+  updatedAt?: string | null;
 }
 
 /**
@@ -948,6 +1269,9 @@ export interface AuditChatMessage {
   content: string;
   attachmentUrl?: string | null;
   createdAt: string;
+  staffId?: string | null;
+  /** S-1: the author. Null on a customer message - see StaffSender. */
+  staff?: StaffSender | null;
 }
 
 export interface AuditChatThread {

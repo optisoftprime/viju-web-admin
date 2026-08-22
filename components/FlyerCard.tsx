@@ -10,6 +10,8 @@ interface Flyer {
   name: string;
   image?: string | StaticImageData;
   imageUrl?: string;
+  /** F-1: the flyer's own copy, shown under the artwork */
+  description?: string | null;
   position?: number;
   status?: string;
   sortOrder?: number;
@@ -84,9 +86,23 @@ export default function FlyerCard({
       {/* Content */}
       <div className="p-4">
         {/* Title */}
-        <Text variant="body" weight="semibold" className="mb-4">
+        <Text variant="body" weight="semibold" className="mb-1">
           {flyer.name}
         </Text>
+
+        {/* Details - clamped, since a card is a summary. The full copy is in
+            the preview. Skipped entirely when the flyer is pure artwork. */}
+        {flyer.description?.trim() ? (
+          <Text
+            variant="caption"
+            color="muted"
+            className="mb-4 block line-clamp-2"
+          >
+            {flyer.description}
+          </Text>
+        ) : (
+          <div className="mb-4" />
+        )}
 
         {/* Actions Container */}
         <div className="flex items-center justify-between">

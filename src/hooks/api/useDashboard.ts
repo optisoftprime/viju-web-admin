@@ -5,13 +5,16 @@
 
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { dashboardService } from "@/services/dashboard.service";
 import { useAuthStore } from "@/store/auth.store";
+import { normalizeStaffRole } from "@/constants/roles";
 import { queryKeys } from "@/lib/api/queryKeys";
+import { DEFAULT_PAGE_SIZE } from "@/constants/pagination";
 import {
   DashboardStats,
   OfficerCustomer,
+  OfficerCustomersParams,
   RegionalAdminDashboardResponse,
   PendingLoadingRequest,
   AdminDashboardStats,
@@ -28,7 +31,9 @@ export const useDashboardStats = () => {
   const getDashboardData = async (): Promise<DashboardStats> => {
     if (!user) throw new Error("User not found");
 
-    switch (user.role) {
+    // "ACCOUNT_OFFICER" and "OFFICER" name the same role - the API returns
+    // the latter, but normalising costs nothing and cannot misroute.
+    switch (normalizeStaffRole(user.role)) {
       case "ADMIN":
         return dashboardService.getAdminDashboard();
       case "OFFICER":
@@ -45,7 +50,7 @@ export const useDashboardStats = () => {
   };
 
   return useQuery({
-    queryKey: [queryKeys.all[0], "dashboard", user?.role],
+    queryKey: [queryKeys.all[0], "dashboard", normalizeStaffRole(user?.role)],
     queryFn: getDashboardData,
     enabled: !!user, // Only run if user is logged in
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -74,13 +79,15 @@ export const useDashboardTableData = (params: DashboardTableParams = {}) => {
   > => {
     if (!user) throw new Error("User not found");
 
-    switch (user.role) {
+    switch (normalizeStaffRole(user.role)) {
       case "OFFICER":
-        // "all" leaves both flags false, so neither is sent
+        // "all" leaves every flag false, so none is sent
         return dashboardService.getOfficerCustomers({
           search: params.search,
           overdue: params.filter === "overdue",
           activeTickets: params.filter === "activeTickets",
+          // AO-C1 - the "waiting on me" tab, mirroring activeTickets
+          unreadMessages: params.filter === "unreadMessages",
         });
       case "ADMIN":
         return dashboardService.getAdminDashboard();
@@ -96,13 +103,63 @@ export const useDashboardTableData = (params: DashboardTableParams = {}) => {
     queryKey: [
       queryKeys.all[0],
       "dashboardTable",
-      user?.role,
+      normalizeStaffRole(user?.role),
       params.search,
       params.filter,
     ],
     queryFn: getTableData,
     enabled:
-      !!user && (user.role === "OFFICER" || user.role === "REGIONAL_ADMIN"),
+      !!user &&
+      ["OFFICER", "REGIONAL_ADMIN"].includes(normalizeStaffRole(user.role)),
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+/**
+ * The signed-in officer's own customers, paginated.
+ *
+ * Backs the All Customers modal for an OFFICER: GET /admin/customers is
+ * ADMIN / REGIONAL_ADMIN only, so the officer view has to come from
+ * GET /officers/customers instead. Same modal, different source.
+ */
+export const useOfficerCustomersPage = (
+  params: OfficerCustomersParams & { enabled?: boolean } = {},
+) => {
+  return useQuery({
+    queryKey: [
+      queryKeys.all[0],
+      "officerCustomersPage",
+      params.page ?? 1,
+      params.pageSize ?? DEFAULT_PAGE_SIZE,
+      params.search ?? "",
+      params.unreadMessages ?? false,
+      params.sortBy ?? "",
+      params.sortOrder ?? "",
+    ],
+    queryFn: () =>
+      dashboardService.getOfficerCustomersPage({
+        page: params.page ?? 1,
+        pageSize: params.pageSize ?? DEFAULT_PAGE_SIZE,
+        search: params.search,
+        unreadMessages: params.unreadMessages,
+        sortBy: params.sortBy,
+        sortOrder: params.sortOrder,
+      }),
+    enabled: params.enabled !== false,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+};
+
+/**
+ * AO-C1: the distributor who has been waiting longest on an unread message.
+ *
+ * Fetched lazily by the Unread Messages tile rather than kept warm - the tile
+ * needs the answer at the moment it is clicked, and a stale one would send the
+ * officer to the wrong conversation.
+ */
+export const useNextUnreadCustomer = () => {
+  return useMutation({
+    mutationFn: () => dashboardService.getNextUnreadCustomer(),
   });
 };

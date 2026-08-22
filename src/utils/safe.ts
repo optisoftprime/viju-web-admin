@@ -57,6 +57,13 @@ export interface SafeMeta {
   totalPages: number;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
+  /**
+   * Only returned by GET /admin/customers?includeUnprojected=true. Left
+   * undefined otherwise, so callers must branch on the value rather than on
+   * the key being present - environments with no ERP feed report 0.
+   */
+  projectedTotal?: number;
+  unprojectedTotal?: number;
 }
 
 export const safeMeta = (value: unknown, rowCount = 0): SafeMeta => {
@@ -75,6 +82,13 @@ export const safeMeta = (value: unknown, rowCount = 0): SafeMeta => {
     totalPages: Math.max(1, safeNumber(meta.totalPages, Math.ceil(total / pageSize) || 1)),
     hasNextPage: Boolean(meta.hasNextPage),
     hasPreviousPage: Boolean(meta.hasPreviousPage),
+    // Passed through only when the API actually sent them
+    ...(meta.projectedTotal !== undefined
+      ? { projectedTotal: safeNumber(meta.projectedTotal, 0) }
+      : {}),
+    ...(meta.unprojectedTotal !== undefined
+      ? { unprojectedTotal: safeNumber(meta.unprojectedTotal, 0) }
+      : {}),
   };
 };
 
