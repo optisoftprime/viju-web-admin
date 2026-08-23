@@ -18,6 +18,7 @@ import { safeText, safeNumber, safeDateText } from "@/utils/safe";
 import { formatRole, formatRoleScope } from "@/constants/roles";
 import { STATUS_FILTER_OPTIONS } from "@/constants/roles";
 import type { CreateOfficerResponse } from "@/lib/api/types";
+import ArrowBack from "@/components/common/ArrowBack";
 
 // Interface for officer data structure (transformed from API)
 interface OfficerTableRow {
@@ -230,6 +231,7 @@ function AccountOfficersContent() {
   return (
     <MainLayout>
       <div className="p-4 overflow-y-auto space-y-6 pb-30 h-screen bg-milkwhite/90">
+        <ArrowBack />
         {/* Page Header Component */}
         <div className="flex flex-col-reverse md:flex-row justify-between md:items-center items-end gap-4">
           <PageHeader

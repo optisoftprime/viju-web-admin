@@ -22,6 +22,7 @@ import { auditService } from "@/services/audit.service";
 import { downloadCsvFile } from "@/utils/download";
 import { getErrorMessage, isRegionNotSetError } from "@/utils/apiError";
 import { toast } from "sonner";
+import ArrowBack from "@/components/common/ArrowBack";
 
 /**
  * Which interaction the screen is auditing.
@@ -315,6 +316,7 @@ function InteractionAuditContent() {
   return (
     <MainLayout>
       <div className="px-4 pt-4 pb-20 space-y-6 overflow-y-auto h-screen bg-milkwhite/90">
+        <ArrowBack />
         {/* Page Header Component */}
         <div className="flex items-center justify-between">
           <PageHeader

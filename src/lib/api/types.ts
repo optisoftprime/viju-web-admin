@@ -1156,6 +1156,19 @@ export interface SendMessageRequest {
   attachmentUrl?: string;
 }
 
+/**
+ * C-1: 200 body from PATCH /chat/{customerId}/read.
+ *
+ * `markedRead` is how many rows this call actually moved from unread to read -
+ * it is what makes an optimistic decrement safe, since the caller subtracts
+ * the number the server cleared rather than one it counted locally. Calling
+ * twice returns 0 the second time.
+ */
+export interface MarkChatReadResponse {
+  customerId: string;
+  markedRead: number;
+}
+
 // File Upload Types
 export interface FileUploadResponse {
   url: string;

@@ -24,6 +24,7 @@ import {
   STATUS_FILTER_OPTIONS,
 } from "@/constants/roles";
 import type { CreateOfficerResponse } from "@/lib/api/types";
+import ArrowBack from "@/components/common/ArrowBack";
 
 /** One row of the managed-users table */
 interface UserRow {
@@ -181,6 +182,7 @@ function ManagedUsersContent() {
   return (
     <MainLayout>
       <div className="p-4 overflow-y-auto space-y-6 pb-30 h-screen bg-milkwhite/90">
+        <ArrowBack />
         <div className="flex flex-col-reverse md:flex-row justify-between md:items-center items-end gap-4">
           <PageHeader
             title="Users"

@@ -17,6 +17,7 @@ import {
 } from "@/hooks/api/useLoading";
 import { safeText, safeNumber, safeDateText, humanizeEnum } from "@/utils/safe";
 import type { LoadingRequest as ApiLoadingRequest } from "@/lib/api/types";
+import ArrowBack from "@/components/common/ArrowBack";
 
 interface LoadingRequest {
   id: string;
@@ -204,6 +205,7 @@ function LoadingRequestPageContent() {
   return (
     <MainLayout>
       <div className="px-4 pt-4 pb-30 space-y-6 overflow-y-auto h-screen bg-milkwhite/90">
+        <ArrowBack />
         {/* Page Header Component */}
         <PageHeader
           title="Loading Requests"

@@ -45,8 +45,13 @@ type StagedStatus = "IN_PROGRESS" | "COMPLETED";
  * a side effect; now the status route and the waybill route are called from
  * one place, handleSubmitWaybill.
  *
- * Proof of loading is OPTIONAL when marking a load in progress and REQUIRED to
- * complete one, since the waybill is the document the distributor is shown.
+ * Completing a load takes BOTH deliberate acts: "Mark Completed" pressed AND
+ * a waybill document attached. Neither alone submits anything, and the primary
+ * button stays disabled until both are true - so a load cannot be completed by
+ * pressing submit with nothing chosen, and never without the document the
+ * distributor is shown.
+ *
+ * Proof of loading stays OPTIONAL when marking a load in progress.
  */
 const SelectedAssignement = ({ assignmentId }: SelectedAssignementProps) => {
   const { data, isLoading, error } = useLoadingQueueItem(assignmentId);
@@ -97,29 +102,46 @@ const SelectedAssignement = ({ assignmentId }: SelectedAssignementProps) => {
   const isBusy = updateStatus.isPending || createWaybill.isPending || isUploading;
 
   /**
-   * Pressing the primary button with nothing staged means "submit the
-   * waybill", and recording a waybill completes the load - so an unstaged
-   * submit is a completion and carries the completion's rules.
+   * The status to submit is ONLY ever the one that was explicitly chosen.
+   *
+   * It used to fall back to "COMPLETED" when nothing was staged, which meant
+   * pressing submit on an untouched load completed it. Completion now requires
+   * the "Mark Completed" button to have been pressed.
    */
-  const targetStatus: StagedStatus = stagedStatus ?? "COMPLETED";
+  const targetStatus: StagedStatus | null = stagedStatus;
   const isCompleting = targetStatus === "COMPLETED";
 
-  /** Proof already on file from an earlier visit counts towards the requirement */
+  /**
+   * Proof already on file from an earlier visit counts: it is a real uploaded
+   * URL and it is what gets sent to the waybill route.
+   */
   const existingAttachmentUrl = safeText(data?.attachmentUrl, "");
   const hasProof = Boolean(stagedFile || existingAttachmentUrl);
+
+  /**
+   * The two conditions completion needs, together. Marking a load in progress
+   * needs only the status.
+   */
+  const canSubmit =
+    !isBusy &&
+    !isCompleted &&
+    (targetStatus === "IN_PROGRESS" || (isCompleting && hasProof));
 
   /** The step the indicator highlights - the staged pick, else what is saved */
   const highlightedStep = stagedStatus ?? status;
 
   const submitHint = useMemo(() => {
     if (isCompleted) return "This load is complete.";
+    if (!targetStatus) {
+      return "Choose a status above - a load is never submitted without one.";
+    }
     if (isCompleting) {
       return hasProof
         ? "Submitting records the waybill and completes this load."
         : "Attach the proof of loading - it is required to complete a load.";
     }
     return "Submitting marks this load as Loading in Progress. Proof of loading is optional at this step.";
-  }, [isCompleted, isCompleting, hasProof]);
+  }, [isCompleted, isCompleting, hasProof, targetStatus]);
 
   if (!assignmentId) {
     return (
@@ -196,6 +218,13 @@ const SelectedAssignement = ({ assignmentId }: SelectedAssignementProps) => {
   const handleSubmitWaybill = async () => {
     if (isBusy || isCompleted) return;
 
+    // Both guards mirror `canSubmit`, which already disables the button. They
+    // are here because a disabled button is a UI affordance, not a rule.
+    if (!targetStatus) {
+      toast.error("Choose a status before submitting this load.");
+      return;
+    }
+
     if (!isCompleting) {
       try {
         await updateStatus.mutateAsync({
@@ -210,7 +239,8 @@ const SelectedAssignement = ({ assignmentId }: SelectedAssignementProps) => {
       return;
     }
 
-    // Completing: the waybill document is required
+    // Completing: the waybill document is required, and it is what the
+    // endpoint is called with
     if (!hasProof) {
       toast.error("Attach the proof of loading before completing this load.");
       return;
@@ -251,13 +281,20 @@ const SelectedAssignement = ({ assignmentId }: SelectedAssignementProps) => {
     }
 
     try {
+      // `hasProof` was checked above, so by here there is always a URL - the
+      // load is never completed with an empty attachment
+      if (!attachmentUrl) {
+        toast.error("The proof of loading could not be attached. Try again.");
+        return;
+      }
+
       await createWaybill.mutateAsync({
         id: assignmentId,
         body: {
           truckPlateNumber,
           driverName,
           quantityCartons,
-          ...(attachmentUrl ? { attachmentUrl } : {}),
+          attachmentUrl,
         },
       });
       toast.success("Waybill recorded. This load is now complete.");
@@ -502,10 +539,14 @@ const SelectedAssignement = ({ assignmentId }: SelectedAssignementProps) => {
         variant="primary"
         fullWidth
         loading={isBusy}
-        disabled={isBusy || isCompleted}
+        disabled={!canSubmit}
         onClick={handleSubmitWaybill}
       >
-        {isCompleted ? "Completed" : "Submit Waybill"}
+        {isCompleted
+          ? "Completed"
+          : isCompleting
+            ? "Complete Loading"
+            : "Submit Waybill"}
       </Button>
 
       <Text variant="caption" color="muted" className="mt-2 block text-center">

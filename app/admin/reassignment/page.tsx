@@ -25,6 +25,7 @@ import { customerService } from "@/services/customer.service";
 import { BroadcastRegion, isProjectedCustomer } from "@/lib/api/types";
 import { REGION_FILTER_TABS } from "@/constants/regions";
 import ExportRecord from "@/components/ExportRecord";
+import ArrowBack from "@/components/common/ArrowBack";
 
 // Interface for customer data structure (transformed from API)
 interface CustomerTableRow {
@@ -316,6 +317,7 @@ function CustomerReassignmentContent() {
   return (
     <MainLayout>
       <div className="px-4 pt-4 pb-30 space-y-6 overflow-y-auto h-screen bg-milkwhite/90">
+        <ArrowBack />
         {/* Page Header Component */}
         <div className="flex items-center justify-between">
           <PageHeader

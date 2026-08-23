@@ -6,7 +6,7 @@ import { Text, Table, SearchInput } from "@/components/common";
 import Pagination from "@/components/Pagination";
 import RowDetailsModal from "@/components/RowDetailsModal";
 import { usePagination, getAppliedPageSize } from "@/hooks/usePagination";
-import { useCustomers } from "@/hooks/api/useCustomer";
+import { useCustomers, useRegionalCustomers } from "@/hooks/api/useCustomer";
 import { useOfficerCustomersPage } from "@/hooks/api/useDashboard";
 import { useAuthStore } from "@/store/auth.store";
 import { normalizeStaffRole } from "@/constants/roles";
@@ -106,12 +106,15 @@ const officerTableColumns = [
  *    portal has not copied yet come back with `isProjected: false` and only
  *    erpId / name / phone / region populated - they are dimmed, badged, and
  *    not clickable, since opening one needs a portal id they do not have.
- *  - An OFFICER is not authorised on that route at all, so their view reads
+ *  - A REGIONAL_ADMIN reads GET /regional/customers, where the region is
+ *    resolved from their staff record. `region` is never sent - naming one is
+ *    a 403 - so the modal cannot leak another region even by accident.
+ *  - An OFFICER is not authorised on either admin route, so their view reads
  *    GET /officers/customers instead: the customers assigned to them, with the
  *    columns that endpoint actually returns.
  *
- * `search` is applied SERVER-side in both cases and `meta.total` counts the
- * filtered set, so the pager arithmetic holds while a search is active.
+ * `search` is applied SERVER-side in all three cases and `meta.total` counts
+ * the filtered set, so the pager arithmetic holds while a search is active.
  */
 export default function AllCustomersModal({
   open,
@@ -124,6 +127,7 @@ export default function AllCustomersModal({
   const { user } = useAuthStore();
   const role = normalizeStaffRole(user?.role);
   const isOfficerView = role === "OFFICER";
+  const isRegionalView = role === "REGIONAL_ADMIN";
 
   const {
     currentPage,
@@ -141,7 +145,20 @@ export default function AllCustomersModal({
     region,
     search: searchTerm || undefined,
     includeUnprojected: true,
-    enabled: open && !isOfficerView,
+    enabled: open && !isOfficerView && !isRegionalView,
+  });
+
+  /**
+   * RA-07. `region` is deliberately NOT forwarded: on this route it is
+   * resolved from the caller's staff record, and a regional admin naming any
+   * region - even their own - is a 403.
+   */
+  const regionalQuery = useRegionalCustomers({
+    page: currentPage,
+    pageSize,
+    search: searchTerm || undefined,
+    includeUnprojected: true,
+    enabled: open && isRegionalView,
   });
 
   const officerQuery = useOfficerCustomersPage({
@@ -151,7 +168,11 @@ export default function AllCustomersModal({
     enabled: open && isOfficerView,
   });
 
-  const { data, isLoading, error } = isOfficerView ? officerQuery : adminQuery;
+  const { data, isLoading, error } = isOfficerView
+    ? officerQuery
+    : isRegionalView
+      ? regionalQuery
+      : adminQuery;
 
   const tableData: CustomerRow[] = useMemo(() => {
     if (isOfficerView) {
@@ -253,7 +274,11 @@ export default function AllCustomersModal({
           {/* Header */}
           <div className="border-b border-muted/20 pb-3 pr-8">
             <Text variant="body" weight="bold" color="foreground">
-              {isOfficerView ? "My Customers" : "All Customers"}
+              {isOfficerView
+                ? "My Customers"
+                : isRegionalView
+                  ? "Regional Customers"
+                  : "All Customers"}
             </Text>
             <Text variant="caption" weight="medium" color="muted">
               {isLoading
@@ -262,7 +287,13 @@ export default function AllCustomersModal({
                   ? "Customers could not be loaded"
                   : `${totalItems.toLocaleString()} ${
                       totalItems === 1 ? "customer" : "customers"
-                    }${isOfficerView ? " assigned to you" : ""}`}
+                    }${
+                      isOfficerView
+                        ? " assigned to you"
+                        : isRegionalView
+                          ? " in your region"
+                          : ""
+                    }`}
             </Text>
           </div>
 

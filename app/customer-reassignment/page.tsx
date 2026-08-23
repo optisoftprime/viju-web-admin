@@ -10,6 +10,7 @@ import RowDetailsModal from "@/components/RowDetailsModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { usePagination, getTotalPages } from "@/hooks/usePagination";
 import userIcon from "@/assets/icons/usersblack.svg";
+import ArrowBack from "@/components/common/ArrowBack";
 
 // Interface for customer data structure
 interface Customer {
@@ -307,6 +308,7 @@ function CustomerReassignmentContent() {
   return (
     <MainLayout>
       <div className="px-4 pt-4 pb-30 space-y-6 overflow-y-auto h-screen bg-milkwhite/90">
+        <ArrowBack />
         {/* Page Header Component */}
         <PageHeader
           title="Customer Reassignment"

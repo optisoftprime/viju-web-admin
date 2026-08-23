@@ -42,7 +42,14 @@ interface StatCardProps {
    * it the card stays a plain div exactly as before.
    */
   onClick?: () => void;
-  /** Accessible description of what clicking does, e.g. "View all customers" */
+  /**
+   * Accessible description of what clicking does, e.g. "View all customers".
+   *
+   * NOT rendered - the tiles read as numbers, and a call-to-action line under
+   * each one crowded the grid. It is still attached as the button's
+   * `aria-label`, so a screen reader announces what the card does even though
+   * nothing is printed.
+   */
   actionLabel?: string;
 }
 
@@ -67,7 +74,7 @@ export default function StatCard({
       const IconComponent = icon;
       return (
         <IconComponent
-          className="w-5 h-5 text-primary shrink-0"
+          className="w-5 h-5 text-foreground shrink-0"
           strokeWidth={2}
           aria-hidden="true"
         />
@@ -101,15 +108,6 @@ export default function StatCard({
       {caption ? (
         <Text variant="small" color="muted" className="mt-1 block">
           {caption}
-        </Text>
-      ) : null}
-      {isClickable && actionLabel ? (
-        <Text
-          variant="small"
-          color="primary"
-          className="mt-2 block group-hover:underline"
-        >
-          {actionLabel}
         </Text>
       ) : null}
     </>
