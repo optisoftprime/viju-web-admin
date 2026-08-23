@@ -214,10 +214,10 @@ const loadingRequestTableColumns = [
     key: "status" as const,
     title: "STATUS",
   },
-  {
-    key: "action" as const,
-    title: "ACTION",
-  },
+  // {
+  //   key: "action" as const,
+  //   title: "ACTION",
+  // },
 ];
 
 // Mock distributor data for admin users (fallback)
@@ -522,7 +522,8 @@ function DashboardContent() {
       // distributors submit loading requests, so guard for a missing array.
       if (role === "REGIONAL_ADMIN") {
         const regionalData = tableData as
-          RegionalAdminDashboardResponse | undefined;
+          | RegionalAdminDashboardResponse
+          | undefined;
         return mapPendingLoadingRequestsToTable(
           Array.isArray(regionalData?.pendingLoadingRequests)
             ? regionalData.pendingLoadingRequests
