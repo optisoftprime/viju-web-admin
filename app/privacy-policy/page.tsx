@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import ArrowBack from "@/components/common/ArrowBack";
 
 const sections = [
   {
@@ -315,6 +316,9 @@ const sections = [
 export default function PrivacyPolicyPage() {
   return (
     <div className="bg-gray-50 min-h-screen pb-12">
+      <div className="px-5 pt-5">
+        <ArrowBack />
+      </div>
       <div className="p-5 min-h-70 bg-gradient-to-r flex justify-center items-center from-primary via-orange to-primary w-full">
         <h1 className="text-[80px] font-bold text-white text-center">
           VIJU PRIVACY POLICY

@@ -43,16 +43,32 @@ const ICONS: Record<string, LucideIcon> = {
 };
 
 /**
- * `content` now arrives as "<title>: <body>" - e.g.
- * "Customer assigned: Ade Foods Ltd has been assigned to you".
- * Split on the FIRST ": " only, so a body containing a colon stays intact.
+ * `content` normally arrives as "<title>: <body>" - e.g.
+ * "Customer assigned: Ade Foods Ltd has been assigned to you" - so it is split
+ * on the FIRST ": " only, leaving a body that contains a colon intact.
+ *
+ * Two cases must NOT be split:
+ *
+ *   - **BROADCAST.** The text is the admin's own words, sent verbatim with no
+ *     prefix (P-3), so there is no title to find. Splitting one that happens
+ *     to contain a colon - "Note: depot closed" - would tear the message in
+ *     half and present "Note" as a heading the admin never wrote. An
+ *     individual broadcast's "<distributor name>: " prefix is likewise part of
+ *     the message, not a title.
+ *   - **Anything with no ": " at all.** That is a bare body, not a bare title:
+ *     rendering it as a heading with nothing under it reads as a truncated row.
  */
-const splitContent = (raw: string): { heading: string; body: string } => {
+const splitContent = (
+  raw: string,
+  type: string,
+): { title: string | null; body: string } => {
+  if (type === "BROADCAST") return { title: null, body: raw };
+
   const separator = raw.indexOf(": ");
-  if (separator <= 0) return { heading: raw, body: "" };
+  if (separator <= 0) return { title: null, body: raw };
 
   return {
-    heading: raw.slice(0, separator).trim(),
+    title: raw.slice(0, separator).trim(),
     body: raw.slice(separator + 2).trim(),
   };
 };
@@ -67,10 +83,11 @@ export default function NotificationItem({
   onClick,
 }: NotificationItemProps) {
   const raw = safeText(title, "New notification");
-  const { heading, body } = splitContent(raw);
+  const normalizedType = safeText(type, "").toUpperCase();
+  const { title: heading, body } = splitContent(raw, normalizedType);
 
   // Unknown or missing type -> generic bell
-  const Icon = ICONS[safeText(type, "").toUpperCase()] ?? Bell;
+  const Icon = ICONS[normalizedType] ?? Bell;
 
   return (
     <div
@@ -87,13 +104,22 @@ export default function NotificationItem({
 
         <Icon className="w-4 h-4 text-muted mt-0.5 shrink-0" strokeWidth={2} />
 
-        {/* Content */}
+        {/* Content. With no title the body carries the weight the heading
+            would have had, so a broadcast does not read as an orphaned
+            subtitle. */}
         <div className="flex-1 min-w-0">
-          <Text variant="small" weight="medium" className="mb-1">
-            {heading}
-          </Text>
+          {heading && (
+            <Text variant="small" weight="medium" className="mb-1">
+              {heading}
+            </Text>
+          )}
           {body && (
-            <Text variant="caption" color="foreground" className="mb-1 block">
+            <Text
+              variant={heading ? "caption" : "small"}
+              weight={heading ? "normal" : "medium"}
+              color="foreground"
+              className="mb-1 block"
+            >
               {body}
             </Text>
           )}

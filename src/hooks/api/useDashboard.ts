@@ -50,10 +50,22 @@ export const useDashboardStats = () => {
   };
 
   return useQuery({
-    queryKey: [queryKeys.all[0], "dashboard", normalizeStaffRole(user?.role)],
+    queryKey: [...queryKeys.dashboard.all, normalizeStaffRole(user?.role)],
     queryFn: getDashboardData,
     enabled: !!user, // Only run if user is logged in
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    /**
+     * The tiles are live counters, not a report. A five-minute stale window
+     * left "Unread Messages" reading 1 long after the admin had opened and
+     * read the conversation, which is the kind of number people act on.
+     *
+     * Thirty seconds plus a refetch whenever the tab regains focus or the
+     * dashboard is revisited keeps them close to the truth; anything that
+     * changes a count on purpose invalidates `queryKeys.dashboard.all`
+     * directly rather than waiting for this.
+     */
+    staleTime: 30 * 1000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 };
 

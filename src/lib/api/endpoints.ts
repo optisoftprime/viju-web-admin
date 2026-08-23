@@ -72,6 +72,13 @@ export const endpoints = {
   chat: {
     history: "/chat/{otherUserId}",
     sendMessage: "/chat/{receiverId}",
+    /**
+     * C-1: clear a customer's unread messages for staff WITHOUT pulling the
+     * thread. Fetching the history already marks it read, so this is only
+     * needed to drop the count from a list, or to drop it instantly rather
+     * than waiting on the thread request. Idempotent.
+     */
+    markRead: "/chat/{customerId}/read",
   },
   notifications: {
     list: "/notifications/me",

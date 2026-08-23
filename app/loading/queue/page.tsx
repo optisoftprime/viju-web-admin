@@ -4,6 +4,7 @@ import { MainLayout } from "@/components/common";
 import PageHeader from "@/components/PageHeader";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import LoadingOfficer from "@/components/loadingOfficer/LoadingOfficer";
+import ArrowBack from "@/components/common/ArrowBack";
 
 /**
  * My Loading Queue (LO-02..LO-05).
@@ -18,6 +19,7 @@ function LoadingQueueContent() {
   return (
     <MainLayout>
       <div className="px-4 pt-4 pb-30 space-y-6 overflow-y-auto h-screen bg-milkwhite/90">
+        <ArrowBack />
         <PageHeader
           title="My Loading Queue"
           subtitle="Manage your assigned loading requests"

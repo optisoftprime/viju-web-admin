@@ -78,6 +78,7 @@ import { auditService } from "@/services/audit.service";
 import { downloadCsvFile } from "@/src/utils/download";
 import { getErrorMessage } from "@/src/utils/apiError";
 import { toast } from "sonner";
+import ArrowBack from "@/components/common/ArrowBack";
 
 // Interface for distributor data structure
 interface Distributor {
@@ -897,6 +898,7 @@ function DashboardContent() {
   return (
     <MainLayout>
       <div className="px-4 pt-4 pb-30 space-y-6 overflow-y-auto h-screen bg-milkwhite/90">
+        <ArrowBack />
         {role !== "LOADING_OFFICER" && (
           <>
             {/* Page Header Component */}

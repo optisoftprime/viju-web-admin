@@ -20,6 +20,7 @@ import {
 } from "@/hooks/api/useFlyer";
 import { getErrorMessage } from "@/utils/apiError";
 import { Flyer } from "@/lib/api/types";
+import ArrowBack from "@/components/common/ArrowBack";
 
 export default function FlyerPage() {
   const { data: flyersData, isLoading, error } = useFlyers();
@@ -195,6 +196,7 @@ export default function FlyerPage() {
     <ProtectedRoute>
       <MainLayout>
         <div className="h-screen overflow-y-auto space-y-6 px-4 pt-4 pb-30">
+          <ArrowBack />
           {/* Page Header with Add Button */}
           <div className="grid grid-cols-1 md:flex items-center justify-between">
             {/* Information Banner */}

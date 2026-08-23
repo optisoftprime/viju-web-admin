@@ -13,6 +13,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { formatDateTime, formatRegion } from "@/utils/formatter";
 import { safeText, safeNumber, safeDateText } from "@/utils/safe";
 import { formatRole } from "@/constants/roles";
+import ArrowBack from "@/components/common/ArrowBack";
 
 // Row shape rendered by the table (flattened from the API officer)
 interface OfficerRow {
@@ -148,6 +149,7 @@ function RegionalAdminOfficersContent() {
   return (
     <MainLayout>
       <div className="px-4 pt-4 space-y-3 pb-30 overflow-y-auto h-screen bg-milkwhite/90">
+        <ArrowBack />
         {/* Page Header Component */}
         <PageHeader
           title="Account Officers"

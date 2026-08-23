@@ -22,6 +22,14 @@ export const queryKeys = {
       filters,
     ],
   },
+  /**
+   * Role-scoped dashboard stats. Named here so anything that can move a tile -
+   * reading a chat, sending a message, an assignment - can invalidate it
+   * without rebuilding the key by hand.
+   */
+  dashboard: {
+    all: ["query", "dashboard"],
+  },
   customers: {
     all: ["customers"],
     list: ["customers", "list"],

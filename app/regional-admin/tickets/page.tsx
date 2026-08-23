@@ -24,6 +24,7 @@ import {
 import { safeArray, safeNumber, safeText, safeDateText } from "@/utils/safe";
 import { toast } from "sonner";
 import type { AuditTicket } from "@/lib/api/types";
+import ArrowBack from "@/components/common/ArrowBack";
 
 /** One open ticket in the left-hand list */
 interface RegionalTicketRow {
@@ -136,6 +137,7 @@ function RegionalAdminTicketsContent() {
   return (
     <MainLayout>
       <div className="px-4 pt-4 pb-20 space-y-4 overflow-y-auto h-screen bg-milkwhite/90">
+        <ArrowBack />
         <div className="flex items-center justify-between gap-4">
           <PageHeader
             title="Open Tickets"

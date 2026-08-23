@@ -8,6 +8,7 @@ import { endpoints } from "@/lib/api/endpoints";
 import { readUploadedUrl } from "@/utils/upload";
 import {
   ChatMessage,
+  MarkChatReadResponse,
   SendMessageRequest,
   FileUploadResponse,
   UploadFolder,
@@ -20,6 +21,26 @@ export const chatService = {
   getChatHistory: async (otherUserId: string): Promise<ChatMessage[]> => {
     const url = endpoints.chat.history.replace("{otherUserId}", otherUserId);
     const response = await apiClient.get<ChatMessage[]>(url);
+    return response.data;
+  },
+
+  /**
+   * C-1: mark a customer's inbound messages read for staff.
+   *
+   * `GET /chat/{customerId}` already does this as a side effect, so this is
+   * only for clearing the count without pulling the thread. Idempotent - a
+   * second call returns `markedRead: 0`.
+   *
+   * Authorisation matches reading the thread: an OFFICER must be assigned to
+   * the customer, a REGIONAL_ADMIN is held to their own region, an ADMIN
+   * reaches every region.
+   */
+  markChatRead: async (customerId: string): Promise<MarkChatReadResponse> => {
+    const url = endpoints.chat.markRead.replace(
+      "{customerId}",
+      encodeURIComponent(customerId),
+    );
+    const response = await apiClient.patch<MarkChatReadResponse>(url);
     return response.data;
   },
 
