@@ -305,7 +305,8 @@ export default function AllCustomersModal({
               </Text>
               <Text variant="small" weight="medium" color="muted">
                 {unprojectedTotal.toLocaleString()} are in the ERP but not yet
-                in the portal — greyed rows are read-only until they are.
+                in the portal due to duplicate phone no — greyed rows are
+                read-only until the duplicate phone no is corrected.
               </Text>
             </div>
           )}
