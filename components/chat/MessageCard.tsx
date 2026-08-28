@@ -1,6 +1,7 @@
 "use client";
 
 import { Text } from "@/components/common";
+import AttachmentPreview from "@/components/common/AttachmentPreview";
 
 interface MessageCardProps {
   content: string;
@@ -36,15 +37,9 @@ export default function MessageCard({
         <Text variant="caption" weight="medium" color="foreground">
           {content}
         </Text>
+        {/* Spec 43 - the picture itself, not the word "attachment" */}
         {attachmentUrl && (
-          <a
-            href={attachmentUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block underline text-blue-600 hover:text-blue-800 text-sm"
-          >
-            View Attachment
-          </a>
+          <AttachmentPreview url={attachmentUrl} size="sm" className="mt-1" />
         )}
         <Text variant="caption" weight="medium" color="muted" className="mt-2">
           {timestamp}

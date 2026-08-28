@@ -45,20 +45,46 @@ export const REGIONAL_ADMIN_MANAGED_ROLES = [
 ] as const;
 
 /**
- * Spec 40: operations that stay organisation-wide, and are therefore hidden
- * from a REGIONAL_ADMIN however they reach the screen.
+ * BA-2: who may bulk-assign customers to an officer
+ * (`PATCH /admin/customers/bulk-reassign`).
  *
- * The backend confirmed these remain ADMIN-only after the parity release:
+ * Spec 43 asked for a REGIONAL_ADMIN and the backend agreed: moving customers
+ * between officers INSIDE a region is squarely their job and gives nothing
+ * away. The route scopes them on both sides - every customer must be in their
+ * region, and so must the receiving officer.
+ */
+export const canBulkAssignCustomers = (role?: string | null): boolean => {
+  const normalized = normalizeStaffRole(role);
+  return normalized === "ADMIN" || normalized === "REGIONAL_ADMIN";
+};
+
+/**
+ * BA-1: who may bulk-move officers between regions
+ * (`PATCH /admin/officers/bulk-region`).
+ *
+ * **ADMIN only, and deliberately so.** Spec 43 asked for a REGIONAL_ADMIN too;
+ * the backend refused, and agreed with the objection rather than just
+ * declining it. The reasoning, kept here because this is exactly the kind of
+ * gate someone widens later without knowing why it is narrow:
+ *
+ *   - "Source-scoped" (move officers who are in MY region, to any region) is
+ *     RU-3's refusal at scale - a regional admin could empty their own region
+ *     of staff into a region whose admin never agreed to receive them.
+ *   - "Confined" (move officers within my own region) is a no-op.
+ *   - There is no third reading. "A regional admin may move officers to any
+ *     region" and "a regional admin is confined to their own region" cannot
+ *     both be true, and the second is the premise the rest of the
+ *     regional-admin work rests on.
+ *
+ * It is also not hypothetical: two officers are already sitting outside their
+ * customers' region on the live database, created one at a time through the
+ * single-officer region edit. This route would let it happen 500 at a time.
+ *
+ * Still ADMIN-only, and still not wired to any UI:
  *   DELETE /admin/officers/{id}
  *   PATCH  /admin/officers/{id}/reassign-customers
- *   PATCH  /admin/officers/bulk-region
- *   PATCH  /admin/customers/bulk-reassign
- *
- * Each moves records across region boundaries, so there is no sensible
- * region-scoped version of them. The API is the control; this hides the
- * affordance so a regional admin is not offered a button that 403s.
  */
-export const canUseOrgWideBulkActions = (role?: string | null): boolean =>
+export const canBulkReassignOfficerRegion = (role?: string | null): boolean =>
   normalizeStaffRole(role) === "ADMIN";
 
 /** The roles the signed-in staff member is allowed to manage */

@@ -23,9 +23,8 @@ import {
 
 export interface AllCustomersTableProps {
   /**
-   * Whether the queries should run. The modal passes its own open state so a
-   * closed dialog holds no request open; the page passes nothing and always
-   * fetches.
+   * Whether the queries should run. The page always fetches; the flag remains
+   * for any caller that mounts this behind something closed.
    */
   enabled?: boolean;
   region?: BroadcastRegion;
@@ -128,10 +127,13 @@ const officerTableColumns = [
 /**
  * The customers table shared by the "Total Customers" surfaces.
  *
- * Spec 42 moved the admin and regional admin onto a PAGE, while the account
- * officer keeps the dialog. Both render THIS - the query branching, the ERP
- * projection notice and the row details are written once, so the two cannot
- * drift apart.
+ * Spec 42 moved the admin and regional admin onto a PAGE; spec 43 moved the
+ * account officer too, so the dialog is gone entirely and `variant="modal"` is
+ * now only a layout option rather than a second caller.
+ *
+ * The query branching, the ERP projection notice and the row details live here
+ * once, which is what let the container change three times without any of that
+ * being rewritten.
  */
 export default function AllCustomersTable({
   enabled = true,

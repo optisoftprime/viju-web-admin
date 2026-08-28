@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Check, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
 import { Modal } from "@/components/common/Modal";
+import AttachmentPreview from "@/components/common/AttachmentPreview";
 import { Text } from "@/components/common/Text";
 import { useAuditChats } from "@/hooks/api/useAudit";
 import { useOfficer, useUpdateOfficerProfile } from "@/hooks/api/useOfficer";
@@ -101,15 +102,9 @@ function ChatBubble({ message }: { message: AuditChatMessage }) {
             {body}
           </p>
         )}
+        {/* Spec 43 - the picture itself, not the word */}
         {attachment && (
-          <a
-            href={attachment}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[11px] text-primary underline break-all"
-          >
-            View attachment
-          </a>
+          <AttachmentPreview url={attachment} size="sm" className="mt-1" />
         )}
         <p className="text-[10px] text-muted mt-1">
           {safeDateText(message?.createdAt, "")}

@@ -16,6 +16,7 @@ import {
   useUpdateLoadingDescription,
 } from "@/hooks/api/useLoading";
 import CancelLoadingRequestModal from "@/components/CancelLoadingRequestModal";
+import AttachmentPreview from "@/components/common/AttachmentPreview";
 import { chatService } from "@/services/chat.service";
 import { getErrorMessage } from "@/utils/apiError";
 import { safeText, safeNumber, safeDateText, humanizeEnum } from "@/utils/safe";
@@ -453,9 +454,15 @@ const SelectedAssignement = ({ assignmentId }: SelectedAssignementProps) => {
         </Text>
       </div>
 
-      <div className="px-4 pb-4 grid grid-cols-2 md:grid-cols-4 gap-2 pt-6 border-t border-muted/30 bg-white">
+      <div className="px-4 pb-4 grid grid-cols-2 md:grid-cols-5 gap-2 pt-6 border-t border-muted/30 bg-white">
         <BoldTopText top="Truck" bottom={safeText(data.truckPlateNumber)} />
         <BoldTopText top="Driver" bottom={safeText(data.driverName)} />
+        {/* Spec 43 - the officer has to reach the driver at the gate, and the
+            number was on the record but never shown */}
+        <BoldTopText
+          top="Driver Phone"
+          bottom={safeText(data.driverPhone)}
+        />
         <BoldTopText
           top="Loading Date"
           bottom={safeDateText(data.loadingDate)}
@@ -699,16 +706,15 @@ const SelectedAssignement = ({ assignmentId }: SelectedAssignementProps) => {
           to mark one in progress.
         </Text>
 
-        {/* Already captured on a previous visit */}
+        {/* Already captured on a previous visit - spec 43 shows the proof
+            rather than describing it, so it can be checked at a glance */}
         {existingAttachmentUrl && !stagedFile && (
-          <a
-            href={existingAttachmentUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-primary underline"
-          >
-            View the proof of loading already on file
-          </a>
+          <div className="mt-2">
+            <Text variant="thinnote" color="muted" className="mb-1 block">
+              Proof of loading already on file
+            </Text>
+            <AttachmentPreview url={existingAttachmentUrl} size="sm" />
+          </div>
         )}
 
         <button

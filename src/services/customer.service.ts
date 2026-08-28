@@ -199,6 +199,22 @@ export const customerService = {
    * That is the server's behaviour on this route only - the single route still
    * answers 409 ALREADY_ASSIGNED, which is why `reassignCustomer` still needs
    * its own handling of that case.
+   *
+   * BA-2 (spec 43): a REGIONAL_ADMIN may call this, scoped to their own region
+   * on both sides. The two failures are shaped differently on purpose:
+   *
+   *   - the RECEIVING OFFICER is checked ONCE. Naming one outside their region
+   *     means the whole call is wrong, not that eighty items each failed
+   *     identically, so it REJECTS with 403 REGION_NOT_ALLOWED and writes
+   *     nothing. That reaches the caller's `onError`, not `failed[]`.
+   *   - each CUSTOMER is checked per item, so a partly-valid selection still
+   *     moves what it can - the point of the envelope.
+   *
+   * NOTE an out-of-region customer answers REGION_NOT_ALLOWED for a regional
+   * admin but OFFICER_NOT_FOUND for an ADMIN: for one the failure is "that
+   * distributor is not yours", for the other it is genuinely "this officer is
+   * not valid for this customer". Anything branching on the code must handle
+   * both; nothing here does, because the API's own `message` is rendered.
    */
   bulkReassign: async (
     customerIds: string[],
