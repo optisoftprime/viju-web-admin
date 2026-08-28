@@ -47,6 +47,12 @@ export interface User {
   // Staff region - null/absent for org-wide admins and for tokens issued
   // before the login response started returning it
   region?: BroadcastRegion | null;
+  /**
+   * Spec 42: the user's own profile photo. Merged into the session by
+   * `syncUser` after an upload, so the avatar changes everywhere at once
+   * without a reload.
+   */
+  profilePhotoUrl?: string | null;
 }
 
 /**
@@ -1317,6 +1323,34 @@ export interface CurrentUser {
   profilePhotoUrl?: string | null;
 }
 
+/** Spec 42 (PR-1): set your own profile photo */
+export interface UpdateProfilePhotoRequest {
+  profilePhotoUrl: string;
+}
+
+/**
+ * Spec 42 (PR-2): change your own password.
+ *
+ * `confirmNewPassword` is validated in the form and NOT sent - the server has
+ * no use for a value whose only job is to catch a typo before it leaves.
+ */
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface ChangePasswordResponse {
+  success?: boolean;
+  message?: string;
+}
+
+/** Business-rule codes returned by the profile routes */
+export type ProfileErrorCode =
+  | "INVALID_CURRENT_PASSWORD"
+  | "PASSWORD_REUSED"
+  | "UNSUPPORTED_IMAGE_TYPE"
+  | "FILE_TOO_LARGE";
+
 /** AD-18: PATCH /admin/officers/{id}. Must be a real boolean, not "false" */
 export interface UpdateOfficerRequest {
   isActive: boolean;
@@ -1488,6 +1522,14 @@ export interface LoadingRequest {
    * Null until they write one - the table renders "-" for that.
    */
   description?: string | null;
+  /**
+   * Spec 42: when that note was last written or changed.
+   *
+   * Deliberately NOT the record's `updatedAt` - a status change bumps that
+   * too, so it would date the note to the moment the load was completed. Null
+   * until a description exists. Raised as **TS-1**.
+   */
+  descriptionUpdatedAt?: string | null;
   /** Spec 39: set when the load was called off, alongside status CANCELLED */
   cancelledAt?: string | null;
   cancelReason?: string | null;

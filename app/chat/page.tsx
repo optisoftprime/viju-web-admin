@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MainLayout, Text } from "@/components/common";
 import PageHeader from "@/components/PageHeader";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -11,6 +11,7 @@ import ChatUI from "@/components/chat/ChatUI";
 import { useOfficerChats } from "@/hooks/api/useChat";
 import { safeText, safeNumber } from "@/utils/safe";
 import { useQueryParam } from "@/hooks/useQueryParam";
+import { useChatUIStore } from "@/store/chat.store";
 
 /** Conversations fetched at a time; "Show more" grows the window */
 const PAGE_SIZE = 30;
@@ -78,6 +79,31 @@ function ChatPageContent() {
     (customerParam
       ? (threads.find((thread) => thread.id === customerParam) ?? null)
       : null);
+
+  /**
+   * Spec 42: publish the open conversation so the SIDEBAR badge can net it
+   * out. The list handles its own row (a selected row never shows a count),
+   * but the sidebar total comes from the dashboard summary and has no other
+   * way to know what is being read.
+   *
+   * `activeUnread` is re-read from the list on every refresh rather than
+   * captured once, so a message that lands mid-read is netted out too.
+   */
+  const openThread = useChatUIStore((state) => state.openThread);
+  const closeThread = useChatUIStore((state) => state.closeThread);
+  const activeId = activeThread?.id ?? null;
+  const activeUnread = activeThread?.unreadMessages ?? 0;
+
+  useEffect(() => {
+    if (!activeId) {
+      closeThread();
+      return;
+    }
+    openThread(activeId, activeUnread);
+  }, [activeId, activeUnread, openThread, closeThread]);
+
+  // Leaving the screen entirely means nothing is being read any more
+  useEffect(() => closeThread, [closeThread]);
 
   return (
     <MainLayout>

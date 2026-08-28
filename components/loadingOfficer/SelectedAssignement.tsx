@@ -139,6 +139,15 @@ const SelectedAssignement = ({ assignmentId }: SelectedAssignementProps) => {
 
   /** Spec 39 - what is actually saved against this load right now */
   const savedDescription = safeText(data?.description, "");
+  /**
+   * Spec 42 - when the note was last written or changed.
+   *
+   * NOT `data.updatedAt`: a status change bumps that too, so it would date the
+   * note to the moment the load was completed. Rendered only when the API
+   * actually sends it (TS-1) - a wrong timestamp on a handover note is worse
+   * than none, since the whole point of it is when the count was taken.
+   */
+  const descriptionUpdatedAt = safeText(data?.descriptionUpdatedAt, "");
 
   /**
    * The status to submit is ONLY ever the one that was explicitly chosen.
@@ -478,6 +487,12 @@ const SelectedAssignement = ({ assignmentId }: SelectedAssignementProps) => {
               e.g. customer loading 800 cartons on 26/08/2026, remaining a
               balance of 200 cartons
             </Text>
+            {/* Spec 42 - when this note was last touched */}
+            {savedDescription && descriptionUpdatedAt && (
+              <Text variant="thinnote" color="muted" className="mt-1 block">
+                Last updated {safeDateText(descriptionUpdatedAt, "-")}
+              </Text>
+            )}
           </div>
 
           {!isEditingDescription && !isCancelled && (

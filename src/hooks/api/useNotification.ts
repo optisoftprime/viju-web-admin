@@ -42,6 +42,18 @@ export const useNotifications = (params: NotificationsParams = {}) => {
       const rows = Array.isArray(response?.data) ? response.data : [];
       const data = scopeNotifications(rows, user);
 
+      /**
+       * NB-1 (spec 42) closed: the badge reads the server's `unread` again.
+       *
+       * `unread` and `data` are now filtered by the SAME predicate server-side
+       * - a staff caller's feed excludes CHAT_MESSAGE from both - so the
+       * number and the list cannot disagree, whatever page is loaded.
+       *
+       * This briefly recounted from the fetched rows, back when the filtering
+       * was ours. That was exact on page one and an undercount past it, which
+       * is why the server-side fix was worth asking for rather than living
+       * with.
+       */
       return {
         ...response,
         data,

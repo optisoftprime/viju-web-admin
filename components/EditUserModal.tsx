@@ -269,6 +269,19 @@ export default function EditUserModal({
                 error={errors.region?.message}
                 placeholder="Select Region"
               />
+              {/*
+                The backend found officers sitting outside the region their
+                customers are in - a live consequence of this control. Moving
+                an officer does NOT move their book, and the reassign route
+                requires the officer to be in the CUSTOMER's region, so any
+                customer left behind can no longer be reassigned to them.
+                Said here rather than discovered later; the bulk modal has
+                carried the same warning since spec 39.
+              */}
+              <Text variant="thinnote" color="orange" className="block -mt-1">
+                Changing a region does not move this user&apos;s customers. Any
+                they hold in the old region will need reassigning separately.
+              </Text>
             </div>
           ) : (
             <div className="mt-2 rounded-lg bg-muted/10 px-3 py-2">
