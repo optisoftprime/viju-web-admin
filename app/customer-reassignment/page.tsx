@@ -11,6 +11,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { usePagination, getTotalPages } from "@/hooks/usePagination";
 import userIcon from "@/assets/icons/usersblack.svg";
 import ArrowBack from "@/components/common/ArrowBack";
+import { REGIONS } from "@/constants/regions";
 
 // Interface for customer data structure
 interface Customer {
@@ -190,13 +191,15 @@ const mockCustomerData: Customer[] = [
   },
 ];
 
-// Region options for tabs
+/**
+ * Region options for tabs, derived from the canonical list so a region added
+ * in `constants/regions` (spec 39 added OTHERS) shows up here too. The rows on
+ * this screen carry display labels, so the tab value is the label and "all"
+ * stays the no-filter entry.
+ */
 const regions = [
   { name: "All Regions", value: "all" },
-  { name: "Lagos", value: "Lagos" },
-  { name: "Western", value: "Western" },
-  { name: "Eastern", value: "Eastern" },
-  { name: "North", value: "North" },
+  ...REGIONS.map((region) => ({ name: region.label, value: region.label })),
 ];
 
 function CustomerReassignmentContent() {

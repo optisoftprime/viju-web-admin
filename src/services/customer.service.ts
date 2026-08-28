@@ -4,7 +4,7 @@
  */
 
 import { apiClient, endpoints } from "@/lib/api";
-import { safeList } from "@/utils/safe";
+import { safeList, safeArray } from "@/utils/safe";
 import {
   CustomersListResponse,
   CustomerDetail,
@@ -17,6 +17,9 @@ import {
   UnmappedCustomer,
   ErpSyncStatus,
   SortOrder,
+  BulkReassignCustomersRequest,
+  BulkReassignCustomersResponse,
+  BulkCustomerFailure,
 } from "@/lib/api/types";
 
 interface GetCustomersParams {
@@ -179,6 +182,43 @@ export const customerService = {
       request,
     );
     return data;
+  },
+
+  /**
+   * Spec 39 (**C-2**): assign ONE officer to MANY customers, in ONE call.
+   *
+   * This used to fan out over the single-customer route, sequentially. The
+   * bulk route now exists and puts each move through that same logic, so the
+   * region rule, the CustomerOfficer bookkeeping (chat and tickets follow the
+   * assignment) and the ASSIGNMENT notification are all unchanged.
+   *
+   * Not all-or-nothing: one customer failing leaves the rest assigned.
+   *
+   * A customer that ALREADY held the requested officer comes back in
+   * `succeeded`, so re-running a half-finished batch does not look broken.
+   * That is the server's behaviour on this route only - the single route still
+   * answers 409 ALREADY_ASSIGNED, which is why `reassignCustomer` still needs
+   * its own handling of that case.
+   */
+  bulkReassign: async (
+    customerIds: string[],
+    request: ReassignCustomerRequest,
+  ): Promise<BulkReassignCustomersResponse> => {
+    const unique = Array.from(new Set(customerIds));
+
+    const body: BulkReassignCustomersRequest = {
+      customerIds: unique,
+      newOfficerId: request.newOfficerId,
+    };
+    const { data } = await apiClient.patch(
+      endpoints.customers.bulkReassign,
+      body,
+    );
+
+    return {
+      succeeded: safeArray<string>(data?.succeeded),
+      failed: safeArray<BulkCustomerFailure>(data?.failed),
+    };
   },
 
   /**

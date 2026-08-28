@@ -21,8 +21,26 @@ import {
 import { getErrorMessage } from "@/utils/apiError";
 import { Flyer } from "@/lib/api/types";
 import ArrowBack from "@/components/common/ArrowBack";
+import { normalizeStaffRole } from "@/constants/roles";
+import { useAuthStore } from "@/store/auth.store";
 
 export default function FlyerPage() {
+  const { user } = useAuthStore();
+
+  /**
+   * Spec 40 / RF-1: the backend settled this as reading (a) - flyers stay
+   * GLOBAL. They carry no region and appear in every distributor's carousel,
+   * so a regional admin editing, deactivating or deleting one is acting
+   * nationwide, not within their own region.
+   *
+   * That is real organisation-wide authority handed to a region-scoped role,
+   * so it is stated on the screen rather than left to be discovered. If the
+   * client would rather flyers were region-scoped, that is reading (b) and a
+   * different piece of work.
+   */
+  const isRegionScopedViewer =
+    normalizeStaffRole(user?.role) === "REGIONAL_ADMIN";
+
   const { data: flyersData, isLoading, error } = useFlyers();
   const createFlyerMutation = useCreateFlyer();
   const updateFlyerMutation = useUpdateFlyer();
@@ -219,6 +237,20 @@ export default function FlyerPage() {
             </Button>
           </div>
 
+          {/* RF-1 reading (a) - flyers are not region-scoped */}
+          {isRegionScopedViewer && (
+            <div className="bg-[#FFF4E1] border border-orange/30 rounded-lg p-3">
+              <Text variant="caption" color="orange" weight="semibold">
+                Flyers are nationwide, not regional
+              </Text>
+              <Text variant="caption" color="orange" weight="medium">
+                These cards carry no region. Anything you add, edit, deactivate
+                or delete here changes what EVERY distributor sees, in every
+                region - not just yours.
+              </Text>
+            </div>
+          )}
+
           {/* Loading State */}
           {isLoading && (
             <div className="text-center py-12">
@@ -303,6 +335,14 @@ export default function FlyerPage() {
                 Are you sure you want to delete "{deleteConfirmation.flyer.name}
                 " ? This action cannot be undone.
               </Text>
+              {/* RF-1 (a) - the reach is nationwide, and this is the last
+                  moment it can usefully be said */}
+              {isRegionScopedViewer && (
+                <Text variant="caption" color="orange" weight="medium">
+                  This removes the flyer from every distributor&apos;s app
+                  nationwide, not only your region.
+                </Text>
+              )}
               <div className="flex justify-end gap-3 pt-4">
                 <Button
                   variant="secondary"

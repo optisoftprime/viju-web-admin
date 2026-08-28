@@ -7,6 +7,8 @@ import OfficerSelectionCard from "@/components/OfficerSelectionCard";
 import searchIcon from "@/assets/icons/search-icon-gray.svg";
 import { BoldTopText } from "./common/BoldTopText";
 import { useOfficers } from "@/hooks/api/useOfficer";
+import { formatRole } from "@/constants/roles";
+import { safeText } from "@/utils/safe";
 
 interface OfficerData {
   id: string;
@@ -24,6 +26,18 @@ interface AssignAccountOfficerModalProps {
    */
   isSubmitting?: boolean;
   distributorName?: string;
+  /**
+   * Spec 39: the API enum for the CUSTOMER's region.
+   *
+   * PATCH /admin/customers/{id}/reassign answers "Officer not found or
+   * inactive" for a deactivated officer AND for one whose region differs from
+   * the customer's, so the picker must not offer either. Without this the
+   * modal listed every officer in the organisation and most picks failed.
+   *
+   * The backend has confirmed the comparison is against the CUSTOMER's region,
+   * not the officer's own - so the customer's is what belongs here.
+   */
+  regionValue?: string;
   distributorData?: {
     distributor: string;
     phoneNumber: string;
@@ -42,6 +56,7 @@ export default function AssignAccountOfficerModal({
   onConfirm,
   isSubmitting = false,
   distributorName = "LAG-234-XG",
+  regionValue,
   distributorData = {
     distributor: "LAG-234-XG",
     phoneNumber: "Tunde Dare",
@@ -58,8 +73,32 @@ export default function AssignAccountOfficerModal({
   );
   const [searchInput, setSearchInput] = useState("");
 
-  // Fetch officers from API
-  const { data: officersData, isLoading, error } = useOfficers();
+  /**
+   * Only ACTIVE account officers, and only in this customer's own region.
+   * Both filters are confirmed applied server-side.
+   *
+   * `role` is left off - GET /admin/officers already defaults to OFFICER, and
+   * that is exactly the population this modal assigns from. The region is only
+   * attached when it is known: an unresolved region would otherwise silently
+   * narrow the list to nothing rather than showing every candidate.
+   *
+   * For a REGIONAL_ADMIN the region param is accepted and ignored - they are
+   * always pinned to their own token's region - so this is correct for them
+   * too, since a customer they can see is by definition in that region.
+   *
+   * The query is skipped entirely while the modal is closed so a closed modal
+   * is not holding a request open per row.
+   */
+  const {
+    data: officersData,
+    isLoading,
+    error,
+  } = useOfficers({
+    isActive: true,
+    region: regionValue || undefined,
+    pageSize: 100,
+    enabled: isOpen,
+  });
 
   // Transform API officers to component format and filter based on search
   const filteredOfficers = useMemo(() => {
@@ -67,8 +106,11 @@ export default function AssignAccountOfficerModal({
 
     const officers = officersData.data.map((officer) => ({
       id: officer.id,
-      name: officer.name,
-      role: "Account Officer",
+      // Two officers can share a name, so the row also carries the email
+      name: safeText(officer.name, "Unnamed officer"),
+      role: officer.email
+        ? `${formatRole(officer.role, "Account Officer")} - ${officer.email}`
+        : formatRole(officer.role, "Account Officer"),
     }));
 
     if (!searchInput.trim()) return officers;
@@ -142,6 +184,11 @@ export default function AssignAccountOfficerModal({
           <Text variant="body" weight="bold" color="foreground">
             Available Account Officers
           </Text>
+          <Text variant="caption" weight="medium" color="muted">
+            {regionValue
+              ? `Active officers in ${distributorData.region}. An officer outside this region, or a deactivated one, is rejected by the API.`
+              : "Active account officers."}
+          </Text>
 
           {/* Search Input */}
           <div className="relative">
@@ -194,7 +241,11 @@ export default function AssignAccountOfficerModal({
             ) : !isLoading && !error ? (
               <div className="p-4 text-center">
                 <Text variant="caption" color="muted">
-                  No officers found
+                  {searchInput.trim()
+                    ? "No officers match that search"
+                    : regionValue
+                      ? `No active account officer is assigned to ${distributorData.region}. Create one, or reactivate an existing officer, before assigning this customer.`
+                      : "No officers found"}
                 </Text>
               </div>
             ) : null}

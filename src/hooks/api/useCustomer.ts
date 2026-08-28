@@ -123,6 +123,52 @@ export const useCustomer = (customerId?: string | null) => {
 };
 
 /**
+ * Spec 39 (**C-2**): assign one officer to every selected customer, in one
+ * call.
+ *
+ * The route is NOT all-or-nothing, so a 2xx can still carry failures. Reports
+ * both halves rather than treating a partial assignment as success.
+ */
+export const useBulkReassignCustomers = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      customerIds,
+      request,
+    }: {
+      customerIds: string[];
+      request: ReassignCustomerRequest;
+    }) => customerService.bulkReassign(customerIds, request),
+    onSuccess: (result) => {
+      assignmentQueryKeys.forEach((queryKey) =>
+        queryClient.invalidateQueries({ queryKey }),
+      );
+
+      if (result.failed.length === 0) {
+        toast.success(
+          `${result.succeeded.length} customer${
+            result.succeeded.length === 1 ? "" : "s"
+          } assigned.`,
+        );
+        return;
+      }
+
+      // The first failure's message is the useful one - they are almost
+      // always the same rule (wrong region, deactivated officer)
+      toast.error(
+        `${result.succeeded.length} assigned, ${result.failed.length} failed. ${
+          result.failed[0].message ?? ""
+        }`.trim(),
+      );
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error) || "Failed to assign officer");
+    },
+  });
+};
+
+/**
  * B-2: ERP rows quarantined for an unmappable region.
  * Admin-only, so a 403 for other roles is expected - callers must render the
  * error branch rather than assuming data.

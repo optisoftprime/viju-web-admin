@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
+import { Pencil } from "lucide-react";
 import { MainLayout } from "@/components/common";
 import { Card, Button, Table, SearchInput, Text } from "@/components/common";
 import PageHeader from "@/components/PageHeader";
@@ -9,6 +10,7 @@ import Pagination from "@/components/Pagination";
 import AddManagedUserModal from "@/components/AddAccountOfficerFormModal";
 import PreviewAccountOfficerModal from "@/components/PreviewAccountOfficerModal";
 import OfficerDetailsModal from "@/components/OfficerDetailsModal";
+import EditUserModal from "@/components/EditUserModal";
 import SuccessModal from "@/components/SuccessModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useOfficers } from "@/hooks/api/useOfficer";
@@ -20,11 +22,16 @@ import { safeText, safeNumber, safeDateText } from "@/utils/safe";
 import {
   formatRole,
   formatRoleScope,
-  ROLE_FILTER_OPTIONS,
+  managedRolesForRole,
+  normalizeStaffRole,
+  roleFilterOptionsForRole,
   STATUS_FILTER_OPTIONS,
 } from "@/constants/roles";
+import { resolveRegion } from "@/constants/regions";
+import type { ManagedRole } from "@/constants/roles";
 import type { CreateOfficerResponse } from "@/lib/api/types";
 import ArrowBack from "@/components/common/ArrowBack";
+import { getErrorMessage, isRegionNotSetError } from "@/utils/apiError";
 
 /** One row of the managed-users table */
 interface UserRow {
@@ -34,7 +41,9 @@ interface UserRow {
   role: string;
   /** Wire value behind the label, e.g. "OFFICER" */
   roleValue: string;
+  /** Display label; regionValue is the API enum the edit form writes back */
   region: string;
+  regionValue: string;
   phoneNo: string;
   customers: number;
   status: string;
@@ -45,6 +54,11 @@ interface UserRow {
   action: string;
 }
 
+/**
+ * Spec 39 - EDIT is its own column rather than a second value in ACTION.
+ * ACTION already toggles Deactivate / Reactivate, and folding editing into the
+ * same button would make what it does depend on the row's status.
+ */
 const tableColumns = [
   { key: "name" as const, title: "NAME" },
   { key: "email" as const, title: "EMAIL" },
@@ -68,16 +82,36 @@ const tableColumns = [
 function ManagedUsersContent() {
   const { user } = useAuthStore();
 
+  /**
+   * Spec 40: a REGIONAL_ADMIN manages staff too, but only account officers
+   * and loading officers, and only in their own region.
+   *
+   * `managed=true` returns exactly those two roles for them, scoped to their
+   * region, and never an ADMIN or a fellow REGIONAL_ADMIN (RU-1). The region
+   * and the search are combined server-side, so a search cannot reach outside
+   * it either. The scoping is therefore the API's, not something this screen
+   * enforces. What the screen does is refuse to OFFER what they are not
+   * entitled to: no ADMIN or REGIONAL_ADMIN in the role picker, and no region
+   * picker on create or edit.
+   */
+  const isRegionScoped =
+    normalizeStaffRole(user?.role) === "REGIONAL_ADMIN";
+  const ownRegion = resolveRegion(user?.region);
+  const creatableRoles = managedRolesForRole(user?.role) as ManagedRole[];
+  const roleFilterOptions = roleFilterOptionsForRole(user?.role);
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
-  const [successKind, setSuccessKind] = useState<"created" | "status">(
-    "created",
-  );
+  const [successKind, setSuccessKind] = useState<
+    "created" | "status" | "edited"
+  >("created");
   const [credentialsEmailSent, setCredentialsEmailSent] = useState(true);
 
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
   const [detailsRow, setDetailsRow] = useState<UserRow | null>(null);
+  // Spec 39 - the row whose details are being edited
+  const [editingUser, setEditingUser] = useState<UserRow | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   // "" on either filter means the param is not sent at all
@@ -126,6 +160,7 @@ function ManagedUsersContent() {
         role: formatRole(roleValue),
         roleValue,
         region: formatRoleScope(roleValue, formatRegion(row.region)),
+        regionValue: safeText(row.region, ""),
         phoneNo: safeText(row.phone),
         customers: safeNumber(row._count?.customers, 0),
         status: isActive ? "Active" : "Inactive",
@@ -140,6 +175,33 @@ function ManagedUsersContent() {
       };
     });
   }, [rows]);
+
+  const columns = useMemo(
+    () => [
+      ...tableColumns,
+      {
+        key: "id" as const,
+        title: "EDIT",
+        render: (_value: unknown, row: UserRow) => (
+          <button
+            type="button"
+            onClick={(event) => {
+              // The row itself opens the read-only profile
+              event.stopPropagation();
+              setEditingUser(row);
+            }}
+            className="inline-flex items-center gap-1 text-primary underline hover:text-orange transition-colors"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            Edit
+          </button>
+        ),
+      },
+    ],
+    // `setEditingUser` is a stable setState, but naming it keeps the React
+    // Compiler's inferred dependencies matching the source ones
+    [setEditingUser],
+  );
 
   const totalItems = data?.meta.total || 0;
   const totalPages = data?.meta.totalPages || 1;
@@ -186,7 +248,13 @@ function ManagedUsersContent() {
         <div className="flex flex-col-reverse md:flex-row justify-between md:items-center items-end gap-4">
           <PageHeader
             title="Users"
-            subtitle="Create, deactivate and reactivate admins, regional admins, account officers and loading officers."
+            subtitle={
+              isRegionScoped
+                ? `Create, edit, deactivate and reactivate account officers and loading officers in ${
+                    user?.region ? formatRegion(user.region) : "your region"
+                  }.`
+                : "Create, deactivate and reactivate admins, regional admins, account officers and loading officers."
+            }
           />
           <Button
             variant="primary"
@@ -214,7 +282,7 @@ function ManagedUsersContent() {
               aria-label="Filter by role"
               className="px-3 py-2 rounded-md border border-muted/50 bg-white text-[13px] font-medium"
             >
-              {ROLE_FILTER_OPTIONS.map((option) => (
+              {roleFilterOptions.map((option) => (
                 <option key={option.value || "all"} value={option.value}>
                   {option.label}
                 </option>
@@ -249,7 +317,29 @@ function ManagedUsersContent() {
             </div>
           )}
 
-          {error && (
+          {/* Spec 40: a regional admin whose staff record carries no region is
+              REFUSED on every route in the parity release rather than being
+              handed every region. That is an account-configuration problem,
+              not an empty region, and it reads completely differently. */}
+          {error && isRegionNotSetError(error) && (
+            <div className="mt-4 rounded-lg border border-orange/30 bg-orange/10 px-4 py-3 space-y-1">
+              <Text variant="caption" weight="semibold" color="orange">
+                No region is set on your account
+              </Text>
+              <Text variant="caption" weight="medium" color="orange">
+                {getErrorMessage(
+                  error,
+                  "No region is set on your account. Contact an administrator.",
+                )}
+              </Text>
+              <Text variant="caption" color="muted">
+                Users are scoped to your region, so there is nothing to show
+                until an administrator sets one on your record.
+              </Text>
+            </div>
+          )}
+
+          {error && !isRegionNotSetError(error) && (
             <div className="py-6 text-center">
               <Text variant="caption" color="primary">
                 Error loading users. Please try again.
@@ -261,7 +351,7 @@ function ManagedUsersContent() {
             <>
               <div className="overflow-x-auto mt-6">
                 <Table
-                  columns={tableColumns}
+                  columns={columns}
                   data={tableData}
                   onRowClick={setDetailsRow}
                   onActionClick={handleActionClick}
@@ -293,6 +383,7 @@ function ManagedUsersContent() {
                   email: detailsRow.email,
                   phone: detailsRow.phoneNo,
                   region: detailsRow.region,
+                  regionValue: detailsRow.regionValue,
                   role: detailsRow.roleValue,
                   status: detailsRow.status,
                   customers: detailsRow.customers,
@@ -303,12 +394,37 @@ function ManagedUsersContent() {
           }
         />
 
-        {/* Create - the full role picker, unlike the officers screen */}
+        {/* Spec 39 - edit Full Name, Region, Phone Number and Password */}
+        <EditUserModal
+          isOpen={!!editingUser}
+          onClose={() => setEditingUser(null)}
+          user={
+            editingUser
+              ? {
+                  id: editingUser.id,
+                  name: editingUser.name,
+                  roleValue: editingUser.roleValue,
+                  regionValue: editingUser.regionValue,
+                  phone: editingUser.phoneNo,
+                }
+              : null
+          }
+          lockedRegion={isRegionScoped ? ownRegion : undefined}
+          onSuccess={() => {
+            setSuccessKind("edited");
+            setIsSuccessOpen(true);
+          }}
+        />
+
+        {/* Create - every managed role for an admin, the two a regional
+            admin may create for them, with their region fixed */}
         <AddManagedUserModal
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
           onSuccess={handleUserCreated}
           title="Add User"
+          roles={isRegionScoped ? creatableRoles : undefined}
+          lockedRegion={isRegionScoped ? ownRegion : undefined}
         />
 
         {selectedUser && (
@@ -347,25 +463,35 @@ function ManagedUsersContent() {
           title={
             successKind === "created"
               ? "User Created Successfully"
-              : "User Updated Successfully"
+              : successKind === "edited"
+                ? "User Details Updated"
+                : "User Updated Successfully"
           }
           message={
             successKind === "created"
               ? credentialsEmailSent
                 ? "The new account has been created successfully. They will receive an email with their login credentials."
                 : "The account has been created. The credentials email could not be sent, so pass the password on directly."
-              : "The account status has been updated. Nothing is deleted - the account, its history and its conversations all remain available for audit."
+              : successKind === "edited"
+                ? "The changes have been saved. If a new password was set, pass it on to the user - it is not emailed."
+                : "The account status has been updated. Nothing is deleted - the account, its history and its conversations all remain available for audit."
           }
         />
 
-        {/* Not reachable through the sidebar for anyone else, but say so if a
-            non-admin lands here by URL rather than showing an empty table */}
-        {user?.role !== "ADMIN" && (
+        {/* A regional admin belongs here now (spec 40) and is told what they
+            are looking at; any other role that lands here by URL is told the
+            list is not theirs rather than shown an unexplained empty table */}
+        {isRegionScoped ? (
           <Text variant="caption" color="muted">
-            Only an administrator can manage users. This list is scoped to what
-            your account is permitted to see.
+            You manage account officers and loading officers in your own
+            region. Admins and regional admins are created by an administrator.
           </Text>
-        )}
+        ) : normalizeStaffRole(user?.role) !== "ADMIN" ? (
+          <Text variant="caption" color="muted">
+            Only an administrator or a regional admin can manage users. This
+            list is scoped to what your account is permitted to see.
+          </Text>
+        ) : null}
       </div>
     </MainLayout>
   );

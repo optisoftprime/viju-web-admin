@@ -6,15 +6,42 @@
 import { apiClient } from "@/lib/api/client";
 import { endpoints } from "@/lib/api/endpoints";
 import { readUploadedUrl } from "@/utils/upload";
+import { safeList, type SafeMeta } from "@/utils/safe";
 import {
   ChatMessage,
   MarkChatReadResponse,
+  OfficerChatThread,
+  OfficerChatThreadsParams,
   SendMessageRequest,
   FileUploadResponse,
   UploadFolder,
 } from "@/lib/api/types";
 
 export const chatService = {
+  /**
+   * Spec 41 (CH-3): the signed-in officer's conversations.
+   *
+   * Returns ONLY accounts with a thread, already ordered by recency across the
+   * whole portfolio and then paged - so there is nothing to filter or re-sort
+   * here. The screen used to pull 100 customers, drop the ones with no
+   * `lastMessageAt` and re-sort in the browser; all three are gone.
+   *
+   * Read-only: listing does not mark anything read.
+   */
+  getOfficerChats: async (
+    params: OfficerChatThreadsParams = {},
+  ): Promise<{ data: OfficerChatThread[]; meta: SafeMeta }> => {
+    const { data } = await apiClient.get(endpoints.chat.officerThreads, {
+      params: {
+        ...(params.page ? { page: params.page } : {}),
+        ...(params.pageSize ? { pageSize: params.pageSize } : {}),
+        ...(params.search?.trim() ? { search: params.search.trim() } : {}),
+      },
+    });
+
+    return safeList<OfficerChatThread>(data);
+  },
+
   /**
    * Fetch chat history with a specific user (distributor)
    */

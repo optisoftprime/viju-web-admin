@@ -11,16 +11,38 @@ import {
   ReassignOfficerCustomersRequest,
   ReassignOfficerCustomersResponse,
   UpdateOfficerRequest,
+  UpdateOfficerProfileRequest,
   UpdateOfficerResponse,
   OfficerDetail,
+  BroadcastRegion,
+  BulkOfficerRegionRequest,
+  BulkOfficerRegionResponse,
+  BulkOfficerFailure,
 } from "@/lib/api/types";
+import { safeArray } from "@/utils/safe";
+
+/** O-2 - the server's own cap, mirrored so an oversized batch never leaves */
+const MAX_BULK_OFFICERS = 500;
 import { normalizeStaffRole } from "@/constants/roles";
 
 export interface GetOfficersParams {
   page?: number;
   pageSize?: number;
   search?: string;
-  /** Optional region filter - regional admins only ever list their own region */
+  /**
+   * Optional region filter.
+   *
+   * Spec 40 (**RA-O1**, answered): for a REGIONAL_ADMIN this is **accepted and
+   * ignored** - the region always comes from their token - so sending it or
+   * dropping it are equally safe and give an identical response.
+   *
+   * NOTE this deliberately differs from GET /admin/customers, where a region
+   * from a regional admin is a hard 403 REGION_NOT_ALLOWED. The inconsistency
+   * is pre-existing and both sides were left alone on purpose: changing the
+   * customers route would break a working screen, and changing this one would
+   * break the officers screens. Nothing leaks either way - scope is read from
+   * the token on both.
+   */
   region?: string;
   /**
    * Filter by staff role, e.g. LOADING_OFFICER for the assign picker.
@@ -146,6 +168,71 @@ export const officerService = {
     );
     const { data } = await apiClient.patch(url, body);
     return data;
+  },
+
+  /**
+   * Spec 39: edit a managed user - name, phone, region, password.
+   *
+   * Same route as `setActive`, different body. Built key by key rather than
+   * spread, for the same reason `createOfficer` is: the API rejects any
+   * property it does not declare, and an empty string is not the same as an
+   * absent field - `phone: ""` would clear a number nobody asked to clear.
+   *
+   * Separators are stripped from the phone exactly as on create, so the value
+   * stays inside the API's 20-character limit.
+   */
+  updateProfile: async (
+    officerId: string,
+    body: UpdateOfficerProfileRequest,
+  ): Promise<UpdateOfficerResponse> => {
+    const payload: UpdateOfficerProfileRequest = {};
+
+    if (body.name?.trim()) payload.name = body.name.trim();
+    if (body.phone?.trim()) payload.phone = body.phone.replace(/[\s-]/g, "");
+    if (body.region) payload.region = body.region;
+    if (body.password) payload.password = body.password;
+
+    const url = endpoints.officers.update.replace(
+      "{id}",
+      encodeURIComponent(officerId),
+    );
+    const { data } = await apiClient.patch(url, payload);
+    return data;
+  },
+
+  /**
+   * Spec 39 (**O-2**): move several officers into one region, in ONE call.
+   *
+   * This used to fan out over `updateProfile`, one request per officer. The
+   * bulk route now exists and applies the same rules per officer, so `code` on
+   * a failure is the same value the single route returns.
+   *
+   * Not all-or-nothing, and no surrounding transaction: nine moved and one
+   * failed leaves nine moved. Both halves of the response are meaningful.
+   *
+   * Duplicates are collapsed server-side; the cap is 500 per call, enforced
+   * here too so an oversized selection is refused with something readable
+   * rather than a 400.
+   */
+  bulkSetRegion: async (
+    officerIds: string[],
+    region: BroadcastRegion,
+  ): Promise<BulkOfficerRegionResponse> => {
+    const unique = Array.from(new Set(officerIds));
+
+    if (unique.length > MAX_BULK_OFFICERS) {
+      throw new Error(
+        `Select at most ${MAX_BULK_OFFICERS} officers at a time (${unique.length} selected).`,
+      );
+    }
+
+    const body: BulkOfficerRegionRequest = { officerIds: unique, region };
+    const { data } = await apiClient.patch(endpoints.officers.bulkRegion, body);
+
+    return {
+      succeeded: safeArray<string>(data?.succeeded),
+      failed: safeArray<BulkOfficerFailure>(data?.failed),
+    };
   },
 
   /**

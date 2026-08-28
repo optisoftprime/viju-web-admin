@@ -235,8 +235,62 @@ export interface OfficerCustomer {
    * never blank.
    */
   lastMessageAt: string | null;
+  /**
+   * Spec 41 (CH-1): the newest message on the thread, either side. Collapsed
+   * to one line, truncated at 120 characters with an ellipsis, and rendered as
+   * "[attachment icon] Attachment" when the message carries only a file. Null
+   * on an empty thread.
+   */
+  lastMessagePreview?: string | null;
+  /**
+   * Who wrote it. NOTE "STAFF" means ANY staff member - an admin or regional
+   * admin replying through the Interaction Audit writes a STAFF message too,
+   * so this is not proof the signed-in officer wrote it.
+   */
+  lastMessageSenderType?: ChatSenderType | null;
+  /**
+   * Spec 41 (CH-2): the customer's own profile photo, set by them in the
+   * distributor app (`Customer.profilePhotoUrl`). Null for most customers -
+   * the UI draws initials for those, which is the permanent fallback, not a
+   * placeholder to be removed.
+   */
+  avatarUrl?: string | null;
   lastPurchaseDate: string | null;
   lastContactDate: string;
+}
+
+/** Who wrote a message */
+export type ChatSenderType = "CUSTOMER" | "STAFF";
+
+/**
+ * Spec 41 (CH-3): one row of GET /officers/chats.
+ *
+ * Deliberately NOT `OfficerCustomer` with fields removed - it is a
+ * conversation, keyed by `customerId`, and it exists only for accounts that
+ * have a thread.
+ */
+export interface OfficerChatThread {
+  customerId: string;
+  name: string;
+  /** ERP account code - what tells two similarly-named distributors apart */
+  accountNumber: string;
+  avatarUrl: string | null;
+  lastMessagePreview: string | null;
+  lastMessageSenderType: ChatSenderType | null;
+  lastMessageAt: string | null;
+  /**
+   * Messages the DISTRIBUTOR sent that are still unread by staff. Uses the
+   * identical predicate as GET /officers/customers, so the two cannot
+   * disagree on one screen.
+   */
+  unreadMessages: number;
+}
+
+export interface OfficerChatThreadsParams {
+  page?: number;
+  pageSize?: number;
+  /** Matches name, account number and phone - same rule as the customer list */
+  search?: string;
 }
 
 /**
@@ -306,7 +360,13 @@ export type BroadcastRegion =
   | "EASTERN"
   | "SOUTH_SOUTH"
   | "WESTERN"
-  | "NORTH";
+  | "NORTH"
+  /**
+   * Spec 39: the sixth region. It is a real enum member everywhere the other
+   * five are - filters, pickers, user creation, broadcast targeting - and is
+   * where a customer whose ERP region maps to none of the five belongs.
+   */
+  | "OTHERS";
 
 export interface BroadcastRegionalRequest {
   regions: BroadcastRegion[];
@@ -319,6 +379,24 @@ export interface BroadcastIndividualRequest {
   deliveryAllowance?: number;
 }
 
+/**
+ * Spec 39 (**B-2**): the same broadcast to several customers in one call.
+ *
+ * Answers an ARRAY - one Broadcast row per recipient, so history stays
+ * per-recipient and each row's `deliveredCount` keeps meaning "how many people
+ * this record reached". The single-`customerId` form above still answers a
+ * single object and is unchanged.
+ *
+ * The delivery allowance is credited PER RECIPIENT, not split between them:
+ * twelve recipients at N1,000 credit N12,000 in total. Duplicate ids are
+ * collapsed; at most 200 recipients per call.
+ */
+export interface BroadcastIndividualBatchRequest {
+  customerIds: string[];
+  message: string;
+  deliveryAllowance?: number;
+}
+
 export interface BroadcastHistoryFilters {
   type?: "REGIONAL" | "INDIVIDUAL";
   region?: BroadcastRegion;
@@ -326,6 +404,13 @@ export interface BroadcastHistoryFilters {
   endDate?: string;
   page?: number;
   pageSize?: number;
+  /**
+   * Spec 39 (**B-1**): server-side search across the WHOLE history, matched
+   * case-insensitively and partially on `reference`, `message` and - for an
+   * individual broadcast - the recipient's name. `meta.total` is the size of
+   * the filtered set, so pagination stays honest.
+   */
+  search?: string;
 }
 
 export type BroadcastType = "REGIONAL" | "INDIVIDUAL";
@@ -1238,6 +1323,77 @@ export interface UpdateOfficerRequest {
 }
 
 /**
+ * Spec 39: edit a managed user's own details on the SAME route
+ * (PATCH /admin/officers/{id}). Every field is optional and only the ones
+ * that changed are sent - a body carrying an unchanged password would rotate
+ * a credential nobody asked to rotate.
+ *
+ * `region` is refused for an ADMIN (400 REGION_NOT_ALLOWED), who is
+ * organisation-wide, so the form never offers it for that role.
+ *
+ * Raised as **O-1** in
+ * `BACKEND_REQUEST_REGION_EDITING_AND_LOADING_FLOW.md`.
+ */
+export interface UpdateOfficerProfileRequest {
+  name?: string;
+  phone?: string;
+  region?: BroadcastRegion;
+  password?: string;
+}
+
+/** Spec 39: move a batch of officers to one region (**O-2**) */
+export interface BulkOfficerRegionRequest {
+  officerIds: string[];
+  region: BroadcastRegion;
+}
+
+/**
+ * One record a bulk route could not act on.
+ *
+ * `code` is the SAME value the equivalent single-record route returns, so a
+ * caller branches on it identically either way.
+ */
+export interface BulkFailure {
+  code?: string | null;
+  message?: string | null;
+}
+
+export interface BulkOfficerFailure extends BulkFailure {
+  officerId: string;
+}
+
+/**
+ * O-2 / C-2 are deliberately NOT all-or-nothing and carry no surrounding
+ * transaction: nine moved and one failed leaves nine moved. Read both halves.
+ */
+export interface BulkOfficerRegionResponse {
+  succeeded: string[];
+  failed: BulkOfficerFailure[];
+}
+
+export interface BulkCustomerFailure extends BulkFailure {
+  customerId: string;
+}
+
+/** Spec 39: assign one officer to many customers (**C-2**) */
+export interface BulkReassignCustomersRequest {
+  customerIds: string[];
+  newOfficerId: string;
+}
+
+/**
+ * NOTE a customer that already held the requested officer comes back in
+ * `succeeded`, not `failed` - they end up holding exactly the officer that was
+ * asked for, which is the point of the call. The SINGLE route still answers
+ * 409 ALREADY_ASSIGNED, so an operator acting on one customer is still told
+ * why nothing changed.
+ */
+export interface BulkReassignCustomersResponse {
+  succeeded: string[];
+  failed: BulkCustomerFailure[];
+}
+
+/**
  * 200 body from PATCH /admin/officers/{id}.
  *
  * `changed` is the idempotency flag: sending a status the account already has
@@ -1326,6 +1482,15 @@ export interface LoadingRequest {
   region?: BroadcastRegion | null;
   status: LoadingRequestStatus | string;
   assignedOfficer?: { id: string; name: string } | null;
+  /**
+   * Spec 39: the loading officer's own note on this load, e.g. "customer
+   * loading 800 cartons on 26/08/2026, remaining a balance of 200 cartons".
+   * Null until they write one - the table renders "-" for that.
+   */
+  description?: string | null;
+  /** Spec 39: set when the load was called off, alongside status CANCELLED */
+  cancelledAt?: string | null;
+  cancelReason?: string | null;
 }
 
 /** Vocabulary used by /loading/* and /regional/loading-requests */
@@ -1362,9 +1527,36 @@ export interface LoadingQueueDetail extends LoadingRequest {
   updatedAt?: string | null;
 }
 
-/** LO-04: only these two are valid targets; ASSIGNED is a 400, not a 409 */
+/**
+ * LO-04: forward moves only - ASSIGNED is a 400, not a 409.
+ *
+ * Spec 39 adds CANCELLED, which is the one non-forward target.
+ *
+ * Spec 41 / LC-1: the legal window is PENDING and ASSIGNED only. Cancelling a
+ * load that is already being loaded leaves stock physically moved with no
+ * waybill accounting for it, so both IN_PROGRESS and COMPLETED are refused
+ * with a 409 INVALID_STATUS_TRANSITION. Enforced on the API and mirrored in
+ * the UI, which hides the control rather than letting it fail.
+ *
+ * `reason` is accepted alongside CANCELLED, exactly as on the two /cancel
+ * routes. Optional, max 500, and omitted rather than sent blank.
+ */
 export interface UpdateLoadingStatusRequest {
-  status: "IN_PROGRESS" | "COMPLETED";
+  status: "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+  reason?: string;
+}
+
+/**
+ * Spec 39: a regional admin or an account officer calling off a load.
+ * The reason is optional - it is shown to the loading officer when present.
+ */
+export interface CancelLoadingRequestBody {
+  reason?: string;
+}
+
+/** Spec 39: the loading officer's note on a load */
+export interface UpdateLoadingDescriptionRequest {
+  description: string;
 }
 
 /** LO-05: recording a waybill also COMPLETES the load */

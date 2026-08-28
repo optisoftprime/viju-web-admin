@@ -128,9 +128,19 @@ export default function ChatUI({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-lg">
-      {/* Profile Section - Fixed */}
-      <div className="sticky top-0 z-10 bg-white p-4">
+    /*
+     * Spec 41: a self-contained column - header, scrolling transcript,
+     * composer - that fills whatever its parent gives it.
+     *
+     * It used to live inside the dashboard's customer detail panel, and the
+     * composer was pinned with `fixed bottom-0 w-[75vw]`: a magic viewport
+     * width tuned to that one layout. On the Chat screen that bar would have
+     * spanned the conversation list as well. It is now an ordinary flex child,
+     * so the component lays out correctly wherever it is placed.
+     */
+    <div className="flex flex-col h-full min-h-0 bg-white rounded-xl border border-muted/20 overflow-hidden">
+      {/* Profile Section */}
+      <div className="shrink-0 bg-white p-4 border-b border-muted/15">
         <div className="flex items-center gap-2">
           <span className="p-3 w-10 h-10 bg-muted uppercase text-white font-bold rounded-full flex justify-center items-center">
             {profileName?.charAt(0) || "A"}
@@ -146,8 +156,8 @@ export default function ChatUI({
         </div>
       </div>
 
-      {/* Messages Section - Scrollable */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-white">
+      {/* Messages Section - the only part that scrolls */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2 bg-white">
         {isLoading && (
           <div className="flex items-center justify-center h-full">
             <Text variant="caption" color="muted">
@@ -196,8 +206,8 @@ export default function ChatUI({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Section - Fixed */}
-      <div className="fixed bottom-0 bg-white p-4 border-t border-[#E0E0E0]/30 w-[75vw] space-y-2">
+      {/* Input Section */}
+      <div className="shrink-0 bg-white p-4 border-t border-[#E0E0E0]/30 w-full space-y-2">
         {/* Attachment Preview */}
         {attachmentUrl && (
           <div className="flex items-center justify-between bg-[#F0F5F9] p-3 rounded-lg">

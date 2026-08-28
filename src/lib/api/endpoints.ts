@@ -34,6 +34,12 @@ export const endpoints = {
     // B-3: ERP-parity detail for a single customer
     detail: "/admin/customers/{id}",
     reassign: "/admin/customers/{id}/reassign",
+    /**
+     * Spec 39 (C-2): assign one officer to many customers in one call.
+     * Per-customer results, no surrounding transaction. A customer that
+     * already held the officer comes back in `succeeded`.
+     */
+    bulkReassign: "/admin/customers/bulk-reassign",
     export: "/admin/customers/export.csv",
   },
   audits: {
@@ -49,8 +55,15 @@ export const endpoints = {
     // B-4.1: officer profile, readable by a regional admin in their own region
     detail: "/admin/officers/{id}",
     reassignCustomers: "/admin/officers/{id}/reassign-customers",
-    // AD-18: deactivate / reactivate
+    // AD-18: deactivate / reactivate, and (spec 39) edit name / phone /
+    // region / password on the same route
     update: "/admin/officers/{id}",
+    /**
+     * Spec 39 (O-2): move a batch of officers to another region in one call.
+     * Per-officer results, no surrounding transaction - nine moved and one
+     * failed leaves nine moved. Duplicates collapsed; max 500 per call.
+     */
+    bulkRegion: "/admin/officers/bulk-region",
   },
   flyers: {
     list: "/admin/product-flyers",
@@ -79,6 +92,21 @@ export const endpoints = {
      * than waiting on the thread request. Idempotent.
      */
     markRead: "/chat/{customerId}/read",
+    /**
+     * Spec 41 (CH-3): the signed-in officer's CONVERSATIONS - one row per
+     * thread, ordered by recency across their whole portfolio, then paged.
+     *
+     * A different resource from "my customers": it returns only accounts with
+     * a thread, and carries only what a conversation list renders, so the
+     * screen no longer pays for wallet balances, stock figures and ticket
+     * counts it never displays.
+     *
+     * READ-ONLY - listing does NOT mark anything read. Only
+     * `GET /chat/{customerId}` does that (C-1), which is right when a human
+     * opens a conversation. A list that cleared the count would clear it for
+     * every staff member, since the count is shared.
+     */
+    officerThreads: "/officers/chats",
   },
   notifications: {
     list: "/notifications/me",
@@ -96,6 +124,8 @@ export const endpoints = {
   regional: {
     loadingRequests: "/regional/loading-requests",
     assignLoadingRequest: "/regional/loading-requests/{id}/assign",
+    /** Spec 39: a regional admin can call off a load before it is loaded */
+    cancelLoadingRequest: "/regional/loading-requests/{id}/cancel",
     /**
      * RA-07: every customer in the caller's own region. Same rows, filters,
      * sorting and meta as /admin/customers - only the path and the region
@@ -110,6 +140,31 @@ export const endpoints = {
     detail: "/loading/queue/{id}",
     status: "/loading/queue/{id}/status",
     waybill: "/loading/queue/{id}/waybill",
+    /**
+     * Spec 39 (L-2): the loading officer's own note on a load, e.g. "customer
+     * loading 800 cartons on 26/08/2026, remaining a balance of 200".
+     *
+     * ASSIGNED OFFICER ONLY - anyone else is a 403, the same gate the status
+     * and waybill routes use. Max 500 characters. An empty (or whitespace)
+     * string is a valid save and clears the note back to null. Answers the
+     * full assignment detail, so one body re-renders the screen.
+     */
+    description: "/loading/queue/{id}/description",
+  },
+  /**
+   * Spec 39 (A-1): an ACCOUNT OFFICER now receives loading requests and
+   * assigns or cancels them, exactly as a regional admin does. Same rows, same
+   * filters, same bodies - a different authorisation scope, so a different
+   * path. Served by the same backend service methods, so the two cannot drift.
+   *
+   * The scope is the officer's OWN portfolio - primary or secondary, the same
+   * set GET /officers/customers returns - resolved from their staff record.
+   * There is no officerId parameter: one officer cannot read another's work.
+   */
+  officerLoading: {
+    loadingRequests: "/officers/loading-requests",
+    assignLoadingRequest: "/officers/loading-requests/{id}/assign",
+    cancelLoadingRequest: "/officers/loading-requests/{id}/cancel",
   },
   // B-2: ERP data-quality surfaces
   erp: {
