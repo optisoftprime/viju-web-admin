@@ -217,7 +217,9 @@ export default function Sidebar({ showSidebar }: { showSidebar: boolean }) {
           icon: "History",
         },
         {
-          name: "Customer Reassignment",
+          // Spec 43 - the screen assigns as well as reassigns, and
+          // "Customers" is what an admin looks for
+          name: "Customers",
           url: "/admin/reassignment",
           icon: "Users",
         },

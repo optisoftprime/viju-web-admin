@@ -4,6 +4,11 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import PasswordStrengthMeter from "@/components/common/PasswordStrengthMeter";
+import {
+  assessPassword,
+  PASSWORD_REQUIREMENT_TEXT,
+} from "@/utils/passwordStrength";
 import Image from "next/image";
 import { Text, Input, Button, Modal } from "@/components/common";
 import verifiedMark from "@/assets/images/verifiedmark.png";
@@ -14,7 +19,16 @@ const resetPasswordValidationSchema = yup.object({
   newPassword: yup
     .string()
     .required("New password is required")
-    .min(8, "Password must be at least 8 characters"),
+    .min(8, "Password must be at least 8 characters")
+    /**
+     * Spec 43 applies the strength rule here too, not only to the profile's
+     * change-password form. A rule that holds on one of the two ways to set a
+     * password is not a rule - anyone wanting a weak one would simply come
+     * through the reset flow instead.
+     */
+    .test("password-strength", PASSWORD_REQUIREMENT_TEXT, (value) =>
+      assessPassword(value ?? "").isAcceptable,
+    ),
   confirmPassword: yup
     .string()
     .required("Confirm password is required")
@@ -75,6 +89,10 @@ export default function ResetPasswordForm() {
                 value={formValues.newPassword || ""}
                 {...register("newPassword")}
                 error={errors.newPassword?.message}
+              />
+              <PasswordStrengthMeter
+                value={formValues.newPassword || ""}
+                className="-mt-3 mb-2"
               />
             </div>
 

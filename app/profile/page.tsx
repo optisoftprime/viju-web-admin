@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { toast } from "sonner";
@@ -14,6 +14,11 @@ import { useUpdateProfilePhoto, useChangePassword } from "@/hooks/api/useAuth";
 import { formatRole } from "@/constants/roles";
 import { formatRegion } from "@/utils/formatter";
 import { safeText } from "@/utils/safe";
+import PasswordStrengthMeter from "@/components/common/PasswordStrengthMeter";
+import {
+  assessPassword,
+  PASSWORD_REQUIREMENT_TEXT,
+} from "@/utils/passwordStrength";
 import {
   validateImageFile,
   IMAGE_ACCEPT_ATTRIBUTE,
@@ -35,6 +40,19 @@ const passwordSchema = yup.object({
     .required("Enter a new password")
     .min(8, "Password must be at least 8 characters")
     .max(72, "Password must be at most 72 characters")
+    /**
+     * Spec 43: a weak password cannot be submitted at all.
+     *
+     * Enforced in the schema rather than only by disabling the button - a
+     * disabled button is an affordance, and this is a rule. The message is
+     * deliberately the requirement itself, so a form submitted by keyboard
+     * still says what is wrong.
+     */
+    .test(
+      "password-strength",
+      PASSWORD_REQUIREMENT_TEXT,
+      (value) => assessPassword(value ?? "").isAcceptable,
+    )
     .notOneOf(
       [yup.ref("currentPassword")],
       "The new password must be different from the current one",
@@ -88,8 +106,19 @@ function ProfilePageContent() {
     handleSubmit,
     setError,
     reset,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<PasswordForm>({ resolver: yupResolver(passwordSchema) });
+
+  /**
+   * Drives the meter; the schema is what actually blocks a weak password.
+   *
+   * `useWatch` rather than `watch()` - the latter returns a fresh function on
+   * every render, which the React Compiler cannot memoise around, so it bails
+   * out of optimising this whole component.
+   */
+  const newPassword = useWatch({ control, name: "newPassword" }) ?? "";
+  const isPasswordStrong = assessPassword(newPassword).isAcceptable;
 
   const name = safeText(user?.name, "User");
   const photoUrl = user?.profilePhotoUrl?.trim() || "";
@@ -306,6 +335,8 @@ function ProfilePageContent() {
                   {...register("newPassword")}
                   error={errors.newPassword?.message}
                 />
+                {/* Spec 43 - red / yellow / green, with the rules named */}
+                <PasswordStrengthMeter value={newPassword} className="-mt-3" />
               </div>
 
               <div>
@@ -357,6 +388,9 @@ function ProfilePageContent() {
                   variant="primary"
                   type="submit"
                   loading={isSavingPassword}
+                  // The schema refuses a weak password either way; this just
+                  // stops the reader finding out by pressing the button
+                  disabled={!isPasswordStrong || isSavingPassword}
                   className="bg-linear-to-r from-primary via-orange to-primary"
                 >
                   Change Password

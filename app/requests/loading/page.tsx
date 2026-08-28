@@ -18,7 +18,7 @@ import {
 } from "@/hooks/api/useLoading";
 import { safeText, safeNumber, safeDateText, humanizeEnum } from "@/utils/safe";
 import { formatRegion } from "@/utils/formatter";
-import { isAccountOfficer } from "@/constants/roles";
+import { formatRole, isAccountOfficer } from "@/constants/roles";
 import type { LoadingRequest as ApiLoadingRequest } from "@/lib/api/types";
 import ArrowBack from "@/components/common/ArrowBack";
 import CancelLoadingRequestModal from "@/components/CancelLoadingRequestModal";
@@ -30,14 +30,20 @@ interface LoadingRequest {
   order: string;
   truck: string;
   driver: string;
+  driverPhone: string;
   submitted: string;
   officer: string;
   /** Humanised for display; rawStatus keeps the API value for logic */
   status: string;
   rawStatus: string;
   quantity: string;
-  /** Spec 39 - the loading officer's note. "-" until they write one. */
+  /**
+   * Spec 39 - the loading officer's note. Spec 43 - or, once a load is called
+   * off, the reason the person cancelling gave. "-" when there is neither.
+   */
   description: string;
+  /** Spec 43 - "Regional Admin - Ada Obi", or "-" while it is still live */
+  cancelledBy: string;
   action: string;
   /** Display label for the header; regionValue is the enum the API filters on */
   region: string;
@@ -45,6 +51,36 @@ interface LoadingRequest {
   /** Spec 39 - false once the load is finished or already called off */
   canCancel: boolean;
 }
+
+/**
+ * Spec 43: who called a load off, as "Regional Admin - Ada Obi".
+ *
+ * The role matters as much as the name - "who do I ask about this" has a
+ * different answer for a loading officer at the depot than for the regional
+ * admin who overruled them. Rendered through `formatRole` rather than from the
+ * wire value, so it reads as "Account Officer" and not "OFFICER".
+ */
+const formatCancelledBy = (row: ApiLoadingRequest): string => {
+  const name = safeText(row.cancelledBy?.name, "");
+  const role = safeText(row.cancelledBy?.role, "");
+
+  if (!name && !role) {
+    /**
+     * The actor has been recorded since L-1, so `cancelledBy` is populated for
+     * nearly every cancelled load - null is the small set that predates it and
+     * genuinely has nobody recorded, plus any id that no longer resolves.
+     *
+     * Say it was cancelled rather than implying it was not; naming a guess
+     * would be worse than admitting the record is incomplete.
+     */
+    return safeText(row.status, "").toUpperCase() === "CANCELLED"
+      ? "Cancelled"
+      : "-";
+  }
+
+  if (name && role) return `${formatRole(role, "Staff")} - ${name}`;
+  return name || formatRole(role, "Staff");
+};
 
 /**
  * Spec 41: a load can be called off only BEFORE loading starts.
@@ -99,6 +135,11 @@ const tableColumns = [
     title: "DRIVER",
   },
   {
+    // Spec 43 - the number to ring when a truck is at the gate
+    key: "driverPhone" as const,
+    title: "DRIVER PHONE",
+  },
+  {
     key: "submitted" as const,
     title: "SUBMITTED",
   },
@@ -111,9 +152,15 @@ const tableColumns = [
     title: "STATUS",
   },
   {
-    // Spec 39 - the loading officer's note, empty as "-" until one is written
+    // Spec 39 - the loading officer's note, empty as "-" until one is written.
+    // Spec 43 - a cancelled load shows the reason given instead.
     key: "description" as const,
     title: "DESCRIPTION",
+  },
+  {
+    // Spec 43 - who called it off, so there is somebody to ask
+    key: "cancelledBy" as const,
+    title: "CANCELLED BY",
   },
   {
     key: "action" as const,
@@ -177,6 +224,7 @@ function LoadingRequestPageContent() {
         order: safeText(row.reference, "-"),
         truck: safeText(row.truckPlateNumber),
         driver: safeText(row.driverName),
+        driverPhone: safeText(row.driverPhone),
         submitted: safeDateText(row.submittedAt),
         officer: safeText(row.assignedOfficer?.name, "Unassigned"),
         status: humanizeEnum(row.status, "Pending"),
@@ -185,14 +233,39 @@ function LoadingRequestPageContent() {
           row.quantityCartons != null
             ? `${safeNumber(row.quantityCartons)} Cartons`
             : "N/A",
-        // Spec 39 - written by the loading officer; a load without one is "-"
-        description: safeText(row.description, "-"),
+        /**
+         * Spec 39 - the loading officer's note.
+         *
+         * Spec 43 - a CANCELLED load shows the reason the canceller gave
+         * instead. On a cancelled load that is the thing anybody reading this
+         * table actually wants, and the officer's note is about work that did
+         * not happen. The officer's note wins if a cancelled load somehow
+         * carries both, since that is the more specific record of what
+         * physically occurred.
+         */
+        description:
+          safeText(row.description, "") ||
+          safeText(row.cancelReason, "") ||
+          "-",
+        // Spec 43 - "Regional Admin - Ada Obi"; "-" while the load is live
+        cancelledBy: formatCancelledBy(row),
         region: formatRegion(row.region),
         regionValue: safeText(row.region, ""),
+        /**
+         * Spec 43 - ACTION carries the two things worth doing: assign a
+         * PENDING load, cancel one that has not started. "View" is gone - the
+         * row itself opens the detail, so a button that did the same thing was
+         * a second way to do nothing new. A finished or cancelled load has no
+         * action at all rather than a dead label.
+         */
         action:
           safeText(row.status, "").toUpperCase() === "PENDING"
             ? "Assign Officer"
-            : "View",
+            : CANCELLABLE_STATUSES.includes(
+                  safeText(row.status, "PENDING").toUpperCase(),
+                )
+              ? "Cancel"
+              : "-",
         canCancel: CANCELLABLE_STATUSES.includes(
           safeText(row.status, "PENDING").toUpperCase(),
         ),
@@ -202,37 +275,6 @@ function LoadingRequestPageContent() {
 
   const totalItems = data?.meta.total ?? 0;
   const totalPages = data?.meta.totalPages ?? 1;
-
-  /**
-   * Spec 39 - CANCEL is its own column rather than a second value in ACTION:
-   * ACTION already carries assign/view, and folding a destructive action into
-   * the same button would make what it does depend on the row's status.
-   */
-  const columns = useMemo(
-    () => [
-      ...tableColumns,
-      {
-        key: "canCancel" as const,
-        title: "CANCEL",
-        render: (_value: unknown, row: LoadingRequest) =>
-          row.canCancel ? (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                setCancelTarget(row);
-              }}
-              className="text-primary underline hover:text-orange transition-colors"
-            >
-              Cancel
-            </button>
-          ) : (
-            <span className="text-muted">-</span>
-          ),
-      },
-    ],
-    [],
-  );
 
   /**
    * Handle search input - server-side, so reset to page 1
@@ -246,12 +288,19 @@ function LoadingRequestPageContent() {
    * Handle action button click - only PENDING rows can be assigned
    */
   const handleActionClick = (action: string, row: LoadingRequest) => {
-    if (row.rawStatus === "PENDING") {
+    if (action === "Assign Officer") {
       setSelectedRequest(row);
       setIsAssignLoadingOfficerModalOpen(true);
-    } else {
-      setDetailsRow(row);
+      return;
     }
+
+    if (action === "Cancel") {
+      setCancelTarget(row);
+      return;
+    }
+
+    // "-" on a finished or cancelled load: nothing to do. The row still
+    // opens the detail on click, which is where reading belongs.
   };
 
   /**
@@ -387,7 +436,7 @@ function LoadingRequestPageContent() {
           {!isLoading && !error && paginatedData.length > 0 && (
             <div className="overflow-x-auto mt-6">
               <Table
-                columns={columns}
+                columns={tableColumns}
                 data={paginatedData}
                 onRowClick={setDetailsRow}
                 onActionClick={handleActionClick}
@@ -428,6 +477,7 @@ function LoadingRequestPageContent() {
               fields: [
                 { label: "Truck", value: detailsRow?.truck },
                 { label: "Driver", value: detailsRow?.driver },
+                { label: "Driver Phone", value: detailsRow?.driverPhone },
               ],
             },
             {
@@ -435,12 +485,14 @@ function LoadingRequestPageContent() {
               fields: [
                 { label: "Distributor", value: detailsRow?.distributor },
                 { label: "Loading Officer", value: detailsRow?.officer },
-                // Spec 39 - the loading officer's own note on this load
+                // Spec 39 - the loading officer's own note on this load, or
+                // spec 43 - the reason it was called off
                 {
                   label: "Description",
                   value: detailsRow?.description,
                   fullWidth: true,
                 },
+                { label: "Cancelled By", value: detailsRow?.cancelledBy },
               ],
             },
           ]}

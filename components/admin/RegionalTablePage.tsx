@@ -25,7 +25,7 @@ import {
   isProjectedCustomer,
 } from "@/lib/api/types";
 import { REGIONS, resolveRegion } from "@/constants/regions";
-import { canUseOrgWideBulkActions, normalizeStaffRole } from "@/constants/roles";
+import { canBulkAssignCustomers, normalizeStaffRole } from "@/constants/roles";
 import { useQueryParam } from "@/hooks/useQueryParam";
 import { useAuthStore } from "@/store/auth.store";
 import {
@@ -209,14 +209,14 @@ function RegionalTable({ regionalPortal = false }: RegionalTablePageProps) {
   const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false);
 
   /**
-   * Spec 40: PATCH /admin/customers/bulk-reassign stays ADMIN-only - it moves
-   * customers across region boundaries, so there is no region-scoped version
-   * of it. A regional admin reaches this very component through
-   * /regional-admin/distributors, so the checkboxes and the bulk bar are
-   * hidden for them rather than offering a button the API answers 403 to.
-   * Single-customer assignment is unaffected.
+   * Spec 43 / BA-2: bulk assignment is on for a REGIONAL_ADMIN, and the API
+   * agreed - this component is what /regional-admin/distributors renders.
+   *
+   * The route scopes them on both sides: every customer must be in their
+   * region, and so must the receiving officer. The picker inside the modal is
+   * already region-scoped, so a valid selection is all they can build.
    */
-  const canBulkAssign = canUseOrgWideBulkActions(user?.role);
+  const canBulkAssign = canBulkAssignCustomers(user?.role);
   const [successModal, setSuccessModal] = useState<{
     isOpen: boolean;
     title: string;

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useMemo, useRef, useState } from "react";
 import { MainLayout } from "@/components/common";
 import { Text, Card, Button, Table, SearchInput } from "@/components/common";
@@ -12,7 +14,6 @@ import AssignLoadingOfficerModal from "@/components/AssignLoadingOfficerModal";
 import LoadingOfficerSuccessModal from "@/components/LoadingOfficerSuccessModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import RowDetailsModal from "@/components/RowDetailsModal";
-import AllCustomersModal from "@/components/AllCustomersModal";
 import { usePagination, getTotalPages } from "@/hooks/usePagination";
 import { DEFAULT_SECTION_PAGE_SIZE } from "@/constants/pagination";
 import OverviewSection from "@/components/OverviewSection";
@@ -303,7 +304,6 @@ function DashboardContent() {
   const [detailsRow, setDetailsRow] = useState<Distributor | null>(null);
 
   // Opened by the Total Customers tile
-  const [isAllCustomersOpen, setIsAllCustomersOpen] = useState(false);
 
   /**
    * Ticket the Open Tickets tile is sending the officer to.
@@ -614,7 +614,9 @@ function DashboardContent() {
             icon={Users}
             label="Total Customers"
             value={formatNumber(stats.totalDistributors)}
-            onClick={() => setIsAllCustomersOpen(true)}
+            // Spec 43 - the page, like the admin and regional admin tiles.
+            // The dialog and its state are gone from this screen entirely.
+            onClick={() => router.push("/customers")}
             actionLabel="View my customers"
           />
           <StatCard
@@ -1337,9 +1339,19 @@ function DashboardContent() {
                   title="Pending Loading Request"
                   subtitle="Assign each request to a loading or warehouse officer in ypour region"
                 />
-                <Text variant="body" weight="bold" color="muted">
-                  View All
-                </Text>
+                {/* Spec 43 - this was inert text; the full queue lives here */}
+                <Link
+                  href="/requests/loading"
+                  className="shrink-0 hover:opacity-80 transition-opacity"
+                >
+                  <Text
+                    variant="body"
+                    weight="bold"
+                    className="text-primary underline"
+                  >
+                    View All
+                  </Text>
+                </Link>
               </div>
 
               {/* Data Table */}
@@ -1450,12 +1462,6 @@ function DashboardContent() {
 
         {role === "LOADING_OFFICER" && <LoadingOfficer />}
 
-        {/* All Customers - opened from the Total Customers tile (admin only,
-            but mounted outside the role branches so it always renders) */}
-        <AllCustomersModal
-          open={isAllCustomersOpen}
-          onClose={() => setIsAllCustomersOpen(false)}
-        />
       </div>
     </MainLayout>
   );

@@ -17,7 +17,7 @@ import Image from "next/image";
 import { formatRegion } from "@/utils/formatter";
 import { safeText, safeNumber, safeDateText } from "@/utils/safe";
 import {
-  canUseOrgWideBulkActions,
+  canBulkReassignOfficerRegion,
   formatRole,
   formatRoleScope,
 } from "@/constants/roles";
@@ -132,7 +132,7 @@ function AccountOfficersContent() {
    * on a regional admin's sidebar, but a URL is a URL.
    */
   const { user } = useAuthStore();
-  const canBulkReassign = canUseOrgWideBulkActions(user?.role);
+  const canBulkReassign = canBulkReassignOfficerRegion(user?.role);
 
   // State for pagination
   const [currentPage, setCurrentPage] = useState(1);

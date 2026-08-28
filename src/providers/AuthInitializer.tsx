@@ -23,6 +23,16 @@ export default function AuthInitializer({ children }: { children: ReactNode }) {
    * scoped to. Older cookies were written before that field existed, so hydrate
    * the store from the API once the session is up. A failure here is harmless:
    * the app keeps the cookie copy and simply has no region to display.
+   *
+   * Spec 43 - `profilePhotoUrl` is hydrated here too, and that is what makes a
+   * picture SURVIVE A LOGOUT.
+   *
+   * The bug it fixes: uploading wrote the URL into the session and its cookie,
+   * so the avatar appeared and survived a refresh - but logging out clears the
+   * cookie, and the login response does not carry a photo. This effect was the
+   * one place that could restore it from the server, and its field list simply
+   * did not mention it. The picture was never lost server-side; it was being
+   * dropped on the way back in.
    */
   const { data: currentUser } = useCurrentUser();
 
@@ -35,6 +45,9 @@ export default function AuthInitializer({ children }: { children: ReactNode }) {
       email: currentUser.email ?? undefined,
       // null means org-wide ADMIN - store as undefined so `user.region` stays falsy
       region: currentUser.region ?? undefined,
+      // null means "no picture set" - undefined keeps `user.profilePhotoUrl`
+      // falsy so the initials fallback renders
+      profilePhotoUrl: currentUser.profilePhotoUrl ?? undefined,
     });
   }, [currentUser, syncUser]);
 

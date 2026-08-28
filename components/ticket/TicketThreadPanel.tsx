@@ -16,6 +16,7 @@ import { resolveSenderLabel } from "@/utils/sender";
 import { useAuthStore } from "@/store/auth.store";
 import { toast } from "sonner";
 import AttachmentIcon from "@/assets/icons/attachment.svg";
+import AttachmentPreview from "@/components/common/AttachmentPreview";
 import Image from "next/image";
 
 interface TicketThreadPanelProps {
@@ -291,19 +292,13 @@ export default function TicketThreadPanel({
                     >
                       {message.content}
                     </Text>
+                    {/* Spec 43 - the picture itself, not the word */}
                     {message.attachmentUrl && (
-                      <a
-                        href={message.attachmentUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`inline-block mt-2 underline text-sm ${
-                          message.senderType === "STAFF"
-                            ? "text-[#4B5BD1]"
-                            : "text-white"
-                        }`}
-                      >
-                        View Attachment
-                      </a>
+                      <AttachmentPreview
+                        url={message.attachmentUrl}
+                        size="sm"
+                        className="mt-2"
+                      />
                     )}
                     <Text
                       variant="caption"

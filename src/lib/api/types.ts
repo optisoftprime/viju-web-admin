@@ -1533,6 +1533,24 @@ export interface LoadingRequest {
   /** Spec 39: set when the load was called off, alongside status CANCELLED */
   cancelledAt?: string | null;
   cancelReason?: string | null;
+  /**
+   * Spec 43 (CB-1): WHO called it off. All three roles can cancel - a regional
+   * admin, an account officer and the assigned loading officer - so
+   * "cancelled" alone does not say who to ask about it.
+   *
+   * Resolved from the existing `cancelledById` by a batched lookup, so there
+   * was no migration and no relation. Null only where nobody was recorded -
+   * loads cancelled before L-1 - or where an id no longer resolves; the row
+   * renders rather than erroring in that case.
+   *
+   * `role` is the WIRE ENUM. Render it through `formatRole()`, never as sent.
+   */
+  cancelledBy?: {
+    id?: string | null;
+    name?: string | null;
+    /** Wire role value, rendered through formatRole() - never as sent */
+    role?: string | null;
+  } | null;
 }
 
 /** Vocabulary used by /loading/* and /regional/loading-requests */

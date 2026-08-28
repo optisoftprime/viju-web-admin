@@ -28,7 +28,7 @@ import { BroadcastRegion, isProjectedCustomer } from "@/lib/api/types";
 import { REGION_FILTER_TABS } from "@/constants/regions";
 import ExportRecord from "@/components/ExportRecord";
 import ArrowBack from "@/components/common/ArrowBack";
-import { canUseOrgWideBulkActions } from "@/constants/roles";
+import { canBulkAssignCustomers } from "@/constants/roles";
 import { useAuthStore } from "@/store/auth.store";
 
 // Interface for customer data structure (transformed from API)
@@ -133,7 +133,7 @@ function CustomerReassignmentContent() {
    * regional admin's sidebar, but a URL is a URL.
    */
   const { user } = useAuthStore();
-  const canBulkAssign = canUseOrgWideBulkActions(user?.role);
+  const canBulkAssign = canBulkAssignCustomers(user?.role);
 
   // State for pagination
   const {
@@ -199,9 +199,10 @@ function CustomerReassignmentContent() {
         // B-1.1 - cartons awaiting loading, not a second copy of the balance
         stock: `${formatNumberExact(cartons)} ${cartons === 1 ? "Carton" : "Cartons"}`,
         tickets: safeNumber(customer?._count?.supportTickets, 0),
-        // An unassigned customer is being assigned, not reassigned - the
-        // label is the only thing that differs, the endpoint is the same
-        action: primary?.id ? "Reassign Officer" : "Assign Officer",
+        // Spec 43 - one label either way. The endpoint was always the same,
+        // and two words for one action only ever made the column read as two
+        // different things.
+        action: "Assign Officer",
         currentOfficerId: primary?.id,
         currentOfficerName: primary?.name,
       };
@@ -391,9 +392,9 @@ function CustomerReassignmentContent() {
 
           setSuccessModal({
             isOpen: true,
-            title: previousOfficerName
-              ? "Reassignment Successful"
-              : "Officer Assigned Successfully",
+            // One label on the button, one in the confirmation. The BODY
+            // still names who lost the customer, which is real information.
+            title: "Officer Assigned Successfully",
             message: previousOfficerName
               ? `${customerName} has been moved from ${previousOfficerName} to ${assignedName}. ${assignedName} has been notified in-app and by push.`
               : `${customerName} has been assigned to ${assignedName}. ${assignedName} has been notified in-app and by push.`,
@@ -410,8 +411,8 @@ function CustomerReassignmentContent() {
         {/* Page Header Component */}
         <div className="flex items-center justify-between">
           <PageHeader
-            title="Customer Reassignment"
-            subtitle="Reassign account officers to customers"
+            title="Customers"
+            subtitle="Assign account officers to customers"
           />
           {/* <ExportRecord onClick={handleExport} /> */}
         </div>
@@ -601,9 +602,7 @@ function CustomerReassignmentContent() {
                 setIsReassignModalOpen(true);
               }}
             >
-              {detailsRow?.currentOfficerId
-                ? "Reassign Officer"
-                : "Assign Officer"}
+              Assign Officer
             </Button>
           }
         />
