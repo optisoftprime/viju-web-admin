@@ -6,6 +6,7 @@ import { Card, Button, Table, SearchInput, Text } from "@/components/common";
 import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
 import AssignAccountOfficerModal from "@/components/AssignAccountOfficerModal";
+import BulkAssignAccountOfficerModal from "@/components/BulkAssignAccountOfficerModal";
 import SuccessModal from "@/components/SuccessModal";
 import RowDetailsModal from "@/components/RowDetailsModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -15,6 +16,7 @@ import {
   useCustomer,
   useRegionalCustomers,
   useReassignCustomer,
+  useBulkReassignCustomers,
 } from "@/hooks/api/useCustomer";
 import {
   BroadcastRegion,
@@ -23,7 +25,7 @@ import {
   isProjectedCustomer,
 } from "@/lib/api/types";
 import { REGIONS, resolveRegion } from "@/constants/regions";
-import { normalizeStaffRole } from "@/constants/roles";
+import { canUseOrgWideBulkActions, normalizeStaffRole } from "@/constants/roles";
 import { useQueryParam } from "@/hooks/useQueryParam";
 import { useAuthStore } from "@/store/auth.store";
 import {
@@ -57,7 +59,9 @@ interface Customer {
   name: string;
   phoneNo: string;
   account: string;
+  /** Display label; regionValue is the API enum the officer picker filters on */
   region: string;
+  regionValue: string;
   officers: string;
   wallet: string;
   stock: string;
@@ -196,6 +200,23 @@ function RegionalTable({ regionalPortal = false }: RegionalTablePageProps) {
     null,
   );
   const [detailsRow, setDetailsRow] = useState<Customer | null>(null);
+  /**
+   * Spec 39 - bulk selection. Rows are kept, not just ids: the bulk modal
+   * needs each customer's name and region, and a selection made on page 1
+   * has to survive a move to page 2 where those rows are no longer loaded.
+   */
+  const [selectedRows, setSelectedRows] = useState<Customer[]>([]);
+  const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false);
+
+  /**
+   * Spec 40: PATCH /admin/customers/bulk-reassign stays ADMIN-only - it moves
+   * customers across region boundaries, so there is no region-scoped version
+   * of it. A regional admin reaches this very component through
+   * /regional-admin/distributors, so the checkboxes and the bulk bar are
+   * hidden for them rather than offering a button the API answers 403 to.
+   * Single-customer assignment is unaffected.
+   */
+  const canBulkAssign = canUseOrgWideBulkActions(user?.role);
   const [successModal, setSuccessModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -282,6 +303,7 @@ function RegionalTable({ regionalPortal = false }: RegionalTablePageProps) {
 
   // Assign the customer to an account officer
   const assignMutation = useReassignCustomer();
+  const bulkAssignMutation = useBulkReassignCustomers();
 
   /**
    * Transform API response to table format
@@ -314,6 +336,7 @@ function RegionalTable({ regionalPortal = false }: RegionalTablePageProps) {
         phoneNo: safeText(customer?.phone),
         account: safeText(customer?.erpId),
         region: formatRegion(customer?.region),
+        regionValue: safeText(customer?.region, ""),
         officers: officerNames.length > 0 ? officerNames.join(", ") : "Unassigned",
         // Shown to the API's own precision - a wallet is reconciled against
         // the ERP figure, so rounding to two decimals would make the column
@@ -446,6 +469,74 @@ function RegionalTable({ regionalPortal = false }: RegionalTablePageProps) {
    * Assign the selected customer to the chosen officer
    * PATCH /admin/customers/{id}/reassign
    */
+  /**
+   * Spec 39 - keep the whole row for anything newly ticked, and drop anything
+   * unticked. Rows selected on other pages are matched from what we already
+   * hold, since they are not in `tableData` any more.
+   */
+  const handleSelectionChange = (keys: string[]) => {
+    const known = new Map<string, Customer>();
+    selectedRows.forEach((row) => known.set(row.id, row));
+    tableData.forEach((row) => known.set(row.id, row));
+
+    setSelectedRows(
+      keys
+        .map((key) => known.get(key))
+        .filter((row): row is Customer => Boolean(row)),
+    );
+  };
+
+  /**
+   * Spec 39 - one officer takes every selected customer. Partial success is a
+   * real outcome, so the summary names both halves rather than claiming the
+   * whole batch landed.
+   */
+  const handleBulkOfficerAssigned = (officer: {
+    id: string;
+    name: string;
+    role: string;
+  }) => {
+    if (selectedRows.length === 0) return;
+
+    const total = selectedRows.length;
+
+    bulkAssignMutation.mutate(
+      {
+        customerIds: selectedRows.map((row) => row.id),
+        request: { newOfficerId: officer.id },
+      },
+      {
+        onSuccess: (result) => {
+          setIsBulkAssignOpen(false);
+          // Only the ones that landed leave the selection - whatever failed
+          // stays ticked so it can be retried without re-picking it
+          const failedIds = new Set(
+            result.failed.map((failure) => failure.customerId),
+          );
+          setSelectedRows((rows) => rows.filter((row) => failedIds.has(row.id)));
+
+          setSuccessModal({
+            isOpen: true,
+            title:
+              result.failed.length === 0
+                ? "Customers Assigned Successfully"
+                : "Some Customers Could Not Be Assigned",
+            message:
+              result.failed.length === 0
+                ? `All ${total} customers have been assigned to ${officer.name}.`
+                : // The failures carry the same message the single route
+                  // returns, so name the reason rather than just the count
+                  `${result.succeeded.length} of ${total} customers were assigned to ${officer.name}. The ${result.failed.length} that failed are still selected so you can try again.${
+                    result.failed[0].message
+                      ? ` First failure: ${result.failed[0].message}`
+                      : ""
+                  }`,
+          });
+        },
+      },
+    );
+  };
+
   const handleOfficerAssigned = (officer: {
     id: string;
     name: string;
@@ -505,7 +596,7 @@ function RegionalTable({ regionalPortal = false }: RegionalTablePageProps) {
           ) : (
           <div className="">
             {/* Tab Buttons */}
-            <div className="flex items-center space-x-4 md:grid grid-cols-6 gap-2 overflow-x-auto md:gap-4">
+            <div className="flex items-center space-x-4 md:grid grid-cols-4 lg:grid-cols-7 gap-2 overflow-x-auto md:gap-4">
               {visibleRegionTabs.map((tab) => (
                 <Button
                   key={tab.value}
@@ -603,6 +694,33 @@ function RegionalTable({ regionalPortal = false }: RegionalTablePageProps) {
             </div>
           )}
 
+          {/* Spec 39 - the bulk bar only exists while something is selected,
+              so the table is unchanged for anyone not using it */}
+          {canBulkAssign && selectedRows.length > 0 && (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+              <Text variant="caption" weight="semibold" color="foreground">
+                {selectedRows.length} customer
+                {selectedRows.length === 1 ? "" : "s"} selected
+              </Text>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedRows([])}
+                  className="bg-white border border-muted/30 text-muted"
+                >
+                  Clear selection
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => setIsBulkAssignOpen(true)}
+                  className="bg-linear-to-r from-primary via-orange to-primary whitespace-nowrap"
+                >
+                  Assign Account Officer
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Data Table */}
           {!isLoading && !error && !awaitingRegionChoice && (
             <>
@@ -615,6 +733,10 @@ function RegionalTable({ regionalPortal = false }: RegionalTablePageProps) {
                   sortKey={sortKey}
                   sortOrder={sortOrder}
                   onSort={handleSort}
+                  selectable={canBulkAssign}
+                  rowKey={(row: Customer) => row.id}
+                  selectedKeys={selectedRows.map((row) => row.id)}
+                  onSelectionChange={handleSelectionChange}
                 />
               </div>
 
@@ -641,6 +763,7 @@ function RegionalTable({ regionalPortal = false }: RegionalTablePageProps) {
           onConfirm={handleOfficerAssigned}
           isSubmitting={assignMutation.isPending}
           distributorName={selectedCustomer?.name}
+          regionValue={selectedCustomer?.regionValue}
           distributorData={{
             distributor: selectedCustomer?.name || "N/A",
             phoneNumber: selectedCustomer?.phoneNo || "N/A",
@@ -651,6 +774,19 @@ function RegionalTable({ regionalPortal = false }: RegionalTablePageProps) {
             stock: selectedCustomer?.stock || "N/A",
             ticket: String(selectedCustomer?.tickets ?? 0),
           }}
+        />
+
+        {/* Spec 39 - bulk assignment for everything ticked above */}
+        <BulkAssignAccountOfficerModal
+          isOpen={isBulkAssignOpen}
+          onClose={() => setIsBulkAssignOpen(false)}
+          onConfirm={handleBulkOfficerAssigned}
+          isSubmitting={bulkAssignMutation.isPending}
+          customers={selectedRows.map((row) => ({
+            id: row.id,
+            name: row.name,
+            regionValue: row.regionValue,
+          }))}
         />
 
         {/* Row Details Modal - opened by clicking any table row */}

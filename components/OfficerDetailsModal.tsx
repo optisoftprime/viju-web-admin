@@ -1,13 +1,18 @@
 "use client";
 
 import React, { useState } from "react";
+import { Check, Pencil, X } from "lucide-react";
+import { toast } from "sonner";
 import { Modal } from "@/components/common/Modal";
 import { Text } from "@/components/common/Text";
 import { useAuditChats } from "@/hooks/api/useAudit";
-import { useOfficer } from "@/hooks/api/useOfficer";
+import { useOfficer, useUpdateOfficerProfile } from "@/hooks/api/useOfficer";
 import { formatRegion } from "@/utils/formatter";
 import { safeArray, safeText, safeNumber, safeDateText } from "@/utils/safe";
-import { formatRole, formatRoleScope } from "@/constants/roles";
+import { formatRole, formatRoleScope, roleRequiresRegion } from "@/constants/roles";
+import { REGIONS } from "@/constants/regions";
+import { getErrorMessage } from "@/utils/apiError";
+import type { BroadcastRegion } from "@/lib/api/types";
 import type {
   AuditChatThread,
   AuditChatMessage,
@@ -20,6 +25,12 @@ export interface OfficerProfile {
   email?: string | null;
   phone?: string | null;
   region?: string | null;
+  /**
+   * Region as the API enum, e.g. "LAGOS". `region` above may be a display
+   * label from the table row - the picker has to write back the enum, so the
+   * unformatted value is passed separately when the caller has it.
+   */
+  regionValue?: string | null;
   /** Wire role value from the list row, e.g. "OFFICER" */
   role?: string | null;
   status?: string | null;
@@ -217,6 +228,60 @@ export default function OfficerDetailsModal({
   const roleLabel = formatRole(roleValue, "Account Officer");
 
   /**
+   * Spec 39: change the officer's region from here.
+   *
+   * The picker writes the API ENUM, so the value it starts from must be the
+   * enum too - `detail.region` when the profile has resolved, else the enum
+   * the caller passed. `officer.region` is deliberately NOT used as a
+   * fallback: on some screens it is already a display label ("South-South"),
+   * and submitting that would be a 400.
+   *
+   * An ADMIN carries no region and the API refuses one, so the control is
+   * absent for that role rather than shown and rejected.
+   */
+  const canEditRegion = roleRequiresRegion(roleValue);
+  const regionValue = safeText(detail?.region ?? officer?.regionValue, "");
+
+  const updateProfile = useUpdateOfficerProfile();
+  const [isEditingRegion, setIsEditingRegion] = useState(false);
+  const [draftRegion, setDraftRegion] = useState("");
+
+  /**
+   * Closing the modal, or opening it on another officer, drops a half-made
+   * edit rather than carrying it onto the next profile.
+   *
+   * Reset during render rather than in an effect - an effect would paint the
+   * previous officer's open picker against the new profile for one frame.
+   */
+  const editingKey = open ? officerId : "";
+  const [editingKeyInState, setEditingKeyInState] = useState(editingKey);
+  if (editingKeyInState !== editingKey) {
+    setEditingKeyInState(editingKey);
+    setIsEditingRegion(false);
+    setDraftRegion("");
+  }
+
+  const handleSaveRegion = async () => {
+    if (!officerId || !draftRegion || updateProfile.isPending) return;
+
+    if (draftRegion === regionValue) {
+      setIsEditingRegion(false);
+      return;
+    }
+
+    try {
+      await updateProfile.mutateAsync({
+        officerId,
+        body: { region: draftRegion as BroadcastRegion },
+      });
+      setIsEditingRegion(false);
+      toast.success(`Region changed to ${formatRegion(draftRegion)}.`);
+    } catch (error) {
+      toast.error(getErrorMessage(error) || "Could not change the region");
+    }
+  };
+
+  /**
    * The audit block only makes sense for an account this portal manages. A
    * WAREHOUSE_OFFICER is still ERP-sourced and carries none of these stamps.
    */
@@ -258,10 +323,69 @@ export default function OfficerDetailsModal({
               value={safeText(detail?.phone ?? officer?.phone)}
             />
             <Field label="Role" value={roleLabel} />
-            <Field
-              label="Region"
-              value={formatRoleScope(roleValue, formatRegion(region))}
-            />
+
+            {/* Spec 39 - region, editable in place behind the pen icon */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Text variant="small" weight="bold" color="foreground">
+                  Region
+                </Text>
+                {canEditRegion && !isEditingRegion && (
+                  <button
+                    type="button"
+                    aria-label="Change region"
+                    onClick={() => {
+                      setDraftRegion(regionValue);
+                      setIsEditingRegion(true);
+                    }}
+                    className="text-muted hover:text-primary transition-colors"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {isEditingRegion ? (
+                <div className="flex items-center gap-2">
+                  <select
+                    value={draftRegion}
+                    aria-label="Region"
+                    onChange={(event) => setDraftRegion(event.target.value)}
+                    disabled={updateProfile.isPending}
+                    className="flex-1 min-w-0 px-2 py-1.5 rounded-md border border-muted/50 bg-white text-[13px] font-medium"
+                  >
+                    <option value="">Select region</option>
+                    {REGIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    aria-label="Save region"
+                    onClick={handleSaveRegion}
+                    disabled={!draftRegion || updateProfile.isPending}
+                    className="text-[#04B054] hover:opacity-70 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <Check className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Discard region change"
+                    onClick={() => setIsEditingRegion(false)}
+                    disabled={updateProfile.isPending}
+                    className="text-muted hover:text-primary disabled:opacity-40"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <Text variant="caption" weight="medium" color="muted">
+                  {formatRoleScope(roleValue, formatRegion(region))}
+                </Text>
+              )}
+            </div>
             <Field label="Status" value={safeText(status)} />
             <Field label="Customers" value={safeNumber(customerCount, 0)} />
             <Field label="Open Tickets" value={safeNumber(ticketCount, 0)} />

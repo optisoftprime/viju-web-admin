@@ -32,6 +32,44 @@ export const MANAGED_ROLES = [
 export type ManagedRole = (typeof MANAGED_ROLES)[number];
 
 /**
+ * Spec 40: the roles a REGIONAL_ADMIN may create, edit and deactivate.
+ *
+ * Deliberately NOT ADMIN or REGIONAL_ADMIN. A regional admin who could mint
+ * another regional admin - or an organisation-wide admin - would be able to
+ * grant themselves scope they do not have, so those two stay with the ADMIN.
+ * The API is the real control; this list is what the UI offers.
+ */
+export const REGIONAL_ADMIN_MANAGED_ROLES = [
+  "OFFICER",
+  "LOADING_OFFICER",
+] as const;
+
+/**
+ * Spec 40: operations that stay organisation-wide, and are therefore hidden
+ * from a REGIONAL_ADMIN however they reach the screen.
+ *
+ * The backend confirmed these remain ADMIN-only after the parity release:
+ *   DELETE /admin/officers/{id}
+ *   PATCH  /admin/officers/{id}/reassign-customers
+ *   PATCH  /admin/officers/bulk-region
+ *   PATCH  /admin/customers/bulk-reassign
+ *
+ * Each moves records across region boundaries, so there is no sensible
+ * region-scoped version of them. The API is the control; this hides the
+ * affordance so a regional admin is not offered a button that 403s.
+ */
+export const canUseOrgWideBulkActions = (role?: string | null): boolean =>
+  normalizeStaffRole(role) === "ADMIN";
+
+/** The roles the signed-in staff member is allowed to manage */
+export const managedRolesForRole = (
+  role?: string | null,
+): readonly ManagedRole[] =>
+  normalizeStaffRole(role) === "REGIONAL_ADMIN"
+    ? REGIONAL_ADMIN_MANAGED_ROLES
+    : MANAGED_ROLES;
+
+/**
  * Roles that carry a region. An ADMIN is organisation-wide: sending a region
  * with one is a 400 REGION_NOT_ALLOWED, omitting it for any of these three is
  * a 400 REGION_REQUIRED.
@@ -103,6 +141,21 @@ export const CREATE_ROLE_OPTIONS: { value: ManagedRole; label: string }[] =
 export const ROLE_FILTER_OPTIONS: { value: string; label: string }[] = [
   { value: "", label: "All Roles" },
   ...CREATE_ROLE_OPTIONS,
+];
+
+/**
+ * Spec 40: the role filter a given staff member should see. A regional admin
+ * is offered only the two roles they manage - filtering by ADMIN would be a
+ * list they are not entitled to and, once the API scopes them, an empty one.
+ */
+export const roleFilterOptionsForRole = (
+  role?: string | null,
+): { value: string; label: string }[] => [
+  { value: "", label: "All Roles" },
+  ...managedRolesForRole(role).map((managed) => ({
+    value: managed,
+    label: ROLE_LABELS[managed],
+  })),
 ];
 
 /** Status filter for GET /admin/officers?isActive= - "" means no filter */

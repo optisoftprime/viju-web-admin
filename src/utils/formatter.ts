@@ -99,6 +99,7 @@ const KNOWN_REGIONS: Record<string, string> = {
   SOUTH_SOUTH: "South-South",
   WESTERN: "Western",
   NORTH: "North",
+  OTHERS: "Others",
 };
 
 /**

@@ -21,11 +21,16 @@ interface AssignLoadingOfficerModalProps {
   onConfirm?: (officer: Officer) => void;
   /** True while the parent's assign request is in flight */
   isSubmitting?: boolean;
+  /** Spec 39 - the customer the load belongs to, named in the subtitle */
+  distributor?: string;
   truckName?: string;
   driver?: string;
   date?: string;
   qty?: string;
+  /** Display label for the heading */
   region?: string;
+  /** API enum, used to scope the officer list to the load's own region */
+  regionValue?: string;
 }
 
 export default function AssignLoadingOfficerModal({
@@ -33,23 +38,26 @@ export default function AssignLoadingOfficerModal({
   onClose,
   onConfirm,
   isSubmitting = false,
-  truckName = "LAG-234-XY",
-  driver = "John Dare",
-  date = "Today, 14:00",
-  qty = "320 Cartons",
-  region = "Lagos",
+  distributor,
+  truckName,
+  driver,
+  date,
+  qty,
+  region,
+  regionValue,
 }: AssignLoadingOfficerModalProps) {
   const [selectedOfficerId, setSelectedOfficerId] = useState<string | null>(
     null,
   );
   const [searchInput, setSearchInput] = useState("");
 
-  // RA-06 - real loading officers, not the three hardcoded names
+  // RA-06 - real loading officers, not the three hardcoded names.
+  // Spec 39 - scoped to this load's region and to active accounts.
   const {
     data: officersResponse,
     isLoading: isLoadingOfficers,
     error: officersError,
-  } = useLoadingOfficers(searchInput.trim() || undefined);
+  } = useLoadingOfficers(searchInput.trim() || undefined, regionValue);
 
   const officers: Officer[] = useMemo(
     () =>
@@ -63,7 +71,11 @@ export default function AssignLoadingOfficerModal({
     [officersResponse],
   );
 
-  // Filter officers based on search input
+  /**
+   * The search is already server-side, so this only narrows what came back -
+   * `officers` belongs in the dependency list or a fresh page keeps rendering
+   * the previous region's names.
+   */
   const filteredOfficers = useMemo(() => {
     if (!searchInput.trim()) return officers;
     return officers.filter(
@@ -71,7 +83,7 @@ export default function AssignLoadingOfficerModal({
         officer.name.toLowerCase().includes(searchInput.toLowerCase()) ||
         officer.role.toLowerCase().includes(searchInput.toLowerCase()),
     );
-  }, [searchInput]);
+  }, [officers, searchInput]);
 
   const selectedOfficer = officers.find((o) => o.id === selectedOfficerId);
 
@@ -101,23 +113,24 @@ export default function AssignLoadingOfficerModal({
               Assign Loading Officer
             </Text>
             <Text variant="caption" weight="medium" color="muted">
-              Request {truckName} for Alfuji Faruk Shola
+              {truckName || "Loading request"}
+              {distributor ? ` for ${distributor}` : ""}
             </Text>
           </div>
         </div>
 
         {/* Loading Details Grid Section */}
         <div className="grid grid-cols-2 gap-y-4 gap-x-12 py-8">
-          <BoldTopText top="Truck Name" bottom={truckName} />
-          <BoldTopText top="Driver" bottom={driver} />
-          <BoldTopText top="Date" bottom={date} />
-          <BoldTopText top="Qty" bottom={qty} />
+          <BoldTopText top="Truck Name" bottom={truckName || "-"} />
+          <BoldTopText top="Driver" bottom={driver || "-"} />
+          <BoldTopText top="Date" bottom={date || "-"} />
+          <BoldTopText top="Qty" bottom={qty || "-"} />
         </div>
 
         {/* Available Officers Section */}
         <div className="space-y-2 pt-4">
           <Text variant="body" weight="bold" color="foreground">
-            Available Officers in {region}
+            Available Officers in {region || "your region"}
           </Text>
 
           {/* Search Input */}
@@ -161,7 +174,7 @@ export default function AssignLoadingOfficerModal({
                       ? "Could not load loading officers. Please try again."
                       : searchInput.trim()
                         ? "No officers match that search"
-                        : "No loading officers available in your region"}
+                        : `No active loading officers in ${region || "this region"}`}
                 </Text>
               </div>
             )}

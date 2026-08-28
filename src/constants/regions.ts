@@ -19,6 +19,24 @@ export const REGIONS: RegionOption[] = [
   { value: "SOUTH_SOUTH", label: "South-South" },
   { value: "WESTERN", label: "Western" },
   { value: "NORTH", label: "North" },
+  /**
+   * Spec 39 - the sixth region, and a different KIND of region.
+   *
+   * The five above are ERP territories with a BP_CLUSTER_CODE. OTHERS is a
+   * PORTAL region with no code, because the ERP has no value meaning "other" -
+   * so nothing the ERP sends can ever produce it. It is only ever set
+   * deliberately, by an admin editing a user or a customer.
+   *
+   * Two consequences worth knowing:
+   *   - filtering the UNPROJECTED ERP list by region=OTHERS correctly returns
+   *     zero rows, not everything
+   *   - the unmapped-customers list does not shrink on its own; somebody has
+   *     to move those rows into OTHERS
+   *
+   * Last in the list on purpose, matching the server's own ordering: it reads
+   * as the catch-all rather than as a peer of the five named territories.
+   */
+  { value: "OTHERS", label: "Others" },
 ];
 
 /**

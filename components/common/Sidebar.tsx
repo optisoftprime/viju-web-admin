@@ -38,6 +38,7 @@ const getIconComponent = (iconName: string) => {
     Megaphone: LucideIcons.Megaphone,
     History: LucideIcons.History,
     FileImage: LucideIcons.FileImage,
+    MessageSquare: LucideIcons.MessageSquare,
     LogOut: LucideIcons.LogOut,
   };
 
@@ -60,14 +61,27 @@ export default function Sidebar({ showSidebar }: { showSidebar: boolean }) {
   const pathname = usePathname();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
-  // An admin works across the whole organisation; every other role is scoped
-  // to the region on their staff record
+  /**
+   * The scope badge under the brand.
+   *
+   * An admin works across the whole organisation; every other role is scoped
+   * to the region on their staff record.
+   *
+   * Spec 41: a LOADING OFFICER works a WAREHOUSE, not a region - they are
+   * posted to one depot inside a region, and "Lagos Region" overstated what
+   * they cover. The region value is the same; only the noun changes.
+   */
+  const scopeNoun =
+    normalizeStaffRole(user?.role) === "LOADING_OFFICER"
+      ? "Warehouse"
+      : "Region";
+
   const regionLabel =
-    user?.role === "ADMIN"
+    normalizeStaffRole(user?.role) === "ADMIN"
       ? "All Regions"
       : user?.region
-        ? `${formatRegion(user.region)} Region`
-        : "LAGOS REGION";
+        ? `${formatRegion(user.region)} ${scopeNoun}`
+        : `Lagos ${scopeNoun}`;
 
   // Log user info when component mounts or user changes
 
@@ -81,6 +95,17 @@ export default function Sidebar({ showSidebar }: { showSidebar: boolean }) {
           url: "/dashboard",
           icon: "LayoutDashboard",
         },
+        /**
+         * Spec 39: an account officer now receives loading requests and
+         * assigns or cancels them, exactly as a regional admin does. Same
+         * page - it reads the route the signed-in role is authorised on.
+         */
+        { name: "Loading Request", url: "/requests/loading", icon: "Truck" },
+        /**
+         * Spec 41: every conversation in one place, instead of one thread at a
+         * time behind a tab on a customer row.
+         */
+        { name: "Chat", url: "/chat", icon: "MessageSquare" },
       ],
     },
     {
@@ -107,6 +132,24 @@ export default function Sidebar({ showSidebar }: { showSidebar: boolean }) {
           name: "Open Tickets",
           url: "/regional-admin/tickets",
           icon: "Ticket",
+        },
+        /**
+         * Spec 40: a regional admin does everything an admin does, scoped to
+         * their own region. These four are the SAME pages the admin uses -
+         * each one region-scopes itself from the signed-in role rather than
+         * existing twice.
+         */
+        { name: "Broadcasts", url: "/broadcast", icon: "Megaphone" },
+        {
+          name: "Interaction Audits",
+          url: "/admin/audits",
+          icon: "History",
+        },
+        { name: "Users", url: "/admin/users", icon: "Users" },
+        {
+          name: "Product Flyers",
+          url: "/admin/flyers",
+          icon: "FileImage",
         },
       ],
     },

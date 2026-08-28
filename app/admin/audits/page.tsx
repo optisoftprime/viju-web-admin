@@ -21,6 +21,8 @@ import { REGION_FILTER_TABS } from "@/constants/regions";
 import { auditService } from "@/services/audit.service";
 import { downloadCsvFile } from "@/utils/download";
 import { getErrorMessage, isRegionNotSetError } from "@/utils/apiError";
+import { normalizeStaffRole } from "@/constants/roles";
+import { useAuthStore } from "@/store/auth.store";
 import { toast } from "sonner";
 import ArrowBack from "@/components/common/ArrowBack";
 
@@ -108,6 +110,19 @@ function InteractionAuditContent() {
   const [pickedTab, setPickedTab] = useState<AuditTab | null>(null);
   const activeTab: AuditTab = pickedTab ?? parseTab(tabParam);
 
+  const { user } = useAuthStore();
+
+  /**
+   * Spec 40: a REGIONAL_ADMIN audits their own region and no other.
+   *
+   * The server already resolves the region from their token and overrides
+   * anything sent, so the strip was decorative for them - pressing "North"
+   * changed nothing. It is hidden and `region` is never attached, which is
+   * both honest and one less way to send a value that is going to be ignored.
+   */
+  const isRegionScoped =
+    normalizeStaffRole(user?.role) === "REGIONAL_ADMIN";
+
   // State for active region filter
   const [selectedRegion, setSelectedRegion] = useState("");
 
@@ -146,7 +161,10 @@ function InteractionAuditContent() {
   const filters = {
     page: currentPage,
     pageSize: itemsPerPage,
-    region: selectedRegion ? (selectedRegion as BroadcastRegion) : undefined,
+    region:
+      !isRegionScoped && selectedRegion
+        ? (selectedRegion as BroadcastRegion)
+        : undefined,
     customerName: customerName || undefined,
     officerName: officerName || undefined,
     keyword: keyword || undefined,
@@ -321,7 +339,13 @@ function InteractionAuditContent() {
         <div className="flex items-center justify-between">
           <PageHeader
             title="Interaction Audits"
-            subtitle="Monitor and track all system interactions"
+            subtitle={
+              isRegionScoped
+                ? `Monitor tickets and conversations in ${
+                    user?.region ? formatRegion(user.region) : "your region"
+                  }`
+                : "Monitor and track all system interactions"
+            }
           />
           <ExportRecord onClick={handleExport} isLoading={isExporting} />
         </div>
@@ -369,25 +393,36 @@ function InteractionAuditContent() {
         <Card border={false}>
           {/* Filters Section */}
           <div className="space-y-4">
-            {/* Row 1: Region Filter Tabs */}
-            <div className="flex items-center space-x-3 flex-wrap">
-              {regions.map((region) => (
-                <Button
-                  key={region.value}
-                  variant={
-                    selectedRegion === region.value ? "primary" : "outline"
-                  }
-                  onClick={() => handleRegionChange(region.value)}
-                  className={
-                    selectedRegion === region.value
-                      ? "bg-linear-to-r from-primary via-orange to-primary text-white border border-primary"
-                      : "bg-white border border-muted/30 hover:border-primary hover:bg-primary hover:text-white"
-                  }
-                >
-                  {region.label}
-                </Button>
-              ))}
-            </div>
+            {/* Row 1: Region Filter Tabs - an organisation-wide admin only.
+                A regional admin already sees exactly their own region and
+                cannot audit across the boundary. */}
+            {isRegionScoped ? (
+              <div className="rounded-lg border border-muted/20 bg-white px-4 py-3">
+                <Text variant="caption" weight="medium" color="muted">
+                  Showing tickets and conversations in{" "}
+                  {user?.region ? formatRegion(user.region) : "your region"}.
+                </Text>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-3 flex-wrap">
+                {regions.map((region) => (
+                  <Button
+                    key={region.value}
+                    variant={
+                      selectedRegion === region.value ? "primary" : "outline"
+                    }
+                    onClick={() => handleRegionChange(region.value)}
+                    className={
+                      selectedRegion === region.value
+                        ? "bg-linear-to-r from-primary via-orange to-primary text-white border border-primary"
+                        : "bg-white border border-muted/30 hover:border-primary hover:bg-primary hover:text-white"
+                    }
+                  >
+                    {region.label}
+                  </Button>
+                ))}
+              </div>
+            )}
 
             {/* Row 2: Filter Input Fields */}
             <div className="flex items-center gap-3 flex-wrap">

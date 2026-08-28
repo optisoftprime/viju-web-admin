@@ -14,8 +14,10 @@ import {
 import { queryKeys, assignmentQueryKeys } from "@/lib/api/queryKeys";
 import { getErrorMessage } from "@/utils/apiError";
 import {
+  BroadcastRegion,
   CreateOfficerRequest,
   ReassignOfficerCustomersRequest,
+  UpdateOfficerProfileRequest,
   UpdateOfficerRequest,
 } from "@/lib/api/types";
 
@@ -27,16 +29,23 @@ import {
  * only); `isActive` is omitted rather than defaulted, which is the unchanged
  * "both statuses" behaviour.
  */
-export const useOfficers = (params: GetOfficersParams = {}) => {
+export const useOfficers = (
+  params: GetOfficersParams & { enabled?: boolean } = {},
+) => {
+  // `enabled` is a React Query concern, not a request filter - it must not
+  // reach the service, and it must not sit in the cache key either
+  const { enabled, ...listParams } = params;
+
   const query: GetOfficersParams = {
-    ...params,
-    page: params.page ?? 1,
-    pageSize: params.pageSize ?? 20,
+    ...listParams,
+    page: listParams.page ?? 1,
+    pageSize: listParams.pageSize ?? 20,
   };
 
   return useQuery({
     queryKey: queryKeys.officers.officersList(query as Record<string, unknown>),
     queryFn: () => officerService.getOfficers(query),
+    enabled: enabled !== false,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1,
   });
@@ -121,6 +130,82 @@ export const useSetOfficerActive = () => {
       assignmentQueryKeys.forEach((queryKey) =>
         queryClient.invalidateQueries({ queryKey }),
       );
+    },
+  });
+};
+
+/**
+ * Spec 39: edit a managed user's name, phone, region or password.
+ *
+ * Field-level API errors are NOT toasted - the edit form attaches them to the
+ * input named by `field`, exactly as the create form does. Everything else
+ * surfaces the API message.
+ */
+export const useUpdateOfficerProfile = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      officerId,
+      body,
+    }: {
+      officerId: string;
+      body: UpdateOfficerProfileRequest;
+    }) => officerService.updateProfile(officerId, body),
+    onSuccess: (_result, variables) => {
+      assignmentQueryKeys.forEach((queryKey) =>
+        queryClient.invalidateQueries({ queryKey }),
+      );
+      // The modal reads the profile straight from GET /admin/officers/{id}
+      queryClient.invalidateQueries({
+        queryKey: ["officers", "detail", variables.officerId],
+      });
+    },
+  });
+};
+
+/**
+ * Spec 39 (**O-2**): move every selected officer into one region, in one call.
+ *
+ * The route is NOT all-or-nothing, so a 2xx can still carry failures. Reports
+ * both halves rather than treating a partial move as success - the admin has
+ * to see what is left.
+ */
+export const useBulkSetOfficerRegion = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      officerIds,
+      region,
+    }: {
+      officerIds: string[];
+      region: BroadcastRegion;
+    }) => officerService.bulkSetRegion(officerIds, region),
+    onSuccess: (result) => {
+      assignmentQueryKeys.forEach((queryKey) =>
+        queryClient.invalidateQueries({ queryKey }),
+      );
+
+      if (result.failed.length === 0) {
+        toast.success(
+          `${result.succeeded.length} officer${
+            result.succeeded.length === 1 ? "" : "s"
+          } reassigned.`,
+        );
+        return;
+      }
+
+      // The failures carry the same `message` the single route would have
+      // returned; the first one is almost always the whole story
+      toast.error(
+        `${result.succeeded.length} reassigned, ${result.failed.length} failed. ${
+          result.failed[0].message ?? ""
+        }`.trim(),
+      );
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error) || "Failed to reassign officers");
     },
   });
 };

@@ -2,10 +2,11 @@
 
 import { useState, useMemo } from "react";
 import { MainLayout } from "@/components/common";
-import { Card, Button, Table } from "@/components/common";
+import { Card, Button, Table, Text } from "@/components/common";
 import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
 import AssignAccountOfficerModal from "@/components/AssignAccountOfficerModal";
+import BulkAssignAccountOfficerModal from "@/components/BulkAssignAccountOfficerModal";
 import SuccessModal from "@/components/SuccessModal";
 import RowDetailsModal from "@/components/RowDetailsModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -20,12 +21,15 @@ import { toast } from "sonner";
 import {
   useCustomersForReassignment,
   useReassignCustomer,
+  useBulkReassignCustomers,
 } from "@/hooks/api/useCustomer";
 import { customerService } from "@/services/customer.service";
 import { BroadcastRegion, isProjectedCustomer } from "@/lib/api/types";
 import { REGION_FILTER_TABS } from "@/constants/regions";
 import ExportRecord from "@/components/ExportRecord";
 import ArrowBack from "@/components/common/ArrowBack";
+import { canUseOrgWideBulkActions } from "@/constants/roles";
+import { useAuthStore } from "@/store/auth.store";
 
 // Interface for customer data structure (transformed from API)
 interface CustomerTableRow {
@@ -33,7 +37,9 @@ interface CustomerTableRow {
   name: string;
   phoneNo: string;
   account: string;
+  /** Display label; regionValue is the API enum the officer picker filters on */
   region: string;
+  regionValue: string;
   officers: string;
   wallet: string;
   stock: string;
@@ -113,6 +119,22 @@ function CustomerReassignmentContent() {
   // State for the row details modal
   const [detailsRow, setDetailsRow] = useState<CustomerTableRow | null>(null);
 
+  /**
+   * Spec 40 - bulk selection, the same treatment /admin/distributors got in
+   * spec 39. Whole rows are kept, not just ids: the bulk modal needs each
+   * customer's name and region, and a selection made on page 1 has to survive
+   * a move to page 2 where those rows are no longer loaded.
+   */
+  const [selectedRows, setSelectedRows] = useState<CustomerTableRow[]>([]);
+  const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false);
+
+  /**
+   * Spec 40: the bulk route stays ADMIN-only. This screen is not on a
+   * regional admin's sidebar, but a URL is a URL.
+   */
+  const { user } = useAuthStore();
+  const canBulkAssign = canUseOrgWideBulkActions(user?.role);
+
   // State for pagination
   const {
     currentPage,
@@ -146,6 +168,7 @@ function CustomerReassignmentContent() {
    * customer - that is where "ADLAK has no account officer yet" came from.
    */
   const reassignMutation = useReassignCustomer();
+  const bulkAssignMutation = useBulkReassignCustomers();
 
   /**
    * Transform API response to table format
@@ -167,6 +190,7 @@ function CustomerReassignmentContent() {
         phoneNo: safeText(customer?.phone),
         account: safeText(customer?.erpId),
         region: formatRegion(customer?.region),
+        regionValue: safeText(customer?.region, ""),
         officers: primary?.name || "Unassigned",
         // Shown to the API's own precision - a wallet is reconciled against
         // the ERP figure, so rounding to two decimals would make the column
@@ -241,6 +265,71 @@ function CustomerReassignmentContent() {
       setSelectedCustomer(row);
       setIsReassignModalOpen(true);
     }
+  };
+
+  /**
+   * Spec 40 - keep the whole row for anything newly ticked, and drop anything
+   * unticked. Rows selected on another page are matched from what we already
+   * hold, since they are not in `tableData` any more.
+   */
+  const handleSelectionChange = (keys: string[]) => {
+    const known = new Map<string, CustomerTableRow>();
+    selectedRows.forEach((row) => known.set(row.id, row));
+    tableData.forEach((row) => known.set(row.id, row));
+
+    setSelectedRows(
+      keys
+        .map((key) => known.get(key))
+        .filter((row): row is CustomerTableRow => Boolean(row)),
+    );
+  };
+
+  /**
+   * Spec 40 - one officer takes every selected customer. A partial result is
+   * a real outcome on this route, so the summary names both halves and
+   * whatever failed stays ticked for a retry.
+   */
+  const handleBulkOfficerAssigned = (officer: {
+    id: string;
+    name: string;
+    role: string;
+  }) => {
+    if (selectedRows.length === 0) return;
+
+    const total = selectedRows.length;
+
+    bulkAssignMutation.mutate(
+      {
+        customerIds: selectedRows.map((row) => row.id),
+        request: { newOfficerId: officer.id },
+      },
+      {
+        onSuccess: (result) => {
+          setIsBulkAssignOpen(false);
+
+          const failedIds = new Set(
+            result.failed.map((failure) => failure.customerId),
+          );
+          setSelectedRows((rows) => rows.filter((row) => failedIds.has(row.id)));
+
+          setSuccessModal({
+            isOpen: true,
+            title:
+              result.failed.length === 0
+                ? "Customers Assigned Successfully"
+                : "Some Customers Could Not Be Assigned",
+            message:
+              result.failed.length === 0
+                ? `All ${total} customers have been assigned to ${officer.name}. They have been notified in-app and by push.`
+                : `${result.succeeded.length} of ${total} customers were assigned to ${officer.name}. The ${result.failed.length} that failed are still selected so you can try again.${
+                    result.failed[0].message
+                      ? ` First failure: ${result.failed[0].message}`
+                      : ""
+                  }`,
+          });
+        },
+      },
+    );
   };
 
   /**
@@ -374,6 +463,33 @@ function CustomerReassignmentContent() {
             </div>
           )}
 
+          {/* Spec 40 - the bulk bar only exists while something is selected,
+              so the table is unchanged for anyone not using it */}
+          {canBulkAssign && selectedRows.length > 0 && (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+              <Text variant="caption" weight="semibold" color="foreground">
+                {selectedRows.length} customer
+                {selectedRows.length === 1 ? "" : "s"} selected
+              </Text>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedRows([])}
+                  className="bg-white border border-muted/30 text-muted"
+                >
+                  Clear selection
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => setIsBulkAssignOpen(true)}
+                  className="bg-linear-to-r from-primary via-orange to-primary whitespace-nowrap"
+                >
+                  Assign Account Officer
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Data Table */}
           {!isLoading && !error && (
             <>
@@ -383,6 +499,10 @@ function CustomerReassignmentContent() {
                   data={tableData}
                   onRowClick={setDetailsRow}
                   onActionClick={handleActionClick}
+                  selectable={canBulkAssign}
+                  rowKey={(row: CustomerTableRow) => row.id}
+                  selectedKeys={selectedRows.map((row) => row.id)}
+                  onSelectionChange={handleSelectionChange}
                 />
               </div>
 
@@ -399,6 +519,19 @@ function CustomerReassignmentContent() {
           )}
         </Card>
 
+        {/* Spec 40 - bulk assignment for everything ticked above */}
+        <BulkAssignAccountOfficerModal
+          isOpen={isBulkAssignOpen}
+          onClose={() => setIsBulkAssignOpen(false)}
+          onConfirm={handleBulkOfficerAssigned}
+          isSubmitting={bulkAssignMutation.isPending}
+          customers={selectedRows.map((row) => ({
+            id: row.id,
+            name: row.name,
+            regionValue: row.regionValue,
+          }))}
+        />
+
         {/* Reassign Account Officer Modal */}
         <AssignAccountOfficerModal
           isOpen={isReassignModalOpen}
@@ -409,6 +542,7 @@ function CustomerReassignmentContent() {
           onConfirm={handleOfficerAssigned}
           isSubmitting={reassignMutation.isPending}
           distributorName={selectedCustomer?.name}
+          regionValue={selectedCustomer?.regionValue}
           distributorData={{
             distributor: selectedCustomer?.name || "N/A",
             phoneNumber: selectedCustomer?.phoneNo || "N/A",

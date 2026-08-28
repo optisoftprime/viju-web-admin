@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { ChevronDown, X } from "lucide-react";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -14,16 +14,24 @@ import { MultiSelectField } from "@/components/common/MultiSelectField";
 import { BroadcastTypeTabs } from "./BroadcastTypeTabs";
 import {
   useBroadcastRegional,
-  useBroadcastIndividual,
+  useBroadcastIndividualMany,
   useInfiniteCustomers,
 } from "@/hooks/api/useBroadcast";
 import { toast } from "sonner";
-import { REGIONS } from "@/constants/regions";
+import { REGIONS, resolveRegion } from "@/constants/regions";
+import { normalizeStaffRole } from "@/constants/roles";
+import { formatRegion } from "@/utils/formatter";
+import { useAuthStore } from "@/store/auth.store";
 
 interface BroadcastFormData {
   broadcastType: "regional" | "individual";
   regions: string[];
-  customer: string;
+  /**
+   * Spec 39: an individual broadcast now goes to ONE OR MORE customers. Kept
+   * as an array even for a single recipient, so there is one shape to
+   * validate, reset and submit rather than two.
+   */
+  customers: string[];
   message: string;
   allowance: number;
 }
@@ -32,7 +40,7 @@ interface BroadcastFormProps {
   onSubmit?: (data: BroadcastFormData) => void;
 }
 
-const regionOptions = REGIONS;
+
 
 const validationSchema = yup.object().shape({
   broadcastType: yup
@@ -47,9 +55,12 @@ const validationSchema = yup.object().shape({
         .required("Region is required") as any,
     otherwise: (schema) => schema.optional(),
   }) as any,
-  customer: yup.string().when("broadcastType", {
+  customers: yup.array().when("broadcastType", {
     is: "individual",
-    then: (schema) => schema.required("customer is required"),
+    then: (schema) =>
+      schema
+        .min(1, "Select at least one customer")
+        .required("Select at least one customer") as any,
     otherwise: (schema) => schema.optional(),
   }) as any,
   message: yup
@@ -69,23 +80,44 @@ const validationSchema = yup.object().shape({
 }) as any;
 
 export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
+  const { user } = useAuthStore();
+
+  /**
+   * Spec 40: a REGIONAL_ADMIN broadcasts to their OWN region and nowhere else.
+   *
+   * The picker is narrowed to that one region rather than hidden, so the
+   * message still says plainly who it is going to - and if their staff record
+   * carries no region the list is empty, which is honest: there is no region
+   * to broadcast to until an admin sets one.
+   */
+  const isRegionScoped =
+    normalizeStaffRole(user?.role) === "REGIONAL_ADMIN";
+  const ownRegion = resolveRegion(user?.region);
+
+  const regionOptions = useMemo(() => {
+    if (!isRegionScoped) return REGIONS;
+    return REGIONS.filter((region) => region.value === ownRegion);
+  }, [isRegionScoped, ownRegion]);
+
   const [broadcastType, setBroadcastType] = useState<"regional" | "individual">(
     "individual",
   );
   const [messageLength, setMessageLength] = useState(0);
   const [customerSearch, setCustomerSearch] = useState("");
-  // Kept separately so the chosen customer stays readable after the
-  // search box is cleared and the option list reloads
-  const [selectedCustomer, setSelectedCustomer] = useState<{
-    label: string;
-    value: string;
-  } | null>(null);
+  /**
+   * Kept separately so a chosen customer stays readable after the search box
+   * is cleared and the option list reloads - the picked row is often no longer
+   * among the loaded options, and an id is not a name.
+   */
+  const [selectedCustomers, setSelectedCustomers] = useState<
+    { label: string; value: string }[]
+  >([]);
   const [isCustomerListOpen, setIsCustomerListOpen] = useState(false);
   const scrollListenerRef = useRef<HTMLDivElement>(null);
   const customerFieldRef = useRef<HTMLDivElement>(null);
 
   const regionalMutation = useBroadcastRegional();
-  const individualMutation = useBroadcastIndividual();
+  const individualMutation = useBroadcastIndividualMany();
   const {
     data: customerPages,
     fetchNextPage: fetchNextCustomers,
@@ -105,7 +137,7 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
     defaultValues: {
       broadcastType: "individual",
       regions: [],
-      customer: "",
+      customers: [],
       message: "",
       allowance: 0,
     },
@@ -165,13 +197,13 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
     reset({
       broadcastType: type,
       regions: [],
-      customer: "",
+      customers: [],
       message: "",
       allowance: 0,
     });
     setMessageLength(0);
     setCustomerSearch("");
-    setSelectedCustomer(null);
+    setSelectedCustomers([]);
     setIsCustomerListOpen(false);
   };
 
@@ -184,13 +216,22 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
           message: data.message,
         });
       } else {
-        // Send individual broadcast - deliveryAllowance is optional and only
-        // meaningful when > 0, so it is left out entirely otherwise
+        /**
+         * Send individual broadcast - deliveryAllowance is optional and only
+         * meaningful when > 0, so it is left out entirely otherwise.
+         *
+         * Spec 39 (B-2): ONE call carrying every recipient. Unlike the two
+         * bulk admin routes this one is not partial - it either sends to all
+         * of them or raises - so there is no half-sent state to reconcile, and
+         * a rejection lands in the catch below with the form still filled in.
+         */
         const allowance = Number(data.allowance);
         await individualMutation.mutateAsync({
-          customerId: data.customer,
-          message: data.message,
-          ...(allowance > 0 ? { deliveryAllowance: allowance } : {}),
+          customerIds: data.customers,
+          payload: {
+            message: data.message,
+            ...(allowance > 0 ? { deliveryAllowance: allowance } : {}),
+          },
         });
       }
       // Reset form on success, keeping the tab the user is working on
@@ -198,13 +239,13 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
       reset({
         broadcastType: data.broadcastType,
         regions: [],
-        customer: "",
+        customers: [],
         message: "",
         allowance: 0,
       });
       setMessageLength(0);
       setCustomerSearch("");
-      setSelectedCustomer(null);
+      setSelectedCustomers([]);
       setIsCustomerListOpen(false);
       if (onSubmit) {
         onSubmit(data);
@@ -243,6 +284,9 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
             </Text>
             <Text variant="caption" color="muted" className="mt-1">
               Push notification delivered to customer mobile apps.
+              {isRegionScoped
+                ? ` Scoped to ${ownRegion ? formatRegion(ownRegion) : "your region"}.`
+                : ""}
             </Text>
           </div>
           <BroadcastTypeTabs
@@ -260,15 +304,35 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
         {/* Regions / customer Field */}
         {broadcastType === "individual" ? (
           <Controller
-            name="customer"
+            name="customers"
             control={control}
             render={({ field }) => {
-              const selectedLabel =
-                selectedCustomer?.value === field.value
-                  ? selectedCustomer.label
-                  : customerOptions.find(
-                      (opt: any) => opt.value === field.value,
-                    )?.label || field.value;
+              const selectedValues: string[] = field.value ?? [];
+
+              /**
+               * Spec 39: toggling a recipient. The picked option (label AND
+               * id) is remembered alongside the form value, because the option
+               * list reloads as the search changes and a deselected-then-
+               * reselected customer would otherwise lose its name.
+               */
+              const toggleCustomer = (option: {
+                label: string;
+                value: string;
+              }) => {
+                const isSelected = selectedValues.includes(option.value);
+                const next = isSelected
+                  ? selectedValues.filter((value) => value !== option.value)
+                  : [...selectedValues, option.value];
+
+                field.onChange(next);
+                setSelectedCustomers((current) =>
+                  isSelected
+                    ? current.filter(
+                        (customer) => customer.value !== option.value,
+                      )
+                    : [...current, option],
+                );
+              };
 
               return (
                 <div ref={customerFieldRef} className="space-y-2 relative">
@@ -278,24 +342,28 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
                     color="foreground"
                     className="block"
                   >
-                    Target customer
+                    Target customers
                   </Text>
 
-                  {/* Trigger - shows the current selection, opens the list */}
+                  {/* Trigger - shows how many are picked, opens the list */}
                   <div
                     onClick={() =>
                       !isLoading && setIsCustomerListOpen((prev) => !prev)
                     }
                     className={`w-full border rounded-md px-3 py-2.5 flex items-center justify-between gap-2 ${
-                      errors.customer ? "border-red-500" : "border-[#E5E7EB]"
+                      errors.customers ? "border-red-500" : "border-[#E5E7EB]"
                     } ${isLoading ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
                   >
                     <Text
                       variant="small"
-                      color={selectedLabel ? "foreground" : "muted"}
+                      color={selectedValues.length ? "foreground" : "muted"}
                       className="truncate"
                     >
-                      {selectedLabel || "Select customer"}
+                      {selectedValues.length === 0
+                        ? "Select customers"
+                        : `${selectedValues.length} customer${
+                            selectedValues.length === 1 ? "" : "s"
+                          } selected`}
                     </Text>
                     <ChevronDown
                       className={`w-4 h-4 text-muted shrink-0 transition-transform ${
@@ -303,6 +371,41 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
                       }`}
                     />
                   </div>
+
+                  {/* Every recipient named, and removable one at a time -
+                      "12 selected" alone is not something you can check */}
+                  {selectedCustomers.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedCustomers.map((customer) => (
+                        <span
+                          key={customer.value}
+                          className="inline-flex items-center gap-1 rounded-full bg-[#F0F5F9] px-3 py-1 text-[12px] text-[#374151]"
+                        >
+                          {customer.label}
+                          <button
+                            type="button"
+                            aria-label={`Remove ${customer.label}`}
+                            disabled={isLoading}
+                            onClick={() => toggleCustomer(customer)}
+                            className="text-muted hover:text-primary disabled:opacity-50"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                      <button
+                        type="button"
+                        disabled={isLoading}
+                        onClick={() => {
+                          field.onChange([]);
+                          setSelectedCustomers([]);
+                        }}
+                        className="text-[12px] text-primary underline disabled:opacity-50"
+                      >
+                        Clear all
+                      </button>
+                    </div>
+                  )}
 
                   {isCustomerListOpen && (
                     <div className="absolute z-50 mt-1 w-full border border-[#E5E7EB] rounded-md bg-white shadow-lg">
@@ -339,20 +442,27 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
                               No customers found
                             </Text>
                           )}
-                        {customerOptions.map((option: any) => (
-                          <div
-                            key={option.value}
-                            onClick={() => {
-                              field.onChange(option.value);
-                              setSelectedCustomer(option);
-                              setCustomerSearch("");
-                              setIsCustomerListOpen(false);
-                            }}
-                            className="p-2 cursor-pointer hover:bg-[#F0F5F9] rounded-md text-sm"
-                          >
-                            {option.label}
-                          </div>
-                        ))}
+                        {/* Multi-select: the list stays open so several
+                            recipients can be ticked in one pass */}
+                        {customerOptions.map((option: any) => {
+                          const isSelected = selectedValues.includes(
+                            option.value,
+                          );
+                          return (
+                            <label
+                              key={option.value}
+                              className="flex items-center gap-2 p-2 cursor-pointer hover:bg-[#F0F5F9] rounded-md text-sm"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleCustomer(option)}
+                                className="w-4 h-4 accent-primary cursor-pointer"
+                              />
+                              <span className="truncate">{option.label}</span>
+                            </label>
+                          );
+                        })}
                         {isFetchingMoreCustomers && (
                           <Text
                             variant="caption"
@@ -366,13 +476,13 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
                     </div>
                   )}
 
-                  {errors.customer && (
+                  {errors.customers && (
                     <Text
                       variant="caption"
                       color="primary"
                       className="text-red-500"
                     >
-                      {errors.customer.message}
+                      {errors.customers.message as string}
                     </Text>
                   )}
                 </div>
@@ -380,16 +490,26 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
             }}
           />
         ) : (
-          <MultiSelectField
-            name="regions"
-            control={control}
-            label="Target Regions"
-            options={regionOptions}
-            placeholder="Select regions..."
-            searchMode="internal"
-            filterOptions={true}
-            disabled={isLoading}
-          />
+          <div className="space-y-2">
+            <MultiSelectField
+              name="regions"
+              control={control}
+              label="Target Regions"
+              options={regionOptions}
+              placeholder="Select regions..."
+              searchMode="internal"
+              filterOptions={true}
+              disabled={isLoading}
+            />
+            {/* An unconfigured regional admin has nothing to broadcast to -
+                say so rather than showing an empty picker with no explanation */}
+            {isRegionScoped && regionOptions.length === 0 && (
+              <Text variant="caption" color="orange">
+                No region is set on your account, so there is nowhere to send a
+                regional broadcast. Ask an administrator to set your region.
+              </Text>
+            )}
+          </div>
         )}
 
         {/* Message Textarea */}
@@ -430,7 +550,7 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
               className="mt-1 max-w-[320px]"
             >
               Optional. If entered, the customer's wallet is credited
-              immediately on receipt.
+              immediately on receipt - per recipient, not split between them.
             </Text>
           </div>
           <Controller
@@ -464,7 +584,9 @@ export function BroadcastForm({ onSubmit }: BroadcastFormProps) {
         <div className="border border-[#E5E7EB] rounded-md p-5 flex justify-between items-center">
           <Text variant="caption" color="muted">
             {broadcastType === "individual"
-              ? "Push notification will include customer's name"
+              ? `Push notification will include each customer's name, and is sent once per selected customer${
+                  isRegionScoped ? " in your region" : ""
+                }`
               : "Push notification will be delivered to all customers in selected regions"}
           </Text>
           <Button

@@ -10,7 +10,29 @@ import { chatService } from "@/services/chat.service";
 import { queryKeys } from "@/lib/api/queryKeys";
 import { SendMessageRequest,
   UploadFolder,
+  OfficerChatThreadsParams,
 } from "@/lib/api/types";
+
+/**
+ * Spec 41 (CH-3): the officer's conversation list.
+ *
+ * Short stale time, like the thread itself - a list whose unread badges are
+ * five minutes out of date is worse than no badges, since the whole point is
+ * knowing who is waiting. Safe to refetch freely: the route is read-only and
+ * does NOT mark anything read (confirmed by the backend against live data).
+ */
+export const useOfficerChats = (params: OfficerChatThreadsParams = {}) =>
+  useQuery({
+    queryKey: [
+      "officerChats",
+      params.page ?? 1,
+      params.pageSize ?? 30,
+      params.search ?? "",
+    ],
+    queryFn: () => chatService.getOfficerChats(params),
+    staleTime: 30 * 1000,
+    retry: 1,
+  });
 
 /**
  * Fetch chat history with a specific user.
@@ -35,6 +57,9 @@ export const useChatHistory = (otherUserId: string | null) => {
     queryFn: async () => {
       const messages = await chatService.getChatHistory(otherUserId!);
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+      // Spec 41: this request marks the thread read, so the conversation
+      // list's unread badge for it is stale the moment this resolves
+      queryClient.invalidateQueries({ queryKey: ["officerChats"] });
       return messages;
     },
     enabled: !!otherUserId,
@@ -59,6 +84,9 @@ export const useSendMessage = (receiverId: string) => {
       });
       // A reply can move the unread counters either way, so the tiles refresh
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+      // ...and it becomes the thread's newest message, so the list's preview
+      // and ordering move with it
+      queryClient.invalidateQueries({ queryKey: ["officerChats"] });
     },
   });
 };

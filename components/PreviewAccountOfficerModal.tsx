@@ -9,7 +9,7 @@ import { BoldTopText } from "./common/BoldTopText";
 import { useSetOfficerActive } from "@/hooks/api/useOfficer";
 import { useAuthStore } from "@/store/auth.store";
 import { getErrorCode, getErrorMessage, getErrorStatus } from "@/utils/apiError";
-import { formatRole } from "@/constants/roles";
+import { formatRole, normalizeStaffRole } from "@/constants/roles";
 import { safeText } from "@/utils/safe";
 
 interface Officer {
@@ -70,6 +70,10 @@ export default function PreviewAccountOfficerModal({
 
   // A WAREHOUSE_OFFICER is not ours to deactivate
   const isUnmanaged = officer?.isManaged === false;
+
+  // A regional admin has no Customer Reassignment screen to be pointed at
+  const isRegionScopedViewer =
+    normalizeStaffRole(user?.role) === "REGIONAL_ADMIN";
 
   const canToggle = !isSelf && !isUnmanaged;
 
@@ -223,9 +227,16 @@ export default function PreviewAccountOfficerModal({
               {blocker.message}
             </Text>
             <Text variant="caption" color="muted">
+              {/* Spec 40: Customer Reassignment is an ADMIN screen, so a
+                  regional admin cannot be sent there. They reassign one
+                  customer at a time from their own Customers page. */}
               Move {blocker.assignedCustomers}{" "}
-              {blocker.assignedCustomers === 1 ? "customer" : "customers"} from
-              the Customer Reassignment page, then try again.
+              {blocker.assignedCustomers === 1 ? "customer" : "customers"} off
+              this officer from the{" "}
+              {isRegionScopedViewer
+                ? "Customers page"
+                : "Customer Reassignment page"}
+              , then try again.
             </Text>
           </div>
         )}

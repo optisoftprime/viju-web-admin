@@ -6,7 +6,6 @@ import { Text, Card, Button, Table, SearchInput } from "@/components/common";
 import StatCard from "@/components/StatCard";
 import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
-import ChatUI from "@/components/chat/ChatUI";
 import TicketsUI from "@/components/ticket/TicketsUI";
 import AssignAccountOfficerModal from "@/components/AssignAccountOfficerModal";
 import AssignLoadingOfficerModal from "@/components/AssignLoadingOfficerModal";
@@ -673,12 +672,14 @@ function DashboardContent() {
             onClick={() => setIsAllCustomersOpen(true)}
             actionLabel="View all customers"
           />
+          {/* Spec 40 - into the ticket audit, which is now region-scoped for
+              a regional admin, rather than the standalone tickets screen */}
           <StatCard
             icon={Ticket}
             label="Open Tickets"
             value={formatNumber(summary.openTickets)}
-            onClick={() => router.push("/regional-admin/tickets")}
-            actionLabel="Go to open tickets"
+            onClick={() => router.push("/admin/audits?tab=ticket")}
+            actionLabel="View ticket audit"
           />
           <StatCard
             icon={Truck}
@@ -868,12 +869,14 @@ function DashboardContent() {
   };
 
   /**
-   * Unread Messages tile - jump to the distributor who has been waiting
-   * longest on an unread message and land on the Chat tab, where the thread
-   * loads on its own.
+   * Unread Messages tile - open the conversation of the distributor who has
+   * been waiting longest.
    *
-   * The table switches to the matching "Unread Messages" filter at the same
-   * time, so the list underneath shows exactly who else is waiting.
+   * Spec 41 moved chat off this page, so the tile now deep-links into the Chat
+   * screen with that customer named rather than selecting a row here and
+   * switching to a tab that no longer exists. The rest of the list is right
+   * there in the left column, which is what the "Unread Messages" table filter
+   * used to provide.
    */
   const handleUnreadMessagesStat = async () => {
     if (isFindingUnread) return;
@@ -886,10 +889,7 @@ function DashboardContent() {
         return;
       }
 
-      setSelectedTab("unreadMessages");
-      resetPage();
-      focusCustomer({ id: customer.id, name: customer.name }, "Chat");
-      setAutoOpenTicketId(null);
+      router.push(`/chat?customer=${encodeURIComponent(customer.id)}`);
     } catch (error) {
       toast.error(
         getErrorMessage(error, "Could not open the next unread conversation"),
@@ -941,11 +941,14 @@ function DashboardContent() {
                   right={`Customers - ${stat.region.dist}`}
                 />
                 <TextExtremeEnd
-                  left="Wallet"
+                  left="Account Balance"
                   right={formatToNaira(stat.walletBalance)}
                 />
                 <TextExtremeEnd left="Tickets" right={stat.openTickets} />
-                <TextExtremeEnd left="Officers" right={stat.activeOfficers} />
+                <TextExtremeEnd
+                  left="Account Officers"
+                  right={stat.activeOfficers}
+                />
                 <div
                   onClick={() => {
                     // The tile carries a display label ("Lagos"); the table
@@ -1110,13 +1113,15 @@ function DashboardContent() {
                     </div>
 
                     {/* Detail Tabs Navigation */}
-                    <div className="flex items-center md:grid grid-cols-7 gap-2 pt-4 overflow-x-auto w-full">
+                    {/* Spec 41 - "Chat" is gone from here. Conversations moved
+                        to their own screen, where they are the list rather
+                        than something you reach by first finding the customer */}
+                    <div className="flex items-center md:grid grid-cols-6 gap-2 pt-4 overflow-x-auto w-full">
                       {[
                         "Overview",
                         "Orders",
                         "Invoices",
                         "Stock",
-                        "Chat",
                         "Tickets",
                         "Waybills",
                       ].map((tab) => (
@@ -1256,13 +1261,6 @@ function DashboardContent() {
                             </Text>
                           </div>
                         ))}
-                      {selectedDetailTab === "Chat" && (
-                        <ChatUI
-                          profileName={selectedDistributor.name}
-                          profileStatus="Online"
-                          distributorId={selectedDistributorId}
-                        />
-                      )}
                       {selectedDetailTab === "Tickets" && (
                         <TicketsUI
                           // Re-keyed by the Open Tickets tile so a repeat click

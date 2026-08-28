@@ -38,6 +38,21 @@ export interface TableProps<T> {
    * that is unique across the result set.
    */
   rowKey?: (row: T, index: number) => string;
+  /**
+   * Bulk selection (spec 39). Off unless `selectable` is set, so every
+   * existing table is unaffected.
+   *
+   * Identity comes from `rowKey` - pass one whenever selection is on, or the
+   * checkbox state follows the array index and breaks the moment the page
+   * changes. Selection is OWNED BY THE PARENT: this component renders the
+   * boxes and reports intent, it never keeps a list of its own, so a parent
+   * can hold selections across pages.
+   */
+  selectable?: boolean;
+  selectedKeys?: string[];
+  onSelectionChange?: (keys: string[]) => void;
+  /** Rows that cannot be picked, e.g. a record the action does not apply to */
+  isRowSelectable?: (row: T) => boolean;
 }
 
 // Type for status badge colors
@@ -49,6 +64,15 @@ export const getStatusBadgeStyle = (
   status: string,
 ): { bgColor: string; textColor: string } => {
   const lowerStatus = status.toLowerCase();
+
+  // Spec 39 - a cancelled load must not read as "pending"; checked first
+  // because "cancelled" would otherwise fall through to the default
+  if (lowerStatus.includes("cancel")) {
+    return {
+      bgColor: "bg-[#FFE4E4]",
+      textColor: "text-[#D42D2D]",
+    };
+  }
 
   if (lowerStatus.includes("pending")) {
     return {
@@ -95,11 +119,17 @@ const renderStatusBadge = (status: string) => {
 };
 
 // Table skeleton loading component
-const TableSkeleton = ({ columns }: { columns: any[] }) => (
+const TableSkeleton = ({
+  columns,
+  extraColumns = 0,
+}: {
+  columns: any[];
+  extraColumns?: number;
+}) => (
   <tbody>
     {[...Array(5)].map((_, rowIdx) => (
       <tr key={rowIdx} className="border-b border-muted">
-        {columns.map((_, colIdx) => (
+        {[...Array(columns.length + extraColumns)].map((_, colIdx) => (
           <td key={colIdx} className="p-2">
             <div className="h-4 bg-muted/20 rounded animate-pulse w-20" />
           </td>
@@ -123,11 +153,66 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps<any>>(
       onSort,
       rowClassName,
       rowKey,
+      selectable = false,
+      selectedKeys,
+      onSelectionChange,
+      isRowSelectable,
       className = "",
       showSerialNumber = false,
     },
     ref,
   ) => {
+    /**
+     * The key for a row. Falls back to the index so a table that turns
+     * selection on without a `rowKey` still behaves on a single page rather
+     * than crashing - it is the wrong identity across pages, which is why
+     * `rowKey` is documented as required here.
+     */
+    const keyFor = (row: (typeof data)[number], index: number) =>
+      rowKey ? rowKey(row, index) : String(index);
+
+    const selected = new Set(selectedKeys ?? []);
+
+    // Only rows the parent allows count toward "all on this page"
+    const selectableKeys = data
+      .map((row, index) =>
+        isRowSelectable?.(row) === false ? null : keyFor(row, index),
+      )
+      .filter((key): key is string => key !== null);
+
+    const allOnPageSelected =
+      selectableKeys.length > 0 &&
+      selectableKeys.every((key) => selected.has(key));
+    const someOnPageSelected =
+      !allOnPageSelected && selectableKeys.some((key) => selected.has(key));
+
+    const toggleRow = (key: string) => {
+      const next = new Set(selected);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      onSelectionChange?.(Array.from(next));
+    };
+
+    /**
+     * The header box adds or removes THIS page only - selections made on
+     * other pages are left alone, which is what makes a cross-page bulk
+     * action possible.
+     */
+    const toggleAllOnPage = () => {
+      const next = new Set(selected);
+      if (allOnPageSelected) {
+        selectableKeys.forEach((key) => next.delete(key));
+      } else {
+        selectableKeys.forEach((key) => next.add(key));
+      }
+      onSelectionChange?.(Array.from(next));
+    };
+
+    const selectionColumnCount = selectable ? 1 : 0;
+
     return (
       <div className="overflow-x-auto border border-[#E0E7F0] w-full rounded-tl-lg rounded-tr-lg">
         <table
@@ -137,6 +222,24 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps<any>>(
           {/* Table Header */}
           <thead>
             <tr>
+              {/* Selection Column Header - picks or clears this page */}
+              {selectable && (
+                <th className="w-10 p-2 text-center bg-[#F0F5F9]">
+                  <input
+                    type="checkbox"
+                    aria-label="Select every row on this page"
+                    checked={allOnPageSelected}
+                    ref={(node) => {
+                      // Partial selection reads as a dash, not as unchecked
+                      if (node) node.indeterminate = someOnPageSelected;
+                    }}
+                    disabled={selectableKeys.length === 0}
+                    onChange={toggleAllOnPage}
+                    className="w-4 h-4 accent-primary cursor-pointer disabled:cursor-not-allowed"
+                  />
+                </th>
+              )}
+
               {/* Serial Number Column Header */}
               {showSerialNumber && (
                 <th className="text-[13px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
@@ -186,12 +289,16 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps<any>>(
 
           {/* Table Body */}
           {loading ? (
-            <TableSkeleton columns={columns} />
+            <TableSkeleton columns={columns} extraColumns={selectionColumnCount} />
           ) : data.length === 0 ? (
             <tbody>
               <tr>
                 <td
-                  colSpan={columns.length + (showSerialNumber ? 1 : 0)}
+                  colSpan={
+                    columns.length +
+                    (showSerialNumber ? 1 : 0) +
+                    selectionColumnCount
+                  }
                   className="text-left text-[13px] font-medium text-muted p-2"
                 >
                   No data available
@@ -214,6 +321,23 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps<any>>(
                     } ${rowClassName?.(row) ?? ""}`.trim()}
                     onClick={() => onRowClick?.(row)}
                   >
+                    {/* Selection Column - never opens the row */}
+                    {selectable && (
+                      <td
+                        className="w-10 p-2 text-center"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          aria-label="Select this row"
+                          checked={selected.has(keyFor(row, rowIdx))}
+                          disabled={isRowSelectable?.(row) === false}
+                          onChange={() => toggleRow(keyFor(row, rowIdx))}
+                          className="w-4 h-4 accent-primary cursor-pointer disabled:cursor-not-allowed"
+                        />
+                      </td>
+                    )}
+
                     {/* Serial Number Column */}
                     {showSerialNumber && (
                       <td className="text-left text-[13px] font-medium text-muted p-2 ">

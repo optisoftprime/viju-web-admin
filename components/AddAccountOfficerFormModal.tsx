@@ -13,6 +13,7 @@ import {
   CreateOfficerResponse,
 } from "@/lib/api/types";
 import { REGIONS } from "@/constants/regions";
+import { formatRegion } from "@/utils/formatter";
 import {
   CREATE_ROLE_OPTIONS,
   ManagedRole,
@@ -36,6 +37,15 @@ interface AddManagedUserModalProps {
    */
   roles?: ManagedRole[];
   title?: string;
+  /**
+   * Spec 40: pin every account created here to one region and hide the picker.
+   *
+   * A REGIONAL_ADMIN creates staff for their OWN region and nowhere else, so
+   * the region is not a choice for them - it is a fact about who is asking.
+   * Passing the enum here also stops a display label ("South-South") ever
+   * reaching the API, which would be a 400.
+   */
+  lockedRegion?: BroadcastRegion;
 }
 
 /**
@@ -139,6 +149,7 @@ export default function AddManagedUserModal({
   onSuccess,
   roles,
   title,
+  lockedRegion,
 }: AddManagedUserModalProps) {
   const roleOptions = useMemo(
     () =>
@@ -169,24 +180,28 @@ export default function AddManagedUserModal({
     formState: { errors, isSubmitting },
   } = useForm<FormValues, unknown, FormData>({
     resolver: yupResolver(schema),
-    defaultValues: { role: defaultRole, region: "" },
+    defaultValues: { role: defaultRole, region: lockedRegion ?? "" },
   });
 
   const selectedRole = watch("role") || defaultRole;
   const needsRegion = roleRequiresRegion(selectedRole);
 
-  // Switching to ADMIN must not leave a stale region behind to be submitted
+  /**
+   * Switching to ADMIN must not leave a stale region behind to be submitted.
+   * With a locked region the value is restored rather than cleared, so it
+   * survives a role change back to one of the region-scoped roles.
+   */
   useEffect(() => {
-    if (!needsRegion) setValue("region", "");
-  }, [needsRegion, setValue]);
+    setValue("region", needsRegion ? (lockedRegion ?? "") : "");
+  }, [needsRegion, setValue, lockedRegion]);
 
   // A reopened modal starts clean rather than showing the last attempt
   useEffect(() => {
     if (!isOpen) {
-      reset({ role: defaultRole, region: "" });
+      reset({ role: defaultRole, region: lockedRegion ?? "" });
       setFormErrors([]);
     }
-  }, [isOpen, reset, defaultRole]);
+  }, [isOpen, reset, defaultRole, lockedRegion]);
 
   const handleGeneratePassword = () => {
     setValue("temporaryPassword", generatePassword());
@@ -205,13 +220,16 @@ export default function AddManagedUserModal({
       password: data.temporaryPassword,
     };
 
-    if (needsRegion && data.region) {
-      payload.region = data.region as BroadcastRegion;
+    // The locked region wins outright - the hidden input is a convenience,
+    // not the source of truth for who the creator is
+    const region = lockedRegion ?? data.region;
+    if (needsRegion && region) {
+      payload.region = region as BroadcastRegion;
     }
 
     try {
       const created = await createOfficerMutation.mutateAsync(payload);
-      reset({ role: defaultRole, region: "" });
+      reset({ role: defaultRole, region: lockedRegion ?? "" });
       onSuccess?.(created);
       onClose();
     } catch (error) {
@@ -290,8 +308,19 @@ export default function AddManagedUserModal({
             </div>
           )}
 
-          {/* Region - hidden for an ADMIN, who is organisation-wide */}
-          {needsRegion ? (
+          {/* Region - hidden for an ADMIN, who is organisation-wide, and
+              fixed for a regional admin, who creates only for their own */}
+          {needsRegion && lockedRegion ? (
+            <div className="mt-2 rounded-lg bg-muted/10 px-3 py-2">
+              <Text variant="small" weight="semibold">
+                Region
+              </Text>
+              <Text variant="caption" color="muted">
+                {formatRegion(lockedRegion)} - accounts you create belong to
+                your own region.
+              </Text>
+            </div>
+          ) : needsRegion ? (
             <div>
               <Select
                 name="region"

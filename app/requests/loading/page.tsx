@@ -12,12 +12,16 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { usePagination } from "@/hooks/usePagination";
 import { useAuthStore } from "@/store/auth.store";
 import {
-  useRegionalLoadingRequests,
+  useLoadingRequests,
   useAssignLoadingOfficer,
+  useCancelLoadingRequest,
 } from "@/hooks/api/useLoading";
 import { safeText, safeNumber, safeDateText, humanizeEnum } from "@/utils/safe";
+import { formatRegion } from "@/utils/formatter";
+import { isAccountOfficer } from "@/constants/roles";
 import type { LoadingRequest as ApiLoadingRequest } from "@/lib/api/types";
 import ArrowBack from "@/components/common/ArrowBack";
+import CancelLoadingRequestModal from "@/components/CancelLoadingRequestModal";
 
 interface LoadingRequest {
   id: string;
@@ -32,8 +36,34 @@ interface LoadingRequest {
   status: string;
   rawStatus: string;
   quantity: string;
+  /** Spec 39 - the loading officer's note. "-" until they write one. */
+  description: string;
   action: string;
+  /** Display label for the header; regionValue is the enum the API filters on */
+  region: string;
+  regionValue: string;
+  /** Spec 39 - false once the load is finished or already called off */
+  canCancel: boolean;
 }
+
+/**
+ * Spec 41: a load can be called off only BEFORE loading starts.
+ *
+ * Spec 39 allowed IN_PROGRESS too. That is now wrong for a real reason rather
+ * than a rule change: once a truck is being loaded, cancelling leaves stock
+ * already moved with no waybill to account for it. COMPLETED was always final.
+ *
+ * ASSIGNED is included deliberately - a load with an officer on it that has
+ * not started is still a plan, not work in progress, and it is the only state
+ * in which the loading officer themselves can call one off (their queue never
+ * contains PENDING loads, since PENDING means nobody is assigned yet).
+ *
+ * LC-1 is closed: the API refuses IN_PROGRESS -> CANCELLED with a 409
+ * INVALID_STATUS_TRANSITION, so this list and the server agree. The button is
+ * still hidden rather than left to fail - the API is the guarantee, the UI is
+ * the better experience.
+ */
+const CANCELLABLE_STATUSES = ["PENDING", "ASSIGNED"];
 
 /** Tab value -> API status filter. "ALL" means send nothing. */
 const STATUS_TABS = [
@@ -42,6 +72,8 @@ const STATUS_TABS = [
   { value: "ASSIGNED", label: "Assigned" },
   { value: "IN_PROGRESS", label: "Loading In Progress" },
   { value: "COMPLETED", label: "Completed" },
+  // Spec 39 - cancelled loads stay visible rather than vanishing from the list
+  { value: "CANCELLED", label: "Cancelled" },
 ] as const;
 
 // Table columns definition
@@ -79,6 +111,11 @@ const tableColumns = [
     title: "STATUS",
   },
   {
+    // Spec 39 - the loading officer's note, empty as "-" until one is written
+    key: "description" as const,
+    title: "DESCRIPTION",
+  },
+  {
     key: "action" as const,
     title: "ACTION",
   },
@@ -95,6 +132,8 @@ function LoadingRequestPageContent() {
   const [isLoadingOfficerSuccessOpen, setIsLoadingOfficerSuccessOpen] =
     useState(false);
   const [detailsRow, setDetailsRow] = useState<LoadingRequest | null>(null);
+  // Spec 39 - the row whose cancellation is being confirmed
+  const [cancelTarget, setCancelTarget] = useState<LoadingRequest | null>(null);
   const {
     currentPage,
     pageSize: itemsPerPage,
@@ -108,8 +147,12 @@ function LoadingRequestPageContent() {
   /**
    * RA-06 - region is derived from the token, never sent as a query param.
    * The server paginates, so no client-side slicing.
+   *
+   * Spec 39 - `useLoadingRequests` picks the route from the signed-in role, so
+   * an ACCOUNT OFFICER and a REGIONAL ADMIN both land here and each reads the
+   * list their own authorisation allows. Neither names a path.
    */
-  const { data, isLoading, error } = useRegionalLoadingRequests({
+  const { data, isLoading, error } = useLoadingRequests({
     page: currentPage,
     pageSize: itemsPerPage,
     search: searchTerm || undefined,
@@ -117,6 +160,10 @@ function LoadingRequestPageContent() {
   });
 
   const assignMutation = useAssignLoadingOfficer();
+  const cancelMutation = useCancelLoadingRequest();
+
+  // Only the copy differs - the two roles do exactly the same job here
+  const viewerIsAccountOfficer = isAccountOfficer(user?.role);
 
   const rows: ApiLoadingRequest[] = data?.data ?? [];
 
@@ -138,16 +185,54 @@ function LoadingRequestPageContent() {
           row.quantityCartons != null
             ? `${safeNumber(row.quantityCartons)} Cartons`
             : "N/A",
+        // Spec 39 - written by the loading officer; a load without one is "-"
+        description: safeText(row.description, "-"),
+        region: formatRegion(row.region),
+        regionValue: safeText(row.region, ""),
         action:
           safeText(row.status, "").toUpperCase() === "PENDING"
             ? "Assign Officer"
             : "View",
+        canCancel: CANCELLABLE_STATUSES.includes(
+          safeText(row.status, "PENDING").toUpperCase(),
+        ),
       })),
     [rows],
   );
 
   const totalItems = data?.meta.total ?? 0;
   const totalPages = data?.meta.totalPages ?? 1;
+
+  /**
+   * Spec 39 - CANCEL is its own column rather than a second value in ACTION:
+   * ACTION already carries assign/view, and folding a destructive action into
+   * the same button would make what it does depend on the row's status.
+   */
+  const columns = useMemo(
+    () => [
+      ...tableColumns,
+      {
+        key: "canCancel" as const,
+        title: "CANCEL",
+        render: (_value: unknown, row: LoadingRequest) =>
+          row.canCancel ? (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                setCancelTarget(row);
+              }}
+              className="text-primary underline hover:text-orange transition-colors"
+            >
+              Cancel
+            </button>
+          ) : (
+            <span className="text-muted">-</span>
+          ),
+      },
+    ],
+    [],
+  );
 
   /**
    * Handle search input - server-side, so reset to page 1
@@ -180,6 +265,25 @@ function LoadingRequestPageContent() {
   const handleNextPage = () => nextPage(totalPages);
 
   /**
+   * Spec 39 - call off a load. The reason is optional; when given it is what
+   * the loading officer sees against the cancelled row.
+   */
+  const handleCancelConfirmed = async (reason: string) => {
+    if (!cancelTarget?.id) return;
+
+    try {
+      await cancelMutation.mutateAsync({
+        requestId: cancelTarget.id,
+        body: reason ? { reason } : undefined,
+      });
+      setCancelTarget(null);
+      setDetailsRow(null);
+    } catch {
+      // useCancelLoadingRequest already surfaced the API message
+    }
+  };
+
+  /**
    * Handle loading officer assignment
    */
   const handleLoadingOfficerAssigned = async (officer: {
@@ -209,7 +313,11 @@ function LoadingRequestPageContent() {
         {/* Page Header Component */}
         <PageHeader
           title="Loading Requests"
-          subtitle="Manage and track all loading requests"
+          subtitle={
+            viewerIsAccountOfficer
+              ? "Assign, track and cancel loading requests for your customers"
+              : "Manage and track all loading requests"
+          }
         />
 
         {/* Loading Requests Card */}
@@ -268,7 +376,9 @@ function LoadingRequestPageContent() {
                 No loading requests
               </Text>
               <Text variant="caption" color="muted">
-                Requests submitted by distributors in your region appear here.
+                {viewerIsAccountOfficer
+                  ? "Requests submitted by the distributors on your accounts appear here."
+                  : "Requests submitted by distributors in your region appear here."}
               </Text>
             </div>
           )}
@@ -277,10 +387,11 @@ function LoadingRequestPageContent() {
           {!isLoading && !error && paginatedData.length > 0 && (
             <div className="overflow-x-auto mt-6">
               <Table
-                columns={tableColumns}
+                columns={columns}
                 data={paginatedData}
                 onRowClick={setDetailsRow}
                 onActionClick={handleActionClick}
+                rowKey={(row: LoadingRequest) => row.id}
               />
             </div>
           )}
@@ -324,36 +435,72 @@ function LoadingRequestPageContent() {
               fields: [
                 { label: "Distributor", value: detailsRow?.distributor },
                 { label: "Loading Officer", value: detailsRow?.officer },
+                // Spec 39 - the loading officer's own note on this load
+                {
+                  label: "Description",
+                  value: detailsRow?.description,
+                  fullWidth: true,
+                },
               ],
             },
           ]}
           footer={
-            detailsRow?.status === "Pending" ? (
-              <Button
-                variant="primary"
-                className="bg-linear-to-r from-primary via-orange to-primary"
-                onClick={() => {
-                  setDetailsRow(null);
-                  setIsAssignLoadingOfficerModalOpen(true);
-                }}
-              >
-                Assign Officer
-              </Button>
-            ) : undefined
+            <div className="flex flex-wrap gap-3">
+              {detailsRow?.rawStatus === "PENDING" && (
+                <Button
+                  variant="primary"
+                  className="bg-linear-to-r from-primary via-orange to-primary"
+                  onClick={() => {
+                    setSelectedRequest(detailsRow);
+                    setDetailsRow(null);
+                    setIsAssignLoadingOfficerModalOpen(true);
+                  }}
+                >
+                  Assign Officer
+                </Button>
+              )}
+              {detailsRow?.canCancel && (
+                <Button
+                  variant="outline"
+                  onClick={() => setCancelTarget(detailsRow)}
+                  className="border-primary text-primary"
+                >
+                  Cancel Request
+                </Button>
+              )}
+            </div>
           }
         />
 
-        {/* Assign Loading Officer Modal */}
+        {/* Assign Loading Officer Modal - fed by the row that opened it, not
+            by the placeholder values it used to be pinned to */}
         <AssignLoadingOfficerModal
           isOpen={isAssignLoadingOfficerModalOpen}
-          onClose={() => setIsAssignLoadingOfficerModalOpen(false)}
+          onClose={() => {
+            setIsAssignLoadingOfficerModalOpen(false);
+            setSelectedRequest(null);
+          }}
           onConfirm={handleLoadingOfficerAssigned}
           isSubmitting={assignMutation.isPending}
-          truckName="LAG-234-XY"
-          driver="John Dare"
-          date="Today, 14:00"
-          qty="320 Cartons"
-          region="Lagos"
+          distributor={selectedRequest?.distributor}
+          truckName={selectedRequest?.truck}
+          driver={selectedRequest?.driver}
+          date={selectedRequest?.submitted}
+          qty={selectedRequest?.quantity}
+          region={selectedRequest?.region}
+          regionValue={selectedRequest?.regionValue}
+        />
+
+        {/* Spec 39 - cancel confirmation, with an optional reason */}
+        <CancelLoadingRequestModal
+          isOpen={!!cancelTarget}
+          onClose={() => setCancelTarget(null)}
+          onConfirm={handleCancelConfirmed}
+          isSubmitting={cancelMutation.isPending}
+          distributor={cancelTarget?.distributor}
+          waybill={cancelTarget?.waybill}
+          officer={cancelTarget?.officer}
+          status={cancelTarget?.status}
         />
 
         {/* Loading Officer Success Modal */}
