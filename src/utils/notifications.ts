@@ -43,6 +43,14 @@ export const NOTIFICATION_AUDIENCE: Record<string, string[]> = {
   // A conversation belongs to the two people in it. Every staff role can hold
   // one, so the role cannot narrow this - the row is addressed to the single
   // staff member the conversation belongs to, which is what scopes it.
+  //
+  //
+  // NB-1 (spec 42): the SERVER now excludes CHAT_MESSAGE from a staff caller's
+  // feed and from its `unread` count, so these rows no longer reach the bell
+  // at all - the chat badges say it better in two places already. The row is
+  // still written (it drives the push and the realtime frame) and still
+  // belongs to this audience, which is what this entry records. A
+  // distributor's own feed keeps its chat notifications.
   CHAT_MESSAGE: ["OFFICER", "ADMIN", "REGIONAL_ADMIN"],
   TICKET_CREATED: ["OFFICER", "ADMIN", "REGIONAL_ADMIN"],
   TICKET_REPLY: ["OFFICER", "ADMIN", "REGIONAL_ADMIN"],

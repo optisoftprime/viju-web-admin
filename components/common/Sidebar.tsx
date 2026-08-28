@@ -10,6 +10,8 @@ import { useAuthStore } from "@/store/auth.store";
 import { getPortalName } from "@/src/utils/greeting";
 import { formatRegion } from "@/src/utils/formatter";
 import { formatRole, normalizeStaffRole } from "@/constants/roles";
+import { useDashboardStats } from "@/hooks/api/useDashboard";
+import { useChatUIStore } from "@/store/chat.store";
 
 interface NavLinkItem {
   name: string;
@@ -17,6 +19,8 @@ interface NavLinkItem {
   icon: string;
   isActive?: boolean;
   secondaryLink?: string;
+  /** Spec 42: unread count rendered as a badge. 0 renders nothing. */
+  badge?: number;
 }
 
 interface NavCategory {
@@ -62,6 +66,33 @@ export default function Sidebar({ showSidebar }: { showSidebar: boolean }) {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   /**
+   * Spec 42: total unread customer messages, on the Chat entry.
+   *
+   * The figure is the officer dashboard's own `unreadMessages` - the whole
+   * portfolio, not just the conversations currently loaded on the Chat screen.
+   * It shares a cache key with the dashboard tiles, so this costs no extra
+   * request on a page that already reads them, and the realtime chat frame
+   * invalidates it so the badge moves as messages land.
+   *
+   * The thread the officer is READING is netted out: it is read the moment it
+   * arrives, and waiting for the server round trip would flash a badge for a
+   * message already on screen.
+   */
+  const isOfficer = normalizeStaffRole(user?.role) === "OFFICER";
+  const { data: dashboardStats } = useDashboardStats();
+  const activeThreadUnread = useChatUIStore((state) => state.activeThreadUnread);
+
+  const unreadChatCount = isOfficer
+    ? Math.max(
+        0,
+        Number(
+          (dashboardStats as { unreadMessages?: number } | undefined)
+            ?.unreadMessages ?? 0,
+        ) - activeThreadUnread,
+      )
+    : 0;
+
+  /**
    * The scope badge under the brand.
    *
    * An admin works across the whole organisation; every other role is scoped
@@ -105,7 +136,12 @@ export default function Sidebar({ showSidebar }: { showSidebar: boolean }) {
          * Spec 41: every conversation in one place, instead of one thread at a
          * time behind a tab on a customer row.
          */
-        { name: "Chat", url: "/chat", icon: "MessageSquare" },
+        {
+          name: "Chat",
+          url: "/chat",
+          icon: "MessageSquare",
+          badge: unreadChatCount,
+        },
       ],
     },
     {
@@ -128,11 +164,11 @@ export default function Sidebar({ showSidebar }: { showSidebar: boolean }) {
           url: "/regional-admin/officers",
           icon: "UserCheck",
         },
-        {
-          name: "Open Tickets",
-          url: "/regional-admin/tickets",
-          icon: "Ticket",
-        },
+        // {
+        //   name: "Open Tickets",
+        //   url: "/regional-admin/tickets",
+        //   icon: "Ticket",
+        // },
         /**
          * Spec 40: a regional admin does everything an admin does, scoped to
          * their own region. These four are the SAME pages the admin uses -
@@ -266,7 +302,18 @@ export default function Sidebar({ showSidebar }: { showSidebar: boolean }) {
                     }
                   >
                     {getIconComponent(link.icon)}
-                    <span className="text-sm">{link.name}</span>
+                    <span className="text-sm flex-1">{link.name}</span>
+                    {/* Spec 42 - nothing at all when the count is zero */}
+                    {!!link.badge && link.badge > 0 && (
+                      <span
+                        aria-label={`${link.badge} unread messages`}
+                        className={`min-w-5 h-5 px-1.5 rounded-full text-[11px] font-bold flex items-center justify-center ${
+                          isActive ? "bg-primary text-white" : "bg-white text-primary"
+                        }`}
+                      >
+                        {link.badge > 99 ? "99+" : link.badge}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
@@ -278,9 +325,19 @@ export default function Sidebar({ showSidebar }: { showSidebar: boolean }) {
       {/* Footer Section - User Profile & Logout */}
       <div className="border-t border-gray-300/40 py-8 mt-10">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 p-2 bg-white text-orange rounded-full flex uppercase font-bold items-center justify-center">
-            {user?.name?.charAt(0) || "U"}
-          </div>
+          {/* Spec 42 - the user's own picture once they have set one */}
+          {user?.profilePhotoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={user.profilePhotoUrl}
+              alt=""
+              className="w-10 h-10 rounded-full object-cover shrink-0"
+            />
+          ) : (
+            <div className="w-10 h-10 p-2 bg-white text-orange rounded-full flex uppercase font-bold items-center justify-center shrink-0">
+              {user?.name?.charAt(0) || "U"}
+            </div>
+          )}
 
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-white">

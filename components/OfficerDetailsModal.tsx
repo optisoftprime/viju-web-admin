@@ -385,6 +385,20 @@ export default function OfficerDetailsModal({
                   {formatRoleScope(roleValue, formatRegion(region))}
                 </Text>
               )}
+
+              {/*
+                Moving an officer does NOT move their book, and the reassign
+                route requires the officer to be in the CUSTOMER's region - so
+                anyone left behind can no longer be reassigned to them. Only
+                worth saying when they actually hold customers.
+              */}
+              {isEditingRegion && safeNumber(customerCount, 0) > 0 && (
+                <Text variant="thinnote" color="orange" className="block">
+                  Their {safeNumber(customerCount, 0)} customer
+                  {safeNumber(customerCount, 0) === 1 ? "" : "s"} stay where
+                  they are and will need reassigning separately.
+                </Text>
+              )}
             </div>
             <Field label="Status" value={safeText(status)} />
             <Field label="Customers" value={safeNumber(customerCount, 0)} />

@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Bell, LogOut, LucideLogOut, Menu } from "lucide-react";
+import Link from "next/link";
+import {
+  ChevronDown,
+  Bell,
+  LogOut,
+  LucideLogOut,
+  Menu,
+  UserRound,
+} from "lucide-react";
 import { Text } from "./Text";
 import SearchInput from "./SearchInput";
 import LogoutModal from "./LogoutModal";
@@ -87,9 +95,19 @@ export default function Navbar({
           className="relative hidden md:block rounded-md cursor-pointer px-4 py-2 border border-muted/20 space-y-2 hover:bg-gray-50 transition-colors"
         >
           <div className="flex items-center gap-2 text-sm text-muted font-medium">
-            <span className="w-6 h-6 bg-primary text-white rounded-full flex uppercase text-[11px] font-bold items-center justify-center">
-              {user?.name?.charAt(0) || "U"}
-            </span>
+            {/* Spec 42 - the user's own picture once they have set one */}
+            {user?.profilePhotoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={user.profilePhotoUrl}
+                alt=""
+                className="w-6 h-6 rounded-full object-cover"
+              />
+            ) : (
+              <span className="w-6 h-6 bg-primary text-white rounded-full flex uppercase text-[11px] font-bold items-center justify-center">
+                {user?.name?.charAt(0) || "U"}
+              </span>
+            )}
             <span className="text-black text-[13px] font-semibold">
               {user?.name || "User"}
             </span>
@@ -99,16 +117,39 @@ export default function Navbar({
               <ChevronDown className="w-4 h-4" />
             )}
           </div>
-          {/* toggle logout  */}
+          {/* Spec 42 - the account menu now leads somewhere as well as out */}
           {showLogoutButton && (
-            <div
-              onClick={() => setIsLogoutModalOpen(!isLogoutModalOpen)}
-              className="absolute top-full bg-red-600 px-6 py-2 rounded-md shadow-lg z-50 flex my-3 gap-2 items-center"
-            >
-              <LucideLogOut className="w-4 h-4 text-white" />
-              <span className="text-[12px] font-semibold text-white">
-                Log Out
-              </span>
+            <div className="absolute top-full right-0 z-50 my-3 w-44 rounded-md bg-white shadow-lg border border-muted/20 overflow-hidden">
+              <Link
+                href="/profile"
+                onClick={(event) => {
+                  // The wrapper toggles this menu on click; without this the
+                  // menu reopens as the navigation starts
+                  event.stopPropagation();
+                  setShowLogoutButton(false);
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 hover:bg-gray-50 transition-colors"
+              >
+                <UserRound className="w-4 h-4 text-foreground" />
+                <span className="text-[12px] font-semibold text-foreground">
+                  My Profile
+                </span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setShowLogoutButton(false);
+                  setIsLogoutModalOpen(true);
+                }}
+                className="w-full flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 transition-colors"
+              >
+                <LucideLogOut className="w-4 h-4 text-white" />
+                <span className="text-[12px] font-semibold text-white">
+                  Log Out
+                </span>
+              </button>
             </div>
           )}
         </div>

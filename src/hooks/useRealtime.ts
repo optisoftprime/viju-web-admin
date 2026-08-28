@@ -75,6 +75,20 @@ export const useRealtime = () => {
         } else {
           queryClient.invalidateQueries({ queryKey: ["chatHistory"] });
         }
+        /**
+         * Spec 42: the unread badges have to move on the frame, not on the
+         * next poll - that is what "in real time" means here.
+         *
+         *   ["officerChats"]  - the per-conversation badge and the ordering
+         *   dashboard.all     - the total behind the sidebar badge
+         *
+         * A message arriving in the thread the officer is READING is handled
+         * separately: `chatHistory` above refetches it, which marks it read
+         * server-side, and the store nets that thread out of both badges in
+         * the meantime.
+         */
+        queryClient.invalidateQueries({ queryKey: ["officerChats"] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
         queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
       },
       "ticket.updated": (event) => {

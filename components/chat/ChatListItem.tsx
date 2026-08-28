@@ -44,6 +44,14 @@ interface ChatListItemProps {
 }
 
 /**
+ * Spec 42: the selected row never shows an unread badge.
+ *
+ * Opening a conversation marks it read (C-1), but that is a round trip, and a
+ * message arriving while it is open is read the moment it lands. Rendering the
+ * server's figure would flash a count for a message already on screen.
+ */
+
+/**
  * How a conversation list renders a timestamp: the clock for today, the
  * weekday inside the last week, then the date. Same rule messaging apps use,
  * and it keeps the column narrow.
@@ -98,7 +106,7 @@ export default function ChatListItem({
   onClick,
 }: ChatListItemProps) {
   const name = safeText(thread.name, "Unknown customer");
-  const hasUnread = thread.unreadMessages > 0;
+  const hasUnread = !isSelected && thread.unreadMessages > 0;
 
   /**
    * The secondary line: the message itself, prefixed with "You: " when the

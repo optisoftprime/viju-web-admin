@@ -16,6 +16,20 @@ export const endpoints = {
     me: "/users/me",
     profile: "/users/profile",
     updateProfile: "/users/profile",
+    /**
+     * Spec 42 (PR-1): the signed-in staff member's own profile photo.
+     * Body carries the URL returned by POST /uploads.
+     */
+    photo: "/users/profile/photo",
+    /**
+     * Spec 42 (PR-2): change your own password by supplying the current one.
+     *
+     * Deliberately NOT the forgot-password flow - that proves control of an
+     * inbox, this proves knowledge of the password, and they answer different
+     * questions. The server compares `currentPassword` against the stored hash
+     * before writing the new one.
+     */
+    changePassword: "/users/profile/password",
   },
   dashboard: {
     adminDashboard: "/admin/dashboard",

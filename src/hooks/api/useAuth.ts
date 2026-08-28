@@ -5,11 +5,12 @@
 
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { authService } from "@/services/auth.service";
 import { userService } from "@/services/user.service";
+import { chatService } from "@/services/chat.service";
 import { useAuthStore } from "@/store/auth.store";
 import { queryKeys } from "@/lib/api/queryKeys";
 import {
@@ -20,6 +21,7 @@ import {
   ResetPasswordRequest,
   VerifyOTPRequest,
   VerifyOTPResponse,
+  ChangePasswordRequest,
 } from "@/lib/api/types";
 import { getErrorMessage, getErrorStatus } from "@/utils/apiError";
 
@@ -190,6 +192,48 @@ export const useCurrentUser = () => {
     queryFn: userService.getCurrentUser,
     enabled: !!storedUser, // Only run if user is logged in
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+/**
+ * Spec 42 (PR-1): upload and set the signed-in user's profile photo.
+ *
+ * The new URL is folded straight into the session, so the avatar in the
+ * navbar and anywhere else reading `user.profilePhotoUrl` changes immediately
+ * rather than on the next sign-in.
+ */
+export const useUpdateProfilePhoto = () => {
+  const queryClient = useQueryClient();
+  const { syncUser } = useAuthStore();
+
+  return useMutation({
+    mutationFn: async (file: File) => {
+      // Reuses the shared upload pipeline; `readUploadedUrl` rejects the
+      // placeholder:// URL a storage outage returns with a 2xx
+      const url = await chatService.uploadFile(file, "profile-photos");
+      return userService.updateProfilePhoto(url);
+    },
+    onSuccess: (profile) => {
+      const photo = profile?.profilePhotoUrl;
+      if (photo) syncUser({ profilePhotoUrl: photo });
+      queryClient.invalidateQueries({ queryKey: queryKeys.auth.me });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.profile });
+    },
+    // No toast: the profile form renders the failure inline, next to the
+    // control that caused it
+  });
+};
+
+/**
+ * Spec 42 (PR-2): change your own password with the current one as proof.
+ *
+ * Deliberately NOT toasted either - `INVALID_CURRENT_PASSWORD` belongs on the
+ * current-password field, where the person can see which box to correct.
+ */
+export const useChangePassword = () => {
+  return useMutation({
+    mutationFn: (request: ChangePasswordRequest) =>
+      userService.changePassword(request),
   });
 };
 

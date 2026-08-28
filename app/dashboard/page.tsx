@@ -574,7 +574,8 @@ function DashboardContent() {
             label="Total Customers"
             value={formatNumber(stats.totalActiveCustomers)}
             // caption={buildErpCaption(stats)} client said - do not show this
-            onClick={() => setIsAllCustomersOpen(true)}
+            // Spec 42 - a full page, not a dialog
+            onClick={() => router.push("/customers")}
             actionLabel="View all customers"
           />
           {/* B-1.2 - pairs with the "Unassigned only" filter on the customer list */}
@@ -669,7 +670,9 @@ function DashboardContent() {
             icon={Users}
             label="Total Customers"
             value={formatNumber(summary.totalDistributors)}
-            onClick={() => setIsAllCustomersOpen(true)}
+            // Spec 42 - a full page, not a dialog. No region is sent: a
+            // regional admin's scope comes from their token.
+            onClick={() => router.push("/customers")}
             actionLabel="View all customers"
           />
           {/* Spec 40 - into the ticket audit, which is now region-scoped for
