@@ -6,6 +6,7 @@ import { Text, Card, Button, Table } from "@/components/common";
 import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import RoleProtectedRoute from "@/components/RoleProtectedRoute";
 import ExportRecord from "@/components/ExportRecord";
 import TicketDetailModal from "@/components/ticket/TicketDetailModal";
 import ChatThreadModal from "@/components/chat/ChatThreadModal";
@@ -608,7 +609,9 @@ function InteractionAuditContent() {
 export default function InteractionAuditPage() {
   return (
     <ProtectedRoute redirectPath="/auth/login">
-      <InteractionAuditContent />
+      <RoleProtectedRoute allow={["ADMIN", "REGIONAL_ADMIN"]}>
+        <InteractionAuditContent />
+      </RoleProtectedRoute>
     </ProtectedRoute>
   );
 }

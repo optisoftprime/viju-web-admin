@@ -10,6 +10,7 @@ import BulkAssignAccountOfficerModal from "@/components/BulkAssignAccountOfficer
 import SuccessModal from "@/components/SuccessModal";
 import RowDetailsModal from "@/components/RowDetailsModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import RoleProtectedRoute from "@/components/RoleProtectedRoute";
 import { usePagination, getAppliedPageSize } from "@/hooks/usePagination";
 import {
   useCustomers,
@@ -899,13 +900,30 @@ export default function RegionalTablePage({
   region,
   regionalPortal = false,
 }: RegionalTablePageProps) {
+  /**
+   * Spec 44: one component, two routes, two audiences.
+   *
+   * `/admin/distributors` is an ADMIN screen. `/regional-admin/distributors`
+   * is a REGIONAL_ADMIN one - and also admits an ADMIN, because previewing a
+   * single region through the regional portal is a documented case this page
+   * already handles (see `adminMustPickRegion`).
+   *
+   * Nobody else belongs on either: an account officer reads their own
+   * portfolio through `/customers`, not the cross-region customer table.
+   */
+  const allow = regionalPortal
+    ? ["REGIONAL_ADMIN", "ADMIN"]
+    : ["ADMIN"];
+
   return (
     <ProtectedRoute redirectPath="/auth/login">
-      <RegionalTable
-        isAdmin={isAdmin}
-        region={region}
-        regionalPortal={regionalPortal}
-      />
+      <RoleProtectedRoute allow={allow}>
+        <RegionalTable
+          isAdmin={isAdmin}
+          region={region}
+          regionalPortal={regionalPortal}
+        />
+      </RoleProtectedRoute>
     </ProtectedRoute>
   );
 }

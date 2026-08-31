@@ -62,30 +62,32 @@ export const canBulkAssignCustomers = (role?: string | null): boolean => {
  * BA-1: who may bulk-move officers between regions
  * (`PATCH /admin/officers/bulk-region`).
  *
- * **ADMIN only, and deliberately so.** Spec 43 asked for a REGIONAL_ADMIN too;
- * the backend refused, and agreed with the objection rather than just
- * declining it. The reasoning, kept here because this is exactly the kind of
- * gate someone widens later without knowing why it is narrow:
+ * **Spec 44 re-asks for a REGIONAL_ADMIN, so they have it here again.** This
+ * has now been through a full round trip and the history matters, because the
+ * control and the API currently disagree:
  *
- *   - "Source-scoped" (move officers who are in MY region, to any region) is
- *     RU-3's refusal at scale - a regional admin could empty their own region
- *     of staff into a region whose admin never agreed to receive them.
- *   - "Confined" (move officers within my own region) is a no-op.
- *   - There is no third reading. "A regional admin may move officers to any
- *     region" and "a regional admin is confined to their own region" cannot
- *     both be true, and the second is the premise the rest of the
- *     regional-admin work rests on.
+ *   - Spec 40 reserved the route to an ADMIN, on the backend's instruction.
+ *   - Spec 43 asked for a regional admin; we built it and flagged the clash.
+ *   - The backend REFUSED (BA-1) and agreed with the objection: "source-scoped"
+ *     lets a regional admin empty their own region into one whose admin never
+ *     agreed to receive the staff, and "confined to my own region" is a no-op.
+ *     There is no third reading.
+ *   - Spec 44 asks again. That is the client's call to make, so the control is
+ *     on - but **the API still refuses it**, so it will 403 for that role
+ *     until BA-1 is reopened and answered differently.
  *
- * It is also not hypothetical: two officers are already sitting outside their
- * customers' region on the live database, created one at a time through the
- * single-officer region edit. This route would let it happen 500 at a time.
+ * The objection has not gone away and is not ours to overrule: two officers
+ * are already stranded outside their customers' region, created ONE AT A TIME
+ * through the single-officer edit. This route would allow 500 at a time.
  *
  * Still ADMIN-only, and still not wired to any UI:
  *   DELETE /admin/officers/{id}
  *   PATCH  /admin/officers/{id}/reassign-customers
  */
-export const canBulkReassignOfficerRegion = (role?: string | null): boolean =>
-  normalizeStaffRole(role) === "ADMIN";
+export const canBulkReassignOfficerRegion = (role?: string | null): boolean => {
+  const normalized = normalizeStaffRole(role);
+  return normalized === "ADMIN" || normalized === "REGIONAL_ADMIN";
+};
 
 /** The roles the signed-in staff member is allowed to manage */
 export const managedRolesForRole = (

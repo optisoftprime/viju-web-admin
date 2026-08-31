@@ -9,6 +9,7 @@ import AssignLoadingOfficerModal from "@/components/AssignLoadingOfficerModal";
 import LoadingOfficerSuccessModal from "@/components/LoadingOfficerSuccessModal";
 import RowDetailsModal from "@/components/RowDetailsModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import RoleProtectedRoute from "@/components/RoleProtectedRoute";
 import { usePagination } from "@/hooks/usePagination";
 import { useAuthStore } from "@/store/auth.store";
 import {
@@ -44,6 +45,8 @@ interface LoadingRequest {
   description: string;
   /** Spec 43 - "Regional Admin - Ada Obi", or "-" while it is still live */
   cancelledBy: string;
+  /** Spec 44 - when it was called off, or "-" while it is still live */
+  cancelledAt: string;
   action: string;
   /** Display label for the header; regionValue is the enum the API filters on */
   region: string;
@@ -163,6 +166,12 @@ const tableColumns = [
     title: "CANCELLED BY",
   },
   {
+    // Spec 44 - and when, which is what says whether the truck had already
+    // been turned away
+    key: "cancelledAt" as const,
+    title: "CANCELLED AT",
+  },
+  {
     key: "action" as const,
     title: "ACTION",
   },
@@ -249,6 +258,8 @@ function LoadingRequestPageContent() {
           "-",
         // Spec 43 - "Regional Admin - Ada Obi"; "-" while the load is live
         cancelledBy: formatCancelledBy(row),
+        // Spec 44 - the stamp has been on the row since L-1
+        cancelledAt: safeDateText(row.cancelledAt, "-"),
         region: formatRegion(row.region),
         regionValue: safeText(row.region, ""),
         /**
@@ -493,6 +504,7 @@ function LoadingRequestPageContent() {
                   fullWidth: true,
                 },
                 { label: "Cancelled By", value: detailsRow?.cancelledBy },
+                { label: "Cancelled At", value: detailsRow?.cancelledAt },
               ],
             },
           ]}
@@ -574,7 +586,9 @@ function LoadingRequestPageContent() {
 export default function LoadingRequestPage() {
   return (
     <ProtectedRoute redirectPath="/auth/login">
-      <LoadingRequestPageContent />
+      <RoleProtectedRoute allow={["REGIONAL_ADMIN", "OFFICER", "ADMIN"]}>
+        <LoadingRequestPageContent />
+      </RoleProtectedRoute>
     </ProtectedRoute>
   );
 }

@@ -9,7 +9,14 @@ import { Text, Input, Button } from "@/components/common";
 import { useForgotPassword } from "@/hooks/api/useAuth";
 import { toast } from "sonner";
 
-// Validation schema
+/**
+ * Spec 44: the reset code goes to an EMAIL, never a phone number.
+ *
+ * The field is validated as an email, so a phone number is refused here rather
+ * than sent and silently failing to arrive. The wire name is still
+ * `identifier` - that is the API's, and it is not worth a breaking rename - but
+ * for staff it only ever carries an email address.
+ */
 const forgotPasswordValidationSchema = yup.object({
   identifier: yup
     .string()
@@ -70,7 +77,8 @@ export default function ForgotPasswordForm() {
             Forgot Password
           </Text>
           <Text variant="caption" color="muted" className="mt-2">
-            Kindly enter your email address
+            Enter the email address on your staff account and we will send a
+            6-digit code to it.
           </Text>
         </div>
 

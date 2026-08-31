@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { MainLayout, Text } from "@/components/common";
 import PageHeader from "@/components/PageHeader";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import RoleProtectedRoute from "@/components/RoleProtectedRoute";
 import ArrowBack from "@/components/common/ArrowBack";
 import ChatList from "@/components/chat/ChatList";
 import type { ChatThreadSummary } from "@/components/chat/ChatListItem";
@@ -170,7 +171,9 @@ function ChatPageContent() {
 export default function ChatPage() {
   return (
     <ProtectedRoute redirectPath="/auth/login">
-      <ChatPageContent />
+      <RoleProtectedRoute allow={["OFFICER"]}>
+        <ChatPageContent />
+      </RoleProtectedRoute>
     </ProtectedRoute>
   );
 }

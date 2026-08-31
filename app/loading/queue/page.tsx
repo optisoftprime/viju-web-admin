@@ -3,6 +3,7 @@
 import { MainLayout } from "@/components/common";
 import PageHeader from "@/components/PageHeader";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import RoleProtectedRoute from "@/components/RoleProtectedRoute";
 import LoadingOfficer from "@/components/loadingOfficer/LoadingOfficer";
 import ArrowBack from "@/components/common/ArrowBack";
 
@@ -34,7 +35,9 @@ function LoadingQueueContent() {
 export default function LoadingQueuePage() {
   return (
     <ProtectedRoute redirectPath="/auth/login">
-      <LoadingQueueContent />
+      <RoleProtectedRoute allow={["LOADING_OFFICER", "WAREHOUSE_OFFICER"]}>
+        <LoadingQueueContent />
+      </RoleProtectedRoute>
     </ProtectedRoute>
   );
 }

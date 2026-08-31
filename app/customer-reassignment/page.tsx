@@ -8,6 +8,7 @@ import Pagination from "@/components/Pagination";
 import AssignAccountOfficerModal from "@/components/AssignAccountOfficerModal";
 import RowDetailsModal from "@/components/RowDetailsModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import RoleProtectedRoute from "@/components/RoleProtectedRoute";
 import { usePagination, getTotalPages } from "@/hooks/usePagination";
 import userIcon from "@/assets/icons/usersblack.svg";
 import ArrowBack from "@/components/common/ArrowBack";
@@ -443,7 +444,9 @@ function CustomerReassignmentContent() {
 export default function CustomerReassignmentPage() {
   return (
     <ProtectedRoute redirectPath="/auth/login">
-      <CustomerReassignmentContent />
+      <RoleProtectedRoute allow={["ADMIN"]}>
+        <CustomerReassignmentContent />
+      </RoleProtectedRoute>
     </ProtectedRoute>
   );
 }

@@ -10,6 +10,7 @@ import BulkAssignAccountOfficerModal from "@/components/BulkAssignAccountOfficer
 import SuccessModal from "@/components/SuccessModal";
 import RowDetailsModal from "@/components/RowDetailsModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import RoleProtectedRoute from "@/components/RoleProtectedRoute";
 import {
   formatRegion,
   formatToNairaExact,
@@ -628,7 +629,9 @@ function CustomerReassignmentContent() {
 export default function CustomerReassignmentPage() {
   return (
     <ProtectedRoute redirectPath="/auth/login">
-      <CustomerReassignmentContent />
+      <RoleProtectedRoute allow={["ADMIN"]}>
+        <CustomerReassignmentContent />
+      </RoleProtectedRoute>
     </ProtectedRoute>
   );
 }

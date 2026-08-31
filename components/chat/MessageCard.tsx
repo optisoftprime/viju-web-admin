@@ -5,6 +5,10 @@ import AttachmentPreview from "@/components/common/AttachmentPreview";
 
 interface MessageCardProps {
   content: string;
+  /**
+   * The clock only - "9:38 AM". The calendar day belongs on the divider above
+   * the run of messages, not repeated on every bubble.
+   */
   timestamp: string;
   isMine?: boolean;
   attachmentUrl?: string;
@@ -41,7 +45,13 @@ export default function MessageCard({
         {attachmentUrl && (
           <AttachmentPreview url={attachmentUrl} size="sm" className="mt-1" />
         )}
-        <Text variant="caption" weight="medium" color="muted" className="mt-2">
+        {/* Bottom-right, the way a messaging app tucks it under the text */}
+        <Text
+          variant="caption"
+          weight="medium"
+          color="muted"
+          className="mt-2 block text-right"
+        >
           {timestamp}
         </Text>
       </div>

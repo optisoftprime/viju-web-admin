@@ -2,6 +2,7 @@
 
 import { Text } from "@/components/common";
 import { safeText } from "@/utils/safe";
+import { formatChatTime } from "@/utils/chatTime";
 
 export interface ChatThreadSummary {
   /** Customer id - the `otherUserId` the thread is fetched with */
@@ -52,36 +53,11 @@ interface ChatListItemProps {
  */
 
 /**
- * How a conversation list renders a timestamp: the clock for today, the
- * weekday inside the last week, then the date. Same rule messaging apps use,
- * and it keeps the column narrow.
+ * Re-exported so the list row's timestamp rule lives with the rest of the chat
+ * time formatting, next to the bubble clock and the day divider it has to stay
+ * consistent with.
  */
-export const formatChatTime = (value: string | null): string => {
-  if (!value) return "";
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-
-  const now = new Date();
-  const isToday = date.toDateString() === now.toDateString();
-  if (isToday) {
-    return date.toLocaleTimeString("en-NG", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }
-
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-  if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
-
-  const withinAWeek = now.getTime() - date.getTime() < 7 * 24 * 60 * 60 * 1000;
-  if (withinAWeek) {
-    return date.toLocaleDateString("en-NG", { weekday: "short" });
-  }
-
-  return date.toLocaleDateString("en-NG", { day: "2-digit", month: "short" });
-};
+export { formatChatTime };
 
 /** First letters of the first two words, e.g. "Ade Foods Ltd" -> "AF" */
 const initialsOf = (name: string): string => {

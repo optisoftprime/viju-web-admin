@@ -13,6 +13,8 @@ import { safeArray, safeText, safeNumber, safeDateText } from "@/utils/safe";
 import { formatRole, formatRoleScope, roleRequiresRegion } from "@/constants/roles";
 import { REGIONS } from "@/constants/regions";
 import { getErrorMessage } from "@/utils/apiError";
+import ChatDayDivider from "@/components/chat/ChatDayDivider";
+import { formatMessageClock, groupMessagesByDay } from "@/utils/chatTime";
 import type { BroadcastRegion } from "@/lib/api/types";
 import type {
   AuditChatThread,
@@ -107,7 +109,7 @@ function ChatBubble({ message }: { message: AuditChatMessage }) {
           <AttachmentPreview url={attachment} size="sm" className="mt-1" />
         )}
         <p className="text-[10px] text-muted mt-1">
-          {safeDateText(message?.createdAt, "")}
+          {formatMessageClock(message?.createdAt)}
         </p>
       </div>
     </div>
@@ -153,12 +155,23 @@ function ChatThread({ thread }: { thread: AuditChatThread }) {
               No messages available for this conversation.
             </Text>
           ) : (
-            messages.map((message, index) => (
-              <ChatBubble
-                key={safeText(message?.id, String(index))}
-                message={message}
-              />
-            ))
+            // The day is stated once per run; each bubble carries the clock
+            groupMessagesByDay(messages, (message) => message?.createdAt).map(
+              (day, dayIndex) => (
+                <div key={`${day.key}-${dayIndex}`}>
+                  <ChatDayDivider
+                    label={day.label}
+                    dateTime={day.messages[0]?.createdAt}
+                  />
+                  {day.messages.map((message, index) => (
+                    <ChatBubble
+                      key={safeText(message?.id, `${day.key}-${index}`)}
+                      message={message}
+                    />
+                  ))}
+                </div>
+              ),
+            )
           )}
         </div>
       )}

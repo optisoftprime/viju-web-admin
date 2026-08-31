@@ -7,6 +7,7 @@ import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
 import OfficerDetailsModal from "@/components/OfficerDetailsModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import RoleProtectedRoute from "@/components/RoleProtectedRoute";
 import { usePagination, getAppliedPageSize } from "@/hooks/usePagination";
 import { useOfficers, useBulkSetOfficerRegion } from "@/hooks/api/useOfficer";
 import { useAuthStore } from "@/store/auth.store";
@@ -146,21 +147,14 @@ function RegionalAdminOfficersContent() {
   const appliedPageSize = getAppliedPageSize(officersData?.meta, itemsPerPage);
 
   /**
-   * Spec 43 asked for bulk region reassignment here. **The backend refused
-   * BA-1**, and agreed with the objection rather than merely declining it: a
-   * regional admin moving officers to another region is giving their own staff
-   * away to a region whose admin never agreed to receive them, which is RU-3's
-   * refusal at scale.
+   * Spec 44 re-asks for bulk region reassignment here after the backend
+   * refused it as BA-1, so it is on again - the client has now asked twice and
+   * that is their decision to make.
    *
-   * So the control is gated to an ADMIN - which on this page means it is
-   * effectively absent, since a regional admin is who this screen is for. It
-   * is left wired rather than deleted because an ADMIN can reach this URL, and
-   * because the client may yet decide they want a SAFE version of the feature
-   * (bulk deactivate, or bulk reassign a portfolio) that would land here.
-   *
-   * Showing it and letting it 403 was the alternative. A button that can never
-   * work for the person looking at it is not a feature, it is a defect with a
-   * tooltip.
+   * **It will 403 until the API is reopened.** The failure surfaces through
+   * the same per-officer reporting as any other, so nothing is swallowed, but
+   * nothing will move either. See BA-1 round 2 in
+   * `BACKEND_REQUEST_CANCELLED_BY_AND_REGIONAL_BULK.md`.
    */
   const canBulkReassign = canBulkReassignOfficerRegion(user?.role);
 
@@ -401,7 +395,9 @@ function RegionalAdminOfficersContent() {
 export default function RegionalAdminOfficersPage() {
   return (
     <ProtectedRoute redirectPath="/auth/login">
-      <RegionalAdminOfficersContent />
+      <RoleProtectedRoute allow={["REGIONAL_ADMIN", "ADMIN"]}>
+        <RegionalAdminOfficersContent />
+      </RoleProtectedRoute>
     </ProtectedRoute>
   );
 }

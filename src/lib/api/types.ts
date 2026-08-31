@@ -34,6 +34,15 @@ export interface LoginTwoCredentials {
   code: string;
 }
 
+/**
+ * Spec 44: staff password reset is EMAIL-based.
+ *
+ * `identifier` is the wire name and is kept, but for the four managed staff
+ * roles it always carries an EMAIL ADDRESS - the OTP is delivered to the inbox
+ * on their staff record, never by SMS. The form validates it as an email
+ * rather than accepting a phone number, so a phone can no longer be entered
+ * here at all. See **EM-1**.
+ */
 export interface ForgotPasswordRequest {
   identifier: string;
 }
@@ -1275,11 +1284,7 @@ export interface FileUploadResponse {
   size: number;
 }
 
-// Password Reset Types
-export interface ForgotPasswordRequest {
-  identifier: string;
-}
-
+// Password Reset Types - `ForgotPasswordRequest` is declared once, above
 export interface VerifyOTPRequest {
   identifier: string;
   code: string;

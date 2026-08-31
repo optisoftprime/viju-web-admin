@@ -13,6 +13,7 @@ import OfficerDetailsModal from "@/components/OfficerDetailsModal";
 import EditUserModal from "@/components/EditUserModal";
 import SuccessModal from "@/components/SuccessModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import RoleProtectedRoute from "@/components/RoleProtectedRoute";
 import { useOfficers } from "@/hooks/api/useOfficer";
 import { usePagination, getAppliedPageSize } from "@/hooks/usePagination";
 import { useAuthStore } from "@/store/auth.store";
@@ -500,7 +501,9 @@ function ManagedUsersContent() {
 export default function ManagedUsersPage() {
   return (
     <ProtectedRoute redirectPath="/auth/login">
-      <ManagedUsersContent />
+      <RoleProtectedRoute allow={["ADMIN", "REGIONAL_ADMIN"]}>
+        <ManagedUsersContent />
+      </RoleProtectedRoute>
     </ProtectedRoute>
   );
 }
