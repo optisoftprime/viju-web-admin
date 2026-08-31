@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Text } from "@/components/common";
 import MessageCard from "./MessageCard";
+import ChatDayDivider from "./ChatDayDivider";
+import { formatMessageClock, groupMessagesByDay } from "@/utils/chatTime";
 import AttachmentIcon from "@/assets/icons/attachment.svg";
 import ArrowUpIcon from "@/assets/icons/arrow-up.svg";
 import Image from "next/image";
@@ -41,6 +43,15 @@ export default function ChatUI({
     error,
     refetch,
   } = useChatHistory(distributorId || null);
+
+  /**
+   * Messages split into calendar-day runs, so the transcript states each date
+   * once on a divider instead of on every bubble.
+   */
+  const messageDays = useMemo(
+    () => groupMessagesByDay(messages, (message) => message.createdAt),
+    [messages],
+  );
 
   // Send message mutation
   const { mutate: sendMessage } = useSendMessage(distributorId || "");
@@ -182,26 +193,36 @@ export default function ChatUI({
           </div>
         )}
 
-        {messages.map((message) => (
-          <MessageCard
-            key={message.id}
-            content={message.content}
-            timestamp={new Date(message.createdAt).toLocaleTimeString()}
-            isMine={message.senderType === "STAFF"}
-            attachmentUrl={message.attachmentUrl}
-            // Names the role that wrote it, so an admin or regional admin
-            // answering this thread is not shown as a flat "Staff"
-            senderLabel={resolveSenderLabel({
-              senderType: message.senderType,
-              // staff.id first: on a customer row `staffId` is the officer
-              // the message was routed TO, not its author
-              staffId: message.staff?.id ?? message.staffId,
-              staffRole: message.staff?.role,
-              staffName: message.staff?.name,
-              viewer: user,
-              customerName: profileName,
-            })}
-          />
+        {/* One divider per calendar day, then that day's bubbles. The list
+            is already in order, so grouping never reorders anything. */}
+        {messageDays.map((day) => (
+          <div key={day.key}>
+            <ChatDayDivider
+              label={day.label}
+              dateTime={day.messages[0]?.createdAt}
+            />
+            {day.messages.map((message) => (
+              <MessageCard
+                key={message.id}
+                content={message.content}
+                timestamp={formatMessageClock(message.createdAt)}
+                isMine={message.senderType === "STAFF"}
+                attachmentUrl={message.attachmentUrl}
+                // Names the role that wrote it, so an admin or regional admin
+                // answering this thread is not shown as a flat "Staff"
+                senderLabel={resolveSenderLabel({
+                  senderType: message.senderType,
+                  // staff.id first: on a customer row `staffId` is the officer
+                  // the message was routed TO, not its author
+                  staffId: message.staff?.id ?? message.staffId,
+                  staffRole: message.staff?.role,
+                  staffName: message.staff?.name,
+                  viewer: user,
+                  customerName: profileName,
+                })}
+              />
+            ))}
+          </div>
         ))}
         <div ref={messagesEndRef} />
       </div>

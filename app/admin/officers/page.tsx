@@ -11,6 +11,7 @@ import OfficerDetailsModal from "@/components/OfficerDetailsModal";
 import BulkReassignOfficersModal from "@/components/BulkReassignOfficersModal";
 import SuccessModal from "@/components/SuccessModal";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import RoleProtectedRoute from "@/components/RoleProtectedRoute";
 import { useOfficers, useBulkSetOfficerRegion } from "@/hooks/api/useOfficer";
 import plus from "@/assets/icons/plus.svg";
 import Image from "next/image";
@@ -531,7 +532,9 @@ function AccountOfficersContent() {
 export default function AccountOfficersPage() {
   return (
     <ProtectedRoute redirectPath="/auth/login">
-      <AccountOfficersContent />
+      <RoleProtectedRoute allow={["ADMIN"]}>
+        <AccountOfficersContent />
+      </RoleProtectedRoute>
     </ProtectedRoute>
   );
 }

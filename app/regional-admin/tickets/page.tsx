@@ -6,6 +6,7 @@ import { Card, Text, SearchInput } from "@/components/common";
 import PageHeader from "@/components/PageHeader";
 import Pagination from "@/components/Pagination";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import RoleProtectedRoute from "@/components/RoleProtectedRoute";
 import ExportRecord from "@/components/ExportRecord";
 import TicketCard from "@/components/ticket/TicketCard";
 import TicketThreadPanel from "@/components/ticket/TicketThreadPanel";
@@ -268,7 +269,9 @@ function RegionalAdminTicketsContent() {
 export default function RegionalAdminTicketsPage() {
   return (
     <ProtectedRoute redirectPath="/auth/login">
-      <RegionalAdminTicketsContent />
+      <RoleProtectedRoute allow={["REGIONAL_ADMIN", "ADMIN"]}>
+        <RegionalAdminTicketsContent />
+      </RoleProtectedRoute>
     </ProtectedRoute>
   );
 }

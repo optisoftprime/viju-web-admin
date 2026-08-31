@@ -68,7 +68,7 @@ export const Modal: React.FC<ModalProps> = ({
               <DialogPanel
                 className={`
                   relative bg-milkwhite rounded-xl shadow-lg
-                  max-w-2xl w-full mx-4
+                  max-w-xl w-full mx-4
                   text-left align-middle
                   transition-all
                   ${className}

@@ -304,7 +304,7 @@ export default function AllCustomersTable({
                 ? "Regional Customers"
                 : "All Customers"}
           </Text>
-          <Text variant="caption" weight="medium" color="muted">
+          {/* <Text variant="caption" weight="medium" color="muted">
             {isLoading
               ? "Loading customers..."
               : error
@@ -318,11 +318,11 @@ export default function AllCustomersTable({
                         ? " in your region"
                         : ""
                   }`}
-          </Text>
+          </Text> */}
         </div>
 
         {/* Hides itself once the ERP backlog reaches zero */}
-        {!isLoading && !error && unprojectedTotal > 0 && (
+        {/* {!isLoading && !error && unprojectedTotal > 0 && (
           <div className="mt-4 rounded-lg border border-orange/30 bg-orange/10 px-4 py-3">
             <Text variant="caption" weight="bold" color="orange">
               Showing all {totalItems.toLocaleString()} customers
@@ -333,7 +333,7 @@ export default function AllCustomersTable({
               read-only until the duplicate phone no is corrected.
             </Text>
           </div>
-        )}
+        )} */}
 
         {/* Search */}
         <div className="flex justify-end mt-4">

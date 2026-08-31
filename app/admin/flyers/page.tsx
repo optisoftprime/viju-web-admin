@@ -12,6 +12,7 @@ import PreviewFlyerModal, {
 import SuccessModal from "@/components/SuccessModal";
 import FlyerCard from "@/components/FlyerCard";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import RoleProtectedRoute from "@/components/RoleProtectedRoute";
 import {
   useFlyers,
   useCreateFlyer,
@@ -212,7 +213,8 @@ export default function FlyerPage() {
 
   return (
     <ProtectedRoute>
-      <MainLayout>
+      <RoleProtectedRoute allow={["ADMIN", "REGIONAL_ADMIN"]}>
+        <MainLayout>
         <div className="h-screen overflow-y-auto space-y-6 px-4 pt-4 pb-30">
           <ArrowBack />
           {/* Page Header with Add Button */}
@@ -364,7 +366,8 @@ export default function FlyerPage() {
             </div>
           </div>
         )}
-      </MainLayout>
+        </MainLayout>
+      </RoleProtectedRoute>
     </ProtectedRoute>
   );
 }

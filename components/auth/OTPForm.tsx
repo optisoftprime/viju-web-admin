@@ -95,7 +95,18 @@ export default function OTPForm() {
                 Enter your verification code
               </Text>
               <Text variant="caption" color="muted" className="mt-2">
-                We sent a 6 digits code to {identifier || "your email"}
+                {/* Spec 44 - the code is emailed. Naming the inbox matters:
+                    it is how someone spots that they typed the wrong address
+                    before they sit waiting for a code that cannot arrive. */}
+                We sent a 6-digit code to the email address{" "}
+                {identifier ? (
+                  <span className="font-semibold text-foreground">
+                    {identifier}
+                  </span>
+                ) : (
+                  "on your account"
+                )}
+                . It may take a minute to arrive - check your spam folder.
               </Text>
             </div>
 

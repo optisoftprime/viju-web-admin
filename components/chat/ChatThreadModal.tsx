@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "@/components/common/Modal";
 import { Button, Text } from "@/components/common";
 import MessageCard from "./MessageCard";
+import ChatDayDivider from "./ChatDayDivider";
+import { formatMessageClock, groupMessagesByDay } from "@/utils/chatTime";
 import {
   useChatHistory,
   useSendMessage,
@@ -144,6 +146,16 @@ export default function ChatThreadModal({
     );
   }, [liveMessages, error, isLoading, fallbackMessages, user, customerName, officerName]);
 
+  /**
+   * The transcript split into calendar-day runs. An audit message can arrive
+   * with an empty `createdAt`; those keep their position but get no divider
+   * rather than being stamped with a guessed date.
+   */
+  const messageDays = useMemo(
+    () => groupMessagesByDay(messages, (message) => message.createdAt),
+    [messages],
+  );
+
   // Sending is authorised for every role that can open this modal
   const canCompose = canReply && Boolean(customerId);
 
@@ -261,19 +273,25 @@ export default function ChatThreadModal({
             </div>
           )}
 
-          {messages.map((message) => (
-            <MessageCard
-              key={message.id}
-              content={message.content}
-              timestamp={
-                message.createdAt
-                  ? new Date(message.createdAt).toLocaleString()
-                  : ""
-              }
-              isMine={message.isStaff}
-              attachmentUrl={message.attachmentUrl ?? undefined}
-              senderLabel={message.senderLabel}
-            />
+          {/* The date is stated once per day on a divider; each bubble then
+              carries only the clock, as a messaging app does it */}
+          {messageDays.map((day) => (
+            <div key={day.key}>
+              <ChatDayDivider
+                label={day.label}
+                dateTime={day.messages[0]?.createdAt || undefined}
+              />
+              {day.messages.map((message) => (
+                <MessageCard
+                  key={message.id}
+                  content={message.content}
+                  timestamp={formatMessageClock(message.createdAt)}
+                  isMine={message.isStaff}
+                  attachmentUrl={message.attachmentUrl ?? undefined}
+                  senderLabel={message.senderLabel}
+                />
+              ))}
+            </div>
           ))}
           <div ref={messagesEndRef} />
         </div>

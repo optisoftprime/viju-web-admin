@@ -48,7 +48,7 @@ export default function LogoutModal({ open, onClose }: LogoutModalProps) {
         {/* Actions */}
         <div className="grid grid-cols-2 gap-2 items-center">
           <Button
-            variant="secondary"
+            variant="outline"
             size="md"
             onClick={onClose}
             disabled={isLoading}
