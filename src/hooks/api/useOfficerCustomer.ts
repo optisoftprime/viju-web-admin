@@ -45,13 +45,33 @@ export const useDistributorOrders = (
   });
 };
 
+interface InvoicesParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
 /**
- * Get distributor invoices
+ * Get distributor invoices - paginated, with the tab's own wallet balance and
+ * payment history alongside the page.
  */
-export const useDistributorInvoices = (customerId: string | null) => {
+export const useDistributorInvoices = (
+  customerId: string | null,
+  params: InvoicesParams = {},
+) => {
   return useQuery({
-    queryKey: ["distributorInvoices", customerId],
-    queryFn: () => officerCustomerService.getInvoices(customerId!),
+    queryKey: [
+      "distributorInvoices",
+      customerId,
+      params.page ?? 1,
+      params.pageSize ?? 20,
+      params.search ?? "",
+      params.startDate ?? "",
+      params.endDate ?? "",
+    ],
+    queryFn: () => officerCustomerService.getInvoices(customerId!, params),
     enabled: !!customerId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1,
@@ -59,12 +79,44 @@ export const useDistributorInvoices = (customerId: string | null) => {
 };
 
 /**
- * Get distributor stock
+ * One order's merged product lines. Only runs once a row is opened - the list
+ * no longer carries lines, which is what made it fast.
  */
-export const useDistributorStock = (customerId: string | null) => {
+export const useInvoiceDetail = (
+  customerId: string | null,
+  invoiceId: string | null,
+) => {
   return useQuery({
-    queryKey: ["distributorStock", customerId],
-    queryFn: () => officerCustomerService.getStock(customerId!),
+    queryKey: ["invoiceDetail", customerId, invoiceId],
+    queryFn: () =>
+      officerCustomerService.getInvoiceDetail(customerId!, invoiceId!),
+    enabled: Boolean(customerId && invoiceId),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+};
+
+interface StockParams {
+  /** YYYY-MM-DD, inclusive, either may be sent alone */
+  startDate?: string;
+  endDate?: string;
+}
+
+/**
+ * Get one distributor's ERP stock balance.
+ */
+export const useDistributorStock = (
+  customerId: string | null,
+  params: StockParams = {},
+) => {
+  return useQuery({
+    queryKey: [
+      "distributorStock",
+      customerId,
+      params.startDate ?? "",
+      params.endDate ?? "",
+    ],
+    queryFn: () => officerCustomerService.getStock(customerId!, params),
     enabled: !!customerId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1,
@@ -72,7 +124,29 @@ export const useDistributorStock = (customerId: string | null) => {
 };
 
 /**
- * Get distributor waybills
+ * The same balance across the whole portfolio. Not paginated - there is no
+ * `meta` on this one.
+ */
+export const usePortfolioStock = (
+  params: StockParams & { enabled?: boolean } = {},
+) => {
+  const { enabled, ...query } = params;
+
+  return useQuery({
+    queryKey: [
+      "portfolioStock",
+      query.startDate ?? "",
+      query.endDate ?? "",
+    ],
+    queryFn: () => officerCustomerService.getPortfolioStock(query),
+    enabled: enabled !== false,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+};
+
+/**
+ * Get a distributor's ERP goods-movement documents.
  */
 export const useDistributorWaybills = (
   customerId: string | null,
@@ -85,6 +159,20 @@ export const useDistributorWaybills = (
       officerCustomerService.getWaybills(customerId!, page, pageSize),
     enabled: !!customerId,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1,
+  });
+};
+
+/** One ERP document with its item lines. Keyed on docNo. */
+export const useWaybillDetail = (
+  customerId: string | null,
+  docNo: string | null,
+) => {
+  return useQuery({
+    queryKey: ["waybillDetail", customerId, docNo],
+    queryFn: () => officerCustomerService.getWaybillDetail(customerId!, docNo!),
+    enabled: Boolean(customerId && docNo),
+    staleTime: 5 * 60 * 1000,
     retry: 1,
   });
 };

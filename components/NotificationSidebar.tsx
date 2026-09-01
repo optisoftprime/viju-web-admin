@@ -101,7 +101,7 @@ export default function NotificationSidebar({
             <button
               onClick={handleMarkAllRead}
               disabled={unreadCount === 0 || markAllReadMutation.isPending}
-              className="text-statusblue hover:text-statusblue/80 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="text-statusblue cursor-pointer hover:text-statusblue/80 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {markAllReadMutation.isPending ? "Marking..." : "Mark all read"}
             </button>

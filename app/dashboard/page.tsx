@@ -272,6 +272,11 @@ function DashboardContent() {
   const [orderPageSize, setOrderPageSize] = useState(DEFAULT_SECTION_PAGE_SIZE);
 
   // State for waybills pagination
+  /** The Invoices tab is server-paginated now - it used to slice in the browser */
+  const [invoicePage, setInvoicePage] = useState(1);
+  const [invoicePageSize, setInvoicePageSize] = useState(
+    DEFAULT_SECTION_PAGE_SIZE,
+  );
   const [waybillPage, setWaybillPage] = useState(1);
   const [waybillPageSize, setWaybillPageSize] = useState(
     DEFAULT_SECTION_PAGE_SIZE,
@@ -389,7 +394,10 @@ function DashboardContent() {
     data: invoicesData,
     isLoading: invoicesLoading,
     error: invoicesError,
-  } = useDistributorInvoices(selectedDistributorId);
+  } = useDistributorInvoices(selectedDistributorId, {
+    page: invoicePage,
+    pageSize: invoicePageSize,
+  });
   const {
     data: stockData,
     isLoading: stockLoading,
@@ -796,6 +804,7 @@ function DashboardContent() {
     setSelectedDistributorId(distributor.id);
     setSelectedDetailTab("Overview"); // Reset to Overview tab when a new distributor is selected
     setOrderPage(1); // Reset order page
+    setInvoicePage(1); // Reset invoice page - it is server-paginated now
     setWaybillPage(1); // Reset waybill page
     setAutoOpenTicketId(null);
   };
@@ -836,6 +845,7 @@ function DashboardContent() {
     setSelectedDistributorId(customer.id);
     setSelectedDetailTab(detailTab);
     setOrderPage(1);
+    setInvoicePage(1);
     setWaybillPage(1);
 
     // The panel mounts on this state change, so the scroll waits a frame
@@ -1124,7 +1134,7 @@ function DashboardContent() {
                     <div className="flex items-center md:grid grid-cols-6 gap-2 pt-4 overflow-x-auto w-full">
                       {[
                         "Overview",
-                        "Orders",
+                        // "Orders",
                         "Invoices",
                         "Stock",
                         "Tickets",
@@ -1225,10 +1235,19 @@ function DashboardContent() {
                               Error loading invoices. Please try again.
                             </Text>
                           </div>
-                        ) : invoicesData && invoicesData.invoices.length > 0 ? (
+                        ) : invoicesData && invoicesData.data.length > 0 ? (
                           <InvoicesSection
-                            invoices={invoicesData.invoices}
+                            invoices={invoicesData.data}
+                            walletBalance={invoicesData.walletBalance}
                             paymentHistory={invoicesData.paymentHistory}
+                            lastUpdated={invoicesData.lastUpdated}
+                            customerId={selectedDistributorId}
+                            currentPage={invoicePage}
+                            totalPages={invoicesData.meta.totalPages}
+                            totalItems={invoicesData.meta.total}
+                            pageSize={invoicePageSize}
+                            onPageChange={setInvoicePage}
+                            onPageSizeChange={setInvoicePageSize}
                           />
                         ) : (
                           <div className="flex items-center justify-center h-64">
@@ -1251,13 +1270,22 @@ function DashboardContent() {
                             </Text>
                           </div>
                         ) : stockData ? (
+                          /* The ERP stock BALANCE - totals plus what is still
+                             to collect. `catalogue` and `awaitingLoading` are
+                             gone; they came from local tables by a different
+                             route than the distributor's own screen, so the
+                             two could disagree about one account. */
                           <StockSection
-                            catalogue={stockData.catalogue}
-                            /* Backend handoff: there is no top-level
-                             awaitingLoading array any more - it is a field on
-                             each catalogue row. Kept optional for older
-                             deployments that still send it. */
-                            awaitingLoading={stockData.awaitingLoading}
+                            totalPurchasedCartons={
+                              stockData.totalPurchasedCartons
+                            }
+                            totalLoadedCartons={stockData.totalLoadedCartons}
+                            totalRemainingCartons={
+                              stockData.totalRemainingCartons
+                            }
+                            loadingProgress={stockData.loadingProgress}
+                            products={stockData.products}
+                            lastUpdated={stockData.lastUpdated}
                           />
                         ) : (
                           <div className="flex items-center justify-center h-64">
@@ -1292,6 +1320,8 @@ function DashboardContent() {
                         ) : waybillsData && waybillsData.data.length > 0 ? (
                           <WaybillsSection
                             waybills={waybillsData.data}
+                            lastUpdated={waybillsData.lastUpdated}
+                            customerId={selectedDistributorId}
                             currentPage={waybillPage}
                             totalPages={waybillsData.meta.totalPages}
                             totalItems={waybillsData.meta.total}
@@ -1461,7 +1491,6 @@ function DashboardContent() {
         )}
 
         {role === "LOADING_OFFICER" && <LoadingOfficer />}
-
       </div>
     </MainLayout>
   );
