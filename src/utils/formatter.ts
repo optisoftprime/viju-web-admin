@@ -142,3 +142,23 @@ export const formatDateTime = (isoDate: string): string => {
 
   return `${year}-${month}-${day} ${time}`;
 };
+
+/**
+ * A money value the ERP may not state at all.
+ *
+ * The officer-parity routes return `null` - not `0` - wherever the ERP carries
+ * no figure, which is the majority of rows on the waybill and invoice-line
+ * responses. Coercing that to "₦0.00" would assert a price of nothing on a
+ * line that simply has no price recorded, which is a different and much more
+ * misleading claim.
+ */
+export const formatToNairaOrDash = (
+  value: number | null | undefined,
+  dash = "—",
+): string => (typeof value === "number" ? formatToNairaExact(value) : dash);
+
+/** The same rule for a count the ERP may not state */
+export const formatNumberOrDash = (
+  value: number | null | undefined,
+  dash = "—",
+): string => (typeof value === "number" ? formatNumberExact(value) : dash);

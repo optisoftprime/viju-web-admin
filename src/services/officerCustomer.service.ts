@@ -10,8 +10,11 @@ import {
   DistributorOverview,
   OrdersResponse,
   InvoicesResponse,
+  OrderDetail,
   StockResponse,
+  PortfolioStockResponse,
   WaybillsResponse,
+  ErpWaybillDetail,
   OfficerTicketsResponse,
   TicketThread,
   SendTicketReplyRequest,
@@ -47,25 +50,105 @@ export const officerCustomerService = {
   },
 
   /**
-   * Get distributor invoices
+   * Get distributor invoices - PAGINATED.
+   *
+   * `pageSize`, not `limit`; anything above 200 is clamped and `meta.pageSize`
+   * reports what was actually applied. Rows carry no line items - open one
+   * with `getInvoiceDetail`.
    */
-  getInvoices: async (customerId: string): Promise<InvoicesResponse> => {
+  getInvoices: async (
+    customerId: string,
+    params: {
+      page?: number;
+      pageSize?: number;
+      /** Order id or product name */
+      search?: string;
+      /** YYYY-MM-DD, inclusive */
+      startDate?: string;
+      endDate?: string;
+    } = {},
+  ): Promise<InvoicesResponse> => {
     const url = endpoints.officerCustomers.invoices.replace("{id}", customerId);
-    const response = await apiClient.get<InvoicesResponse>(url);
+    const response = await apiClient.get<InvoicesResponse>(url, {
+      params: {
+        page: params.page ?? 1,
+        pageSize: params.pageSize ?? 20,
+        ...(params.search?.trim() ? { search: params.search.trim() } : {}),
+        ...(params.startDate ? { startDate: params.startDate } : {}),
+        ...(params.endDate ? { endDate: params.endDate } : {}),
+      },
+    });
     return response.data;
   },
 
   /**
-   * Get distributor stock
+   * One order with its merged product lines.
+   *
+   * `invoiceId` is the `id` from a list row, not the `erpId`. Scope is checked
+   * twice: the distributor must be in the caller's portfolio AND the order
+   * must belong to that distributor - pairing an outside order with an inside
+   * customer is a 404.
    */
-  getStock: async (customerId: string): Promise<StockResponse> => {
-    const url = endpoints.officerCustomers.stock.replace("{id}", customerId);
-    const response = await apiClient.get<StockResponse>(url);
+  getInvoiceDetail: async (
+    customerId: string,
+    invoiceId: string,
+  ): Promise<OrderDetail> => {
+    const url = endpoints.officerCustomers.invoiceDetail
+      .replace("{id}", encodeURIComponent(customerId))
+      .replace("{invoiceId}", encodeURIComponent(invoiceId));
+    const response = await apiClient.get<OrderDetail>(url);
     return response.data;
   },
 
   /**
-   * Get distributor waybills
+   * Get one distributor's ERP stock balance.
+   *
+   * The date window selects orders PLACED in it, minus whatever has since been
+   * delivered against them - so two adjacent windows do not add up to the
+   * unfiltered total, and a filtered figure must never be presented as a slice
+   * of the whole. `startDate` after `endDate` is a 400.
+   */
+  getStock: async (
+    customerId: string,
+    params: { startDate?: string; endDate?: string } = {},
+  ): Promise<StockResponse> => {
+    const url = endpoints.officerCustomers.stock.replace("{id}", customerId);
+    const response = await apiClient.get<StockResponse>(url, {
+      params: {
+        ...(params.startDate ? { startDate: params.startDate } : {}),
+        ...(params.endDate ? { endDate: params.endDate } : {}),
+      },
+    });
+    return response.data;
+  },
+
+  /**
+   * The same balance across the officer's whole portfolio.
+   *
+   * Products are grouped ACROSS distributors - one held by several appears
+   * once, with the quantities added. Deliberately NOT paginated: it is one row
+   * per product still held, which is short even across a full book.
+   */
+  getPortfolioStock: async (
+    params: { startDate?: string; endDate?: string } = {},
+  ): Promise<PortfolioStockResponse> => {
+    const response = await apiClient.get<PortfolioStockResponse>(
+      endpoints.officerCustomers.portfolioStock,
+      {
+        params: {
+          ...(params.startDate ? { startDate: params.startDate } : {}),
+          ...(params.endDate ? { endDate: params.endDate } : {}),
+        },
+      },
+    );
+    return response.data;
+  },
+
+  /**
+   * Get a distributor's ERP goods-movement documents.
+   *
+   * NOT this portal's loading requests - those moved to
+   * /officers/loading-requests along with the assign and cancel actions.
    */
   getWaybills: async (
     customerId: string,
@@ -76,6 +159,18 @@ export const officerCustomerService = {
     const response = await apiClient.get<WaybillsResponse>(url, {
       params: { page, pageSize },
     });
+    return response.data;
+  },
+
+  /** One ERP document with its item lines. `docNo`, not an id. */
+  getWaybillDetail: async (
+    customerId: string,
+    docNo: string,
+  ): Promise<ErpWaybillDetail> => {
+    const url = endpoints.officerCustomers.waybillDetail
+      .replace("{id}", encodeURIComponent(customerId))
+      .replace("{docNo}", encodeURIComponent(docNo));
+    const response = await apiClient.get<ErpWaybillDetail>(url);
     return response.data;
   },
 

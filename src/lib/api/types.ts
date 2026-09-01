@@ -1030,62 +1030,13 @@ export interface PaymentHistory {
   createdAt: string;
 }
 
-export interface InvoicesResponse {
-  walletBalance: number;
-  invoices: Order[];
-  paymentHistory: PaymentHistory[];
-}
-
-// Officer Customer Stock Types
-export interface StockCatalogue {
-  id: string;
-  erpId: string;
-  productName: string;
-  quantity: number;
-  updatedAt: string;
-}
-
-export interface AwaitingLoading {
-  productName: string;
-  reserved: number;
-  loaded: number;
-  remaining: number;
-}
-
-export interface StockResponse {
-  catalogue: StockCatalogue[];
-  awaitingLoading: AwaitingLoading[];
-}
-
-// Officer Customer Waybills Types
-export interface Waybill {
-  id: string;
-  reference: string;
-  customerId: string;
-  region: BroadcastRegion;
-  linkedPurchaseId: string;
-  truckPlateNumber: string;
-  driverName: string;
-  driverPhone: string;
-  requestedLoadingDate: string;
-  quantityCartons: number;
-  destination: string;
-  termsAcceptedAt: string;
-  externalFormUrl: string;
-  status: string;
-  assignedOfficerId: string;
-  assignedAt: string;
-  assignedById: string;
-  loadingStartedAt?: string;
-  completedAt?: string;
-  waybillDocumentUrl?: string;
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface WaybillsResponse {
-  data: Waybill[];
+/**
+ * Shared page envelope. The officer routes and the distributor's own now
+ * return the SAME body from the same backend reader, so anything written
+ * against one keeps working against the other.
+ */
+export interface Paginated<T> {
+  data: T[];
   meta: {
     total: number;
     page: number;
@@ -1094,6 +1045,207 @@ export interface WaybillsResponse {
     hasNextPage: boolean;
     hasPreviousPage: boolean;
   };
+}
+
+/**
+ * One row of the Invoices tab.
+ *
+ * NOTE this carries NO line items - that is what made the list slow, since it
+ * ran an ERP lookup per page to fill lines nothing rendered. Open a row and
+ * fetch `OrderDetail` instead.
+ */
+export interface OrderRow {
+  id: string;
+  /** The ERP document number - this is what to show, not `id` */
+  erpId: string;
+  customerId: string;
+  orderDate: string;
+  /** Cartons on the order */
+  totalItems: number;
+  totalValue: number;
+  status: string;
+  statusUpdatedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * GET /officers/customers/{id}/invoices
+ *
+ * `invoices[]` became `data[]` + `meta`. `walletBalance` and `paymentHistory`
+ * are the TAB's own figures and still sit alongside the page - they are not
+ * part of the order list and do not move as it is paged.
+ *
+ * `lastUpdated` is the most recent ERP sync across the balance, the WHOLE
+ * order history and the payments - not the current page, so paging never
+ * moves the "Last updated" stamp.
+ */
+export interface InvoicesResponse extends Paginated<OrderRow> {
+  lastUpdated: string;
+  walletBalance: number;
+  paymentHistory: PaymentHistory[];
+}
+
+/**
+ * One merged product line on an order.
+ *
+ * The ERP writes a SEPARATE line whenever the same product is priced
+ * differently on one order - 1,700 cartons at a price plus 68 free, both under
+ * one item code. Those are merged here, so an officer sees one line per
+ * product rather than four.
+ */
+export interface OrderLine {
+  product: string;
+  itemCode: string | null;
+  /** Summed across the merged parts; sums to `totalItems` */
+  quantity: number;
+  /**
+   * An EFFECTIVE rate where the merged parts disagreed - `amount / quantity`
+   * to 2dp. Null on orders the ERP states no per-line money for, which is most
+   * of them.
+   */
+  unitPrice: number | null;
+  /**
+   * Authoritative, and sums to `totalValue`. NEVER recompute a line as
+   * `quantity * unitPrice` - at two decimals the rate cannot multiply back to
+   * the exact naira.
+   */
+  amount: number | null;
+  accountBalance: number;
+}
+
+/** GET /officers/customers/{id}/invoices/{invoiceId} */
+export interface OrderDetail {
+  id: string;
+  /** The ERP DOC_NO */
+  orderId: string;
+  orderDate: string;
+  status: string;
+  statusUpdatedAt: string | null;
+  totalItems: number;
+  totalValue: number;
+  linkedInvoiceNumber: string;
+  accountBalance: number;
+  lines: OrderLine[];
+}
+
+// Officer Customer Stock Types
+
+/** One product still to collect */
+export interface StockProduct {
+  /**
+   * Null on ~94% of rows - the ERP carries it on only a fraction of line rows,
+   * and rows are grouped by product NAME. Do not use it as a React key.
+   */
+  itemCode: string | null;
+  productName: string;
+  quantityPaid: number;
+  quantityLoaded: number;
+  quantityRemaining: number;
+  /** YYYY-MM-DD */
+  lastOrderDate: string | null;
+}
+
+/**
+ * GET /officers/customers/{id}/stock - the ERP stock BALANCE.
+ *
+ * `catalogue` is gone. It listed every product in the local `Stock` table with
+ * reserved/awaiting figures derived by a DIFFERENT route from the
+ * distributor's own screen, so the two could disagree about one distributor.
+ * These figures come from the single ERP query both portals now read.
+ */
+export interface StockResponse {
+  lastUpdated: string;
+  totalPurchasedCartons: number;
+  totalLoadedCartons: number;
+  totalRemainingCartons: number;
+  /** Percent */
+  loadingProgress: number;
+  /**
+   * ONLY products with `quantityRemaining > 0`, so it does NOT sum to
+   * `totalPurchasedCartons`. A distributor who has collected everything gets
+   * an empty array with non-zero totals - correct, not a bug.
+   */
+  products: StockProduct[];
+}
+
+/** GET /officers/stock - the same shape across the whole portfolio */
+export interface PortfolioStockResponse extends StockResponse {
+  /** How many distributors were counted */
+  customers: number;
+}
+
+// Officer Customer Waybills Types
+
+/**
+ * An ERP goods-movement document.
+ *
+ * ⚠️ This tab shows a DIFFERENT RESOURCE than it used to. It listed the
+ * loading requests raised through this portal; it now lists what the ERP
+ * recorded as moved, whether or not it ever passed through the app - which is
+ * what the distributor sees, and what an officer needs to reconcile an
+ * account.
+ *
+ * The loading requests are not lost: they are on
+ * `GET /officers/loading-requests`, which is what `/requests/loading` reads,
+ * and which carries the assign and cancel actions.
+ *
+ * `raw_sales_order` is one row per ORDER LINE, so rows are rolled up to one
+ * per document (`DOC_NO`) - the thing a waybill actually is.
+ */
+export interface ErpWaybill {
+  /** The document number, and the row identity - there is no `id` */
+  docNo: string;
+  docDate: string | null;
+  orderDate: string | null;
+  shipTo: string | null;
+  /** How many ERP line rows collapsed into this document */
+  lines: number;
+  products: number;
+  quantityOrdered: number;
+  quantityDelivered: number;
+  quantityRemaining: number;
+  /** The ERP's document-level QTY_TOTAL - NOT the sum of the items */
+  quantity: number | null;
+  /**
+   * All four money fields are NULL - not 0 - wherever the ERP states none,
+   * which is the majority of rows. Render a dash; never coerce to zero.
+   */
+  totalAmountBeforeTax: number | null;
+  taxVat: number | null;
+  totalAmountAfterTax: number | null;
+  status: string;
+  lastChangedAt: string | null;
+}
+
+export interface ErpWaybillItem {
+  id: string;
+  itemCode: string | null;
+  description: string | null;
+  specification: string | null;
+  price: number | null;
+  quantity: number;
+  quantityDelivered: number;
+  quantityRemaining: number;
+  totalAmountBeforeTax: number | null;
+  taxVat: number | null;
+  totalAmountAfterTax: number | null;
+  taxRate: number | null;
+}
+
+/**
+ * GET /officers/customers/{id}/waybills/{docNo}
+ *
+ * Items are NOT merged here - unlike the invoice detail, this is the ERP
+ * document reproduced faithfully, so a priced line and its free-goods
+ * companion both appear.
+ */
+export interface ErpWaybillDetail extends ErpWaybill {
+  items: ErpWaybillItem[];
+}
+
+export interface WaybillsResponse extends Paginated<ErpWaybill> {
+  lastUpdated: string;
 }
 
 // Officer Tickets Types

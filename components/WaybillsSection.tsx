@@ -1,524 +1,311 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Text } from "@/components/common";
 import Pagination from "@/components/Pagination";
-import RowDetailsModal from "@/components/RowDetailsModal";
-import { DEFAULT_SECTION_PAGE_SIZE } from "@/constants/pagination";
-import { Waybill as APIWaybill } from "@/src/lib/api/types";
-
-interface Waybill {
-  id: string;
-  waybill: string;
-  linkedOrderId: string;
-  product: string;
-  quantity: string;
-  loadingDate: string;
-  destination: string;
-  driverVehicle: string;
-  status: "Completed" | "In Progress" | "Pending Assign...";
-}
+import { Modal } from "@/components/common/Modal";
+import { BoldTopText } from "@/components/common/BoldTopText";
+import { useWaybillDetail } from "@/hooks/api/useOfficerCustomer";
+import {
+  formatDateTime,
+  formatNumberExact,
+  formatNumberOrDash,
+  formatToNairaOrDash,
+} from "@/utils/formatter";
+import { safeText } from "@/utils/safe";
+import type { ErpWaybill } from "@/lib/api/types";
 
 interface WaybillsSectionProps {
-  waybills?: Waybill[] | APIWaybill[];
-  currentPage?: number;
-  totalPages?: number;
-  onPageChange?: (page: number) => void;
-  /** Server page size, when the parent drives pagination */
-  pageSize?: number;
-  onPageSizeChange?: (pageSize: number) => void;
-  /** Total rows across all pages - defaults to the rows handed in */
-  totalItems?: number;
+  waybills: ErpWaybill[];
+  lastUpdated?: string;
+  /** Needed to open a row - the detail route is scoped to the distributor */
+  customerId: string | null;
+
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
 }
 
-// Mock waybills data
-const mockWaybills: Waybill[] = [
-  {
-    id: "1",
-    waybill: "WB-19045",
-    linkedOrderId: "ORD-3467",
-    product: "Viju Apple Drink",
-    quantity: "120 Cartons",
-    loadingDate: "15 April 2026,",
-    destination: "Yaba Ware House",
-    driverVehicle: "Jimoh Ibrahim KJA-20452",
-    status: "Completed",
-  },
-  {
-    id: "2",
-    waybill: "WB-19045",
-    linkedOrderId: "ORD-3467",
-    product: "Viju Apple Drink",
-    quantity: "120 Cartons",
-    loadingDate: "15 April 2026,",
-    destination: "Yaba Ware House",
-    driverVehicle: "Jimoh Ibrahim KJA-20452",
-    status: "In Progress",
-  },
-  {
-    id: "3",
-    waybill: "WB-19045",
-    linkedOrderId: "ORD-3467",
-    product: "Viju Apple Drink",
-    quantity: "120 Cartons",
-    loadingDate: "15 April 2026,",
-    destination: "Yaba Ware House",
-    driverVehicle: "Jimoh Ibrahim KJA-20452",
-    status: "Completed",
-  },
-  {
-    id: "4",
-    waybill: "WB-19045",
-    linkedOrderId: "ORD-3467",
-    product: "Viju Apple Drink",
-    quantity: "120 Cartons",
-    loadingDate: "15 April 2026,",
-    destination: "Yaba Ware House",
-    driverVehicle: "Jimoh Ibrahim KJA-20452",
-    status: "Pending Assign...",
-  },
-  {
-    id: "5",
-    waybill: "WB-19045",
-    linkedOrderId: "ORD-3467",
-    product: "Viju Apple Drink",
-    quantity: "120 Cartons",
-    loadingDate: "15 April 2026,",
-    destination: "Yaba Ware House",
-    driverVehicle: "Jimoh Ibrahim KJA-20452",
-    status: "Completed",
-  },
-  {
-    id: "6",
-    waybill: "WB-19045",
-    linkedOrderId: "ORD-3467",
-    product: "Viju Apple Drink",
-    quantity: "120 Cartons",
-    loadingDate: "15 April 2026,",
-    destination: "Yaba Ware House",
-    driverVehicle: "Jimoh Ibrahim KJA-20452",
-    status: "In Progress",
-  },
-  {
-    id: "7",
-    waybill: "WB-19045",
-    linkedOrderId: "ORD-3467",
-    product: "Viju Apple Drink",
-    quantity: "120 Cartons",
-    loadingDate: "15 April 2026,",
-    destination: "Yaba Ware House",
-    driverVehicle: "Jimoh Ibrahim KJA-20452",
-    status: "In Progress",
-  },
-  {
-    id: "8",
-    waybill: "WB-19045",
-    linkedOrderId: "ORD-3467",
-    product: "Viju Apple Drink",
-    quantity: "120 Cartons",
-    loadingDate: "15 April 2026,",
-    destination: "Yaba Ware House",
-    driverVehicle: "Jimoh Ibrahim KJA-20452",
-    status: "Completed",
-  },
-  {
-    id: "9",
-    waybill: "WB-19045",
-    linkedOrderId: "ORD-3467",
-    product: "Viju Apple Drink",
-    quantity: "120 Cartons",
-    loadingDate: "15 April 2026,",
-    destination: "Yaba Ware House",
-    driverVehicle: "Jimoh Ibrahim KJA-20452",
-    status: "Pending Assign...",
-  },
-  {
-    id: "10",
-    waybill: "WB-19045",
-    linkedOrderId: "ORD-3467",
-    product: "Viju Apple Drink",
-    quantity: "120 Cartons",
-    loadingDate: "15 April 2026,",
-    destination: "Yaba Ware House",
-    driverVehicle: "Jimoh Ibrahim KJA-20452",
-    status: "Completed",
-  },
-  {
-    id: "11",
-    waybill: "WB-19045",
-    linkedOrderId: "ORD-3467",
-    product: "Viju Apple Drink",
-    quantity: "120 Cartons",
-    loadingDate: "15 April 2026,",
-    destination: "Yaba Ware House",
-    driverVehicle: "Jimoh Ibrahim KJA-20452",
-    status: "In Progress",
-  },
-  {
-    id: "12",
-    waybill: "WB-19045",
-    linkedOrderId: "ORD-3467",
-    product: "Viju Apple Drink",
-    quantity: "120 Cartons",
-    loadingDate: "15 April 2026,",
-    destination: "Yaba Ware House",
-    driverVehicle: "Jimoh Ibrahim KJA-20452",
-    status: "In Progress",
-  },
-  {
-    id: "13",
-    waybill: "WB-19045",
-    linkedOrderId: "ORD-3467",
-    product: "Viju Apple Drink",
-    quantity: "120 Cartons",
-    loadingDate: "15 April 2026,",
-    destination: "Yaba Ware House",
-    driverVehicle: "Jimoh Ibrahim KJA-20452",
-    status: "Completed",
-  },
-  {
-    id: "14",
-    waybill: "WB-19045",
-    linkedOrderId: "ORD-3467",
-    product: "Viju Apple Drink",
-    quantity: "120 Cartons",
-    loadingDate: "15 April 2026,",
-    destination: "Yaba Ware House",
-    driverVehicle: "Jimoh Ibrahim KJA-20452",
-    status: "Pending Assign...",
-  },
-  {
-    id: "15",
-    waybill: "WB-19045",
-    linkedOrderId: "ORD-3467",
-    product: "Viju Apple Drink",
-    quantity: "120 Cartons",
-    loadingDate: "15 April 2026,",
-    destination: "Yaba Ware House",
-    driverVehicle: "Jimoh Ibrahim KJA-20452",
-    status: "Completed",
-  },
-  {
-    id: "16",
-    waybill: "WB-19045",
-    linkedOrderId: "ORD-3467",
-    product: "Viju Apple Drink",
-    quantity: "120 Cartons",
-    loadingDate: "15 April 2026,",
-    destination: "Yaba Ware House",
-    driverVehicle: "Jimoh Ibrahim KJA-20452",
-    status: "In Progress",
-  },
-  {
-    id: "17",
-    waybill: "WB-19045",
-    linkedOrderId: "ORD-3467",
-    product: "Viju Apple Drink",
-    quantity: "120 Cartons",
-    loadingDate: "15 April 2026,",
-    destination: "Yaba Ware House",
-    driverVehicle: "Jimoh Ibrahim KJA-20452",
-    status: "Completed",
-  },
-  {
-    id: "18",
-    waybill: "WB-19045",
-    linkedOrderId: "ORD-3467",
-    product: "Viju Apple Drink",
-    quantity: "120 Cartons",
-    loadingDate: "15 April 2026,",
-    destination: "Yaba Ware House",
-    driverVehicle: "Jimoh Ibrahim KJA-20452",
-    status: "In Progress",
-  },
-  {
-    id: "19",
-    waybill: "WB-19045",
-    linkedOrderId: "ORD-3467",
-    product: "Viju Apple Drink",
-    quantity: "120 Cartons",
-    loadingDate: "15 April 2026,",
-    destination: "Yaba Ware House",
-    driverVehicle: "Jimoh Ibrahim KJA-20452",
-    status: "Completed",
-  },
-  {
-    id: "20",
-    waybill: "WB-19045",
-    linkedOrderId: "ORD-3467",
-    product: "Viju Apple Drink",
-    quantity: "120 Cartons",
-    loadingDate: "15 April 2026,",
-    destination: "Yaba Ware House",
-    driverVehicle: "Jimoh Ibrahim KJA-20452",
-    status: "Pending Assign...",
-  },
-  {
-    id: "21",
-    waybill: "WB-19045",
-    linkedOrderId: "ORD-3467",
-    product: "Viju Apple Drink",
-    quantity: "120 Cartons",
-    loadingDate: "15 April 2026,",
-    destination: "Yaba Ware House",
-    driverVehicle: "Jimoh Ibrahim KJA-20452",
-    status: "Completed",
-  },
-  {
-    id: "22",
-    waybill: "WB-19045",
-    linkedOrderId: "ORD-3467",
-    product: "Viju Apple Drink",
-    quantity: "120 Cartons",
-    loadingDate: "15 April 2026,",
-    destination: "Yaba Ware House",
-    driverVehicle: "Jimoh Ibrahim KJA-20452",
-    status: "In Progress",
-  },
-];
-
-const getStatusBadge = (
-  status: "Completed" | "In Progress" | "Pending Assign...",
-) => {
-  if (status === "Completed") {
-    return {
-      text: status,
-      bgColor: "#D4FFE9",
-      textColor: "#04B054",
-    };
-  } else if (status === "In Progress") {
-    return {
-      text: status,
-      bgColor: "#FFF4E1",
-      textColor: "#FFA10B",
-    };
-  } else if (status === "Pending Assign...") {
-    return {
-      text: status,
-      bgColor: "#FFE5E5",
-      textColor: "#E63946",
-    };
-  }
-  return {
-    text: status,
-    bgColor: "#F0F5F9",
-    textColor: "#4B5BD1",
-  };
-};
-
-// Helper function to map API Waybill to component Waybill format
-const mapAPIWaybillToWaybill = (apiWaybill: APIWaybill): Waybill => {
-  return {
-    id: apiWaybill.id,
-    waybill: apiWaybill.reference,
-    linkedOrderId: apiWaybill.linkedPurchaseId,
-    product: "Product", // Not available in API response
-    quantity: `${apiWaybill.quantityCartons} Cartons`,
-    loadingDate: new Date(apiWaybill.requestedLoadingDate).toLocaleDateString(
-      "en-NG",
-    ),
-    destination: apiWaybill.destination,
-    driverVehicle: `${apiWaybill.driverName} ${apiWaybill.truckPlateNumber}`,
-    status:
-      apiWaybill.status === "Completed" ||
-      apiWaybill.status === "In Progress" ||
-      apiWaybill.status === "Pending Assign..."
-        ? (apiWaybill.status as any)
-        : "In Progress",
-  };
-};
-
+/**
+ * The Waybills tab — now the ERP's OWN goods-movement documents.
+ *
+ * ⚠️ This is a different resource than it used to show. It listed the loading
+ * requests raised through this portal; it now lists what the ERP recorded as
+ * moved, whether or not it ever passed through the app. That is what the
+ * distributor sees in their own app, and it is what an officer needs to
+ * reconcile an account against.
+ *
+ * The loading requests are not lost - they are the `/requests/loading` screen,
+ * which is where the assign and cancel actions live.
+ *
+ * `raw_sales_order` is one row per order line, so the API rolls rows up to one
+ * per document. `lines` reports how many collapsed into each.
+ */
 export default function WaybillsSection({
-  waybills = mockWaybills,
-  currentPage: externalCurrentPage,
-  totalPages: externalTotalPages,
+  waybills,
+  lastUpdated,
+  customerId,
+  currentPage,
+  totalPages,
+  totalItems,
+  pageSize,
   onPageChange,
-  pageSize: externalPageSize,
   onPageSizeChange,
-  totalItems: externalTotalItems,
 }: WaybillsSectionProps) {
-  const [internalPage, setInternalPage] = useState(1);
-  const [internalPageSize, setInternalPageSize] = useState(
-    DEFAULT_SECTION_PAGE_SIZE,
+  const [openDocNo, setOpenDocNo] = useState<string | null>(null);
+
+  const { data: detail, isLoading: isDetailLoading } = useWaybillDetail(
+    customerId,
+    openDocNo,
   );
-  const [detailsRow, setDetailsRow] = useState<Waybill | null>(null);
-  const itemsPerPage = externalPageSize ?? internalPageSize;
 
-  // Convert API waybills to component waybills if needed
-  const mappedWaybills = useMemo(() => {
-    return waybills.map((waybill) => {
-      // Check if it's an API waybill (has linkedPurchaseId property)
-      if ("linkedPurchaseId" in waybill) {
-        return mapAPIWaybillToWaybill(waybill as APIWaybill);
-      }
-      return waybill as Waybill;
-    });
-  }, [waybills]);
-
-  // Use external pagination if provided, otherwise use internal
-  const isServerPaged = externalCurrentPage !== undefined;
-  const currentPage = externalCurrentPage ?? internalPage;
-  const totalPages =
-    externalTotalPages ?? Math.ceil(mappedWaybills.length / itemsPerPage);
-  const handlePageChange = onPageChange ?? setInternalPage;
-
-  /**
-   * Server-paged rows already arrive one page at a time - slicing again
-   * would hide part of the page.
-   */
-  const paginatedWaybills = useMemo(() => {
-    if (isServerPaged) return mappedWaybills;
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return mappedWaybills.slice(startIndex, startIndex + itemsPerPage);
-  }, [mappedWaybills, currentPage, itemsPerPage, isServerPaged]);
-
-  const totalItems = externalTotalItems ?? mappedWaybills.length;
-
-  /**
-   * Changing the page size restarts at page 1 so the offset stays valid
-   */
-  const handlePageSizeChange = (size: number) => {
-    if (onPageSizeChange) {
-      onPageSizeChange(size);
-    } else {
-      setInternalPageSize(size);
-    }
-    handlePageChange(1);
-  };
+  const openRow = waybills.find((row) => row.docNo === openDocNo) ?? null;
 
   return (
     <div className="space-y-4">
-      {/* Table */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Text variant="thinnote" color="muted">
+          Goods-movement documents recorded by the ERP.
+        </Text>
+        {lastUpdated && (
+          <Text variant="thinnote" color="muted">
+            Last updated {formatDateTime(lastUpdated)}
+          </Text>
+        )}
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
-          {/* Table Header */}
           <thead>
             <tr>
-              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
-                WAYBILL
-              </th>
-              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
-                LINKED ORDER ID
-              </th>
-              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
-                PRODUCT
-              </th>
-              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
-                QUANTITY
-              </th>
-              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
-                LOADING DATE
-              </th>
-              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
-                DESTINATION
-              </th>
-              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
-                DRIVER/VEHICLE
-              </th>
-              <th className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
-                STATUS
-              </th>
+              {[
+                "DOC NO",
+                "DOC DATE",
+                "PRODUCTS",
+                "ORDERED",
+                "DELIVERED",
+                "REMAINING",
+                "TOTAL (INC. TAX)",
+                "STATUS",
+              ].map((title) => (
+                <th
+                  key={title}
+                  className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-left bg-[#F0F5F9]"
+                >
+                  {title}
+                </th>
+              ))}
             </tr>
           </thead>
 
-          {/* Table Body */}
           <tbody>
-            {paginatedWaybills.map((waybill, index) => {
-              const statusBadge = getStatusBadge(waybill.status);
-              const bgColor = index % 2 === 1 ? "white" : "bg-[#F0F5F9]";
-              const borderClass =
-                index % 2 === 1 ? "" : "border-b border-[#F0F5F9]";
-
-              return (
-                <tr
-                  key={waybill.id}
-                  onClick={() => setDetailsRow(waybill)}
-                  className={`${bgColor} ${borderClass} cursor-pointer`}
-                >
-                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
-                    {waybill.waybill}
-                  </td>
-                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
-                    {waybill.linkedOrderId}
-                  </td>
-                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
-                    {waybill.product}
-                  </td>
-                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
-                    {waybill.quantity}
-                  </td>
-                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
-                    {waybill.loadingDate}
-                  </td>
-                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
-                    {waybill.destination}
-                  </td>
-                  <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
-                    {waybill.driverVehicle}
-                  </td>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
-                    <span
-                      style={{
-                        backgroundColor: statusBadge.bgColor,
-                        color: statusBadge.textColor,
-                      }}
-                      className="px-3 py-1 whitespace-nowrap rounded-full text-sm font-semibold inline-block"
-                    >
-                      {statusBadge.text}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
+            {waybills.map((waybill, index) => (
+              <tr
+                // docNo is the identity - these rows have no `id`
+                key={waybill.docNo}
+                onClick={() => setOpenDocNo(waybill.docNo)}
+                className={`${
+                  index % 2 === 1 ? "bg-white" : "bg-[#F0F5F9]"
+                } cursor-pointer hover:opacity-80`}
+              >
+                <td className="whitespace-nowrap text-left text-[13px] font-medium text-muted p-2">
+                  {safeText(waybill.docNo, "—")}
+                </td>
+                <td className="whitespace-nowrap text-left text-[13px] font-medium text-muted p-2">
+                  {safeText(waybill.docDate, "—")}
+                </td>
+                <td className="whitespace-nowrap text-left text-[13px] font-medium text-muted p-2">
+                  {formatNumberExact(waybill.products ?? 0)}
+                </td>
+                <td className="whitespace-nowrap text-left text-[13px] font-medium text-muted p-2">
+                  {formatNumberExact(waybill.quantityOrdered ?? 0)}
+                </td>
+                <td className="whitespace-nowrap text-left text-[13px] font-medium text-muted p-2">
+                  {formatNumberExact(waybill.quantityDelivered ?? 0)}
+                </td>
+                <td className="whitespace-nowrap text-left text-[13px] font-bold text-foreground p-2">
+                  {formatNumberExact(waybill.quantityRemaining ?? 0)}
+                </td>
+                {/* Null wherever the ERP states no money - a dash, never ₦0 */}
+                <td className="whitespace-nowrap text-left text-[13px] font-medium text-muted p-2">
+                  {formatToNairaOrDash(waybill.totalAmountAfterTax)}
+                </td>
+                <td className="whitespace-nowrap text-left text-[13px] font-medium text-muted p-2">
+                  <span className="px-3 py-1 rounded-full text-[12px] font-semibold bg-[#F0F5F9] text-[#4B5BD1]">
+                    {safeText(waybill.status, "—")}
+                  </span>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
 
-      {/* Pagination */}
       <Pagination
         currentPage={currentPage}
         totalItems={totalItems}
-        itemsPerPage={itemsPerPage}
-        onPrevious={() => handlePageChange(Math.max(1, currentPage - 1))}
-        onNext={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-        onItemsPerPageChange={handlePageSizeChange}
+        itemsPerPage={pageSize}
+        onPrevious={() => onPageChange(Math.max(1, currentPage - 1))}
+        onNext={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+        onItemsPerPageChange={(size) => {
+          onPageSizeChange(size);
+          onPageChange(1);
+        }}
       />
 
-      {/* Row Details Modal - opened by clicking any row */}
-      <RowDetailsModal
-        open={!!detailsRow}
-        onClose={() => setDetailsRow(null)}
-        title={detailsRow?.waybill || "Waybill"}
-        subtitle="Waybill details"
-        sections={[
-          {
-            title: "Waybill",
-            fields: [
-              { label: "Waybill", value: detailsRow?.waybill, type: "id" },
-              {
-                label: "Linked Order",
-                value: detailsRow?.linkedOrderId,
-                type: "id",
-              },
-              { label: "Status", value: detailsRow?.status, type: "status" },
-              { label: "Loading Date", value: detailsRow?.loadingDate },
-            ],
-          },
-          {
-            title: "Shipment",
-            fields: [
-              { label: "Product", value: detailsRow?.product, fullWidth: true },
-              { label: "Quantity", value: detailsRow?.quantity },
-              { label: "Destination", value: detailsRow?.destination },
-              {
-                label: "Driver / Vehicle",
-                value: detailsRow?.driverVehicle,
-                fullWidth: true,
-              },
-            ],
-          },
-        ]}
-      />
+      {/* Document detail */}
+      <Modal open={!!openDocNo} onClose={() => setOpenDocNo(null)}>
+        <div className="max-h-[80vh] overflow-y-auto">
+          <div className="border-b border-muted/20 pb-3 pr-8">
+            <Text variant="body" weight="bold" color="foreground">
+              {safeText(openDocNo, "Document")}
+            </Text>
+            <Text variant="caption" weight="medium" color="muted">
+              {safeText(detail?.docDate ?? openRow?.docDate, "")}
+            </Text>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-5">
+            <BoldTopText
+              top="Ordered"
+              bottom={formatNumberExact(
+                detail?.quantityOrdered ?? openRow?.quantityOrdered ?? 0,
+              )}
+            />
+            <BoldTopText
+              top="Delivered"
+              bottom={formatNumberExact(
+                detail?.quantityDelivered ?? openRow?.quantityDelivered ?? 0,
+              )}
+            />
+            <BoldTopText
+              top="Remaining"
+              bottom={formatNumberExact(
+                detail?.quantityRemaining ?? openRow?.quantityRemaining ?? 0,
+              )}
+            />
+            {/* The ERP's document-level QTY_TOTAL - NOT the sum of the items,
+                so it is labelled as the ERP's own figure */}
+            <BoldTopText
+              top="ERP Qty Total"
+              bottom={formatNumberOrDash(detail?.quantity ?? openRow?.quantity)}
+            />
+            <BoldTopText
+              top="Before Tax"
+              bottom={formatToNairaOrDash(
+                detail?.totalAmountBeforeTax ?? openRow?.totalAmountBeforeTax,
+              )}
+            />
+            <BoldTopText
+              top="VAT"
+              bottom={formatToNairaOrDash(detail?.taxVat ?? openRow?.taxVat)}
+            />
+            <BoldTopText
+              top="After Tax"
+              bottom={formatToNairaOrDash(
+                detail?.totalAmountAfterTax ?? openRow?.totalAmountAfterTax,
+              )}
+            />
+            <BoldTopText
+              top="Ship To"
+              bottom={safeText(detail?.shipTo ?? openRow?.shipTo, "—")}
+            />
+          </div>
+
+          {isDetailLoading && (
+            <Text variant="caption" color="muted" className="block py-4">
+              Loading document items...
+            </Text>
+          )}
+
+          {!isDetailLoading && detail && (
+            <>
+              <Text
+                variant="caption"
+                weight="bold"
+                color="muted"
+                className="uppercase tracking-wider"
+              >
+                Items
+              </Text>
+              <Text variant="thinnote" color="muted" className="block mb-2">
+                {/* Says so, because the invoice detail DOES merge and the two
+                    sitting side by side would otherwise look inconsistent */}
+                Reproduced as the ERP records them - a priced line and its
+                free-goods companion both appear.
+              </Text>
+
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr>
+                      {[
+                        "DESCRIPTION",
+                        "CODE",
+                        "SPEC",
+                        "PRICE",
+                        "QTY",
+                        "DELIVERED",
+                        "REMAINING",
+                        "AFTER TAX",
+                      ].map((title) => (
+                        <th
+                          key={title}
+                          className="whitespace-nowrap text-[11px] font-bold text-muted p-2 text-left bg-[#F0F5F9]"
+                        >
+                          {title}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detail.items.map((item, index) => (
+                      <tr
+                        key={item.id ?? `${item.itemCode}-${index}`}
+                        className={index % 2 === 1 ? "bg-white" : "bg-[#F0F5F9]"}
+                      >
+                        <td className="text-left text-[12px] font-medium text-foreground p-2">
+                          {safeText(item.description, "—")}
+                        </td>
+                        <td className="whitespace-nowrap text-left text-[12px] font-medium text-muted p-2">
+                          {safeText(item.itemCode, "—")}
+                        </td>
+                        <td className="whitespace-nowrap text-left text-[12px] font-medium text-muted p-2">
+                          {safeText(item.specification, "—")}
+                        </td>
+                        <td className="whitespace-nowrap text-left text-[12px] font-medium text-muted p-2">
+                          {formatToNairaOrDash(item.price)}
+                        </td>
+                        <td className="whitespace-nowrap text-left text-[12px] font-medium text-muted p-2">
+                          {formatNumberExact(item.quantity ?? 0)}
+                        </td>
+                        <td className="whitespace-nowrap text-left text-[12px] font-medium text-muted p-2">
+                          {formatNumberExact(item.quantityDelivered ?? 0)}
+                        </td>
+                        <td className="whitespace-nowrap text-left text-[12px] font-bold text-foreground p-2">
+                          {formatNumberExact(item.quantityRemaining ?? 0)}
+                        </td>
+                        <td className="whitespace-nowrap text-left text-[12px] font-medium text-muted p-2">
+                          {formatToNairaOrDash(item.totalAmountAfterTax)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {detail.items.length === 0 && (
+                <Text variant="caption" color="muted" className="block py-4">
+                  The ERP records no item lines for this document.
+                </Text>
+              )}
+            </>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }

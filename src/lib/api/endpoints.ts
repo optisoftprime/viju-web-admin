@@ -89,8 +89,19 @@ export const endpoints = {
     overview: "/officers/customers/{id}/overview",
     orders: "/officers/customers/{id}/orders",
     invoices: "/officers/customers/{id}/invoices",
+    /** One order with its merged product lines - opened from an invoice row */
+    invoiceDetail: "/officers/customers/{id}/invoices/{invoiceId}",
+    /** ERP stock BALANCE for one distributor - totals + what is still to collect */
     stock: "/officers/customers/{id}/stock",
+    /** The same, across the officer's whole portfolio. Not paginated. */
+    portfolioStock: "/officers/stock",
+    /**
+     * The ERP's own goods-movement documents - NOT this portal's loading
+     * requests, which live on /officers/loading-requests.
+     */
     waybills: "/officers/customers/{id}/waybills",
+    /** One ERP document with its item lines, keyed on docNo */
+    waybillDetail: "/officers/customers/{id}/waybills/{docNo}",
     tickets: "/tickets/{id}",
     list: "/tickets/officer",
     sendReply: "/tickets/{id}/replies",

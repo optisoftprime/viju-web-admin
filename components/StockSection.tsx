@@ -1,442 +1,205 @@
 "use client";
 
-import { useState, useMemo } from "react";
 import { Text } from "@/components/common";
-import Pagination from "@/components/Pagination";
-import RowDetailsModal from "@/components/RowDetailsModal";
-import { DEFAULT_SECTION_PAGE_SIZE } from "@/constants/pagination";
-import { formatNumberExact } from "@/utils/formatter";
-
-interface Stock {
-  id: string;
-  product: string;
-  stockBalance: string;
-  reservedStock: string;
-  awaitingLoading: string;
-  lastStockUpdate: string;
-  status: "Available" | "Low Stock" | "Out of Stock";
-}
+import { BoldTopText } from "@/components/common/BoldTopText";
+import { formatDateTime, formatNumberExact } from "@/utils/formatter";
+import { safeText } from "@/utils/safe";
+import type { StockProduct } from "@/lib/api/types";
 
 interface StockSectionProps {
-  stocks?: Stock[];
-  catalogue?: any[];
-  awaitingLoading?: any[];
-  currentPage?: number;
-  totalPages?: number;
-  onPageChange?: (page: number) => void;
+  totalPurchasedCartons: number;
+  totalLoadedCartons: number;
+  totalRemainingCartons: number;
+  /** Percent */
+  loadingProgress: number;
+  /** ONLY products with something still to collect */
+  products: StockProduct[];
+  lastUpdated?: string;
+  /** Set on the portfolio view - how many distributors were counted */
+  customers?: number;
+  /** True when a date window is applied, which changes what the totals mean */
+  isFiltered?: boolean;
 }
 
-// Mock stocks data
-const mockStocks: Stock[] = [
-  {
-    id: "1",
-    product: "Viju Apple Drink",
-    stockBalance: "2,500 Cartons",
-    reservedStock: "300",
-    awaitingLoading: "120",
-    lastStockUpdate: "15 April 2026, 10:45 AM",
-    status: "Available",
-  },
-  {
-    id: "2",
-    product: "Viju Apple Drink",
-    stockBalance: "2,500 Cartons",
-    reservedStock: "300",
-    awaitingLoading: "120",
-    lastStockUpdate: "15 April 2026, 10:45 AM",
-    status: "Low Stock",
-  },
-  {
-    id: "3",
-    product: "Viju Apple Drink",
-    stockBalance: "2,500 Cartons",
-    reservedStock: "300",
-    awaitingLoading: "120",
-    lastStockUpdate: "15 April 2026, 10:45 AM",
-    status: "Available",
-  },
-  {
-    id: "4",
-    product: "Viju Apple Drink",
-    stockBalance: "2,500 Cartons",
-    reservedStock: "300",
-    awaitingLoading: "120",
-    lastStockUpdate: "15 April 2026, 10:45 AM",
-    status: "Low Stock",
-  },
-  {
-    id: "5",
-    product: "Viju Apple Drink",
-    stockBalance: "2,500 Cartons",
-    reservedStock: "300",
-    awaitingLoading: "120",
-    lastStockUpdate: "15 April 2026, 10:45 AM",
-    status: "Low Stock",
-  },
-  {
-    id: "6",
-    product: "Viju Apple Drink",
-    stockBalance: "2,500 Cartons",
-    reservedStock: "300",
-    awaitingLoading: "120",
-    lastStockUpdate: "15 April 2026, 10:45 AM",
-    status: "Available",
-  },
-  {
-    id: "7",
-    product: "Viju Apple Drink",
-    stockBalance: "2,500 Cartons",
-    reservedStock: "300",
-    awaitingLoading: "120",
-    lastStockUpdate: "15 April 2026, 10:45 AM",
-    status: "Low Stock",
-  },
-  {
-    id: "8",
-    product: "Viju Apple Drink",
-    stockBalance: "2,500 Cartons",
-    reservedStock: "300",
-    awaitingLoading: "120",
-    lastStockUpdate: "15 April 2026, 10:45 AM",
-    status: "Out of Stock",
-  },
-  {
-    id: "9",
-    product: "Viju Apple Drink",
-    stockBalance: "2,500 Cartons",
-    reservedStock: "300",
-    awaitingLoading: "120",
-    lastStockUpdate: "15 April 2026, 10:45 AM",
-    status: "Available",
-  },
-  {
-    id: "10",
-    product: "Viju Apple Drink",
-    stockBalance: "2,500 Cartons",
-    reservedStock: "300",
-    awaitingLoading: "120",
-    lastStockUpdate: "15 April 2026, 10:45 AM",
-    status: "Low Stock",
-  },
-  {
-    id: "11",
-    product: "Viju Apple Drink",
-    stockBalance: "2,500 Cartons",
-    reservedStock: "300",
-    awaitingLoading: "120",
-    lastStockUpdate: "15 April 2026, 10:45 AM",
-    status: "Available",
-  },
-  {
-    id: "12",
-    product: "Viju Apple Drink",
-    stockBalance: "2,500 Cartons",
-    reservedStock: "300",
-    awaitingLoading: "120",
-    lastStockUpdate: "15 April 2026, 10:45 AM",
-    status: "Low Stock",
-  },
-  {
-    id: "13",
-    product: "Viju Apple Drink",
-    stockBalance: "2,500 Cartons",
-    reservedStock: "300",
-    awaitingLoading: "120",
-    lastStockUpdate: "15 April 2026, 10:45 AM",
-    status: "Available",
-  },
-  {
-    id: "14",
-    product: "Viju Apple Drink",
-    stockBalance: "2,500 Cartons",
-    reservedStock: "300",
-    awaitingLoading: "120",
-    lastStockUpdate: "15 April 2026, 10:45 AM",
-    status: "Low Stock",
-  },
-  {
-    id: "15",
-    product: "Viju Apple Drink",
-    stockBalance: "2,500 Cartons",
-    reservedStock: "300",
-    awaitingLoading: "120",
-    lastStockUpdate: "15 April 2026, 10:45 AM",
-    status: "Available",
-  },
-  {
-    id: "16",
-    product: "Viju Apple Drink",
-    stockBalance: "2,500 Cartons",
-    reservedStock: "300",
-    awaitingLoading: "120",
-    lastStockUpdate: "15 April 2026, 10:45 AM",
-    status: "Low Stock",
-  },
-  {
-    id: "17",
-    product: "Viju Apple Drink",
-    stockBalance: "2,500 Cartons",
-    reservedStock: "300",
-    awaitingLoading: "120",
-    lastStockUpdate: "15 April 2026, 10:45 AM",
-    status: "Available",
-  },
-  {
-    id: "18",
-    product: "Viju Apple Drink",
-    stockBalance: "2,500 Cartons",
-    reservedStock: "300",
-    awaitingLoading: "120",
-    lastStockUpdate: "15 April 2026, 10:45 AM",
-    status: "Low Stock",
-  },
-  {
-    id: "19",
-    product: "Viju Apple Drink",
-    stockBalance: "2,500 Cartons",
-    reservedStock: "300",
-    awaitingLoading: "120",
-    lastStockUpdate: "15 April 2026, 10:45 AM",
-    status: "Available",
-  },
-  {
-    id: "20",
-    product: "Viju Apple Drink",
-    stockBalance: "2,500 Cartons",
-    reservedStock: "300",
-    awaitingLoading: "120",
-    lastStockUpdate: "15 April 2026, 10:45 AM",
-    status: "Low Stock",
-  },
-  {
-    id: "21",
-    product: "Viju Apple Drink",
-    stockBalance: "2,500 Cartons",
-    reservedStock: "300",
-    awaitingLoading: "120",
-    lastStockUpdate: "15 April 2026, 10:45 AM",
-    status: "Available",
-  },
-  {
-    id: "22",
-    product: "Viju Apple Drink",
-    stockBalance: "2,500 Cartons",
-    reservedStock: "300",
-    awaitingLoading: "120",
-    lastStockUpdate: "15 April 2026, 10:45 AM",
-    status: "Out of Stock",
-  },
-];
-
-const getStatusBadge = (status: "Available" | "Low Stock" | "Out of Stock") => {
-  if (status === "Available") {
-    return {
-      text: status,
-      bgColor: "#D4FFE9",
-      textColor: "#04B054",
-    };
-  } else if (status === "Low Stock") {
-    return {
-      text: status,
-      bgColor: "#FFF4E1",
-      textColor: "#FFA10B",
-    };
-  } else if (status === "Out of Stock") {
-    return {
-      text: status,
-      bgColor: "#FFE5E5",
-      textColor: "#E63946",
-    };
-  }
-  return {
-    text: status,
-    bgColor: "#F0F5F9",
-    textColor: "#4B5BD1",
-  };
-};
-
+/**
+ * The Stock tab, rebuilt as the ERP stock BALANCE.
+ *
+ * `catalogue` is gone. It listed every product in the local `Stock` table with
+ * reserved / awaiting figures derived by a DIFFERENT route from the one the
+ * distributor's own app reads - so the officer and the distributor could
+ * disagree about the same account, which is the worst possible outcome for a
+ * screen whose entire job is reconciliation. Both now read one ERP query.
+ */
 export default function StockSection({
-  stocks = mockStocks,
-  catalogue = [],
-  awaitingLoading = [],
-  currentPage: externalCurrentPage,
-  totalPages: externalTotalPages,
-  onPageChange,
+  totalPurchasedCartons,
+  totalLoadedCartons,
+  totalRemainingCartons,
+  loadingProgress,
+  products,
+  lastUpdated,
+  customers,
+  isFiltered = false,
 }: StockSectionProps) {
-  const [internalPage, setInternalPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_SECTION_PAGE_SIZE);
-  const [detailsRow, setDetailsRow] = useState<Stock | null>(null);
-
-  const combinedData = useMemo(() => {
-    if (catalogue.length === 0 && awaitingLoading.length === 0) {
-      return mockStocks;
-    }
-
-    // Transform catalogue items to Stock format
-    const catalogueStocks: Stock[] = catalogue.map((item: any) => ({
-      id: item.id || item.erpId,
-      product: item.productName,
-      stockBalance: `${formatNumberExact(item.quantity || 0)} Cartons`,
-      reservedStock: "0",
-      awaitingLoading: "0",
-      lastStockUpdate: item.updatedAt || new Date().toISOString(),
-      status: "Available" as const,
-    }));
-
-    // Transform awaitingLoading items to Stock format
-    const awaitingLoadingStocks: Stock[] = awaitingLoading.map((item: any) => ({
-      id: `awaiting-${item.productName}`,
-      product: item.productName,
-      stockBalance: `${item.loaded || 0} Cartons`,
-      reservedStock: String(item.reserved || 0),
-      awaitingLoading: String(item.remaining || 0),
-      lastStockUpdate: new Date().toISOString(),
-      status:
-        item.remaining > 0 ? ("Low Stock" as const) : ("Available" as const),
-    }));
-
-    return [...catalogueStocks, ...awaitingLoadingStocks];
-  }, [catalogue, awaitingLoading]);
-
-  // Use catalogue data if provided, otherwise use stocks
-  const displayData = combinedData.length > 0 ? combinedData : stocks;
-
-  // Use external pagination if provided, otherwise use internal
-  const currentPage = externalCurrentPage ?? internalPage;
-  const totalPages =
-    externalTotalPages ?? Math.ceil(displayData.length / itemsPerPage);
-  const handlePageChange = onPageChange ?? setInternalPage;
-
-  const paginatedStocks = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return displayData.slice(startIndex, startIndex + itemsPerPage);
-  }, [displayData, currentPage, itemsPerPage]);
-
-  const totalItems = displayData.length;
-
-  /**
-   * Changing the page size restarts at page 1 so the offset stays valid
-   */
-  const handlePageSizeChange = (size: number) => {
-    setItemsPerPage(size);
-    handlePageChange(1);
-  };
+  const progress = Math.max(0, Math.min(100, loadingProgress ?? 0));
 
   return (
-    <div className="space-y-4">
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          {/* Table Header */}
-          <thead>
-            <tr>
-              <th className="whitespace-nowrap text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
-                PRODUCT
-              </th>
-              <th className="whitespace-nowrap text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
-                STOCK BALANCE
-              </th>
-              <th className="whitespace-nowrap text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
-                RESERVED STOCK
-              </th>
-              <th className="whitespace-nowrap text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
-                AWAITING LOADING
-              </th>
-              <th className="whitespace-nowrap text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
-                LAST STOCK UPDATE
-              </th>
-              <th className="whitespace-nowrap text-[14px] font-bold text-muted p-2 text-center bg-[#F0F5F9]">
-                STATUS
-              </th>
-            </tr>
-          </thead>
+    <div className="space-y-5">
+      {/* Totals */}
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <BoldTopText
+            top="Purchased"
+            bottom={`${formatNumberExact(totalPurchasedCartons ?? 0)} cartons`}
+          />
+          <BoldTopText
+            top="Loaded"
+            bottom={`${formatNumberExact(totalLoadedCartons ?? 0)} cartons`}
+          />
+          <BoldTopText
+            top="Still to Collect"
+            bottom={`${formatNumberExact(totalRemainingCartons ?? 0)} cartons`}
+          />
+          {typeof customers === "number" && (
+            <BoldTopText
+              top="Distributors"
+              bottom={formatNumberExact(customers)}
+            />
+          )}
+        </div>
 
-          {/* Table Body */}
-          <tbody>
-            {paginatedStocks.map((stock, index) => {
-              const statusBadge = getStatusBadge(stock.status);
-              const bgColor = index % 2 === 1 ? "white" : "bg-[#F0F5F9]";
-              const borderClass =
-                index % 2 === 1 ? "" : "border-b border-[#F0F5F9]";
-
-              return (
-                <tr
-                  key={stock.id}
-                  onClick={() => setDetailsRow(stock)}
-                  className={`${bgColor} ${borderClass} cursor-pointer`}
-                >
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
-                    {stock.product}
-                  </td>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
-                    {stock.stockBalance}
-                  </td>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
-                    {stock.reservedStock}
-                  </td>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
-                    {stock.awaitingLoading}
-                  </td>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
-                    {stock.lastStockUpdate}
-                  </td>
-                  <td className="text-left text-[14px] font-medium text-muted p-2">
-                    <span
-                      style={{
-                        backgroundColor: statusBadge.bgColor,
-                        color: statusBadge.textColor,
-                      }}
-                      className="px-3 py-1 rounded-full text-sm font-semibold inline-block"
-                    >
-                      {statusBadge.text}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        {lastUpdated && (
+          <Text variant="thinnote" color="muted">
+            Last updated {formatDateTime(lastUpdated)}
+          </Text>
+        )}
       </div>
 
-      {/* Pagination */}
-      <Pagination
-        currentPage={currentPage}
-        totalItems={totalItems}
-        itemsPerPage={itemsPerPage}
-        onPrevious={() => handlePageChange(Math.max(1, currentPage - 1))}
-        onNext={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-        onItemsPerPageChange={handlePageSizeChange}
-      />
+      {/* Loading progress */}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <Text variant="small" weight="semibold" color="foreground">
+            Loading progress
+          </Text>
+          <Text variant="small" weight="bold" color="foreground">
+            {progress}%
+          </Text>
+        </div>
+        <div className="h-2 w-full rounded-full bg-[#F0F5F9] overflow-hidden">
+          <div
+            className="h-full rounded-full bg-[#04B054] transition-all"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
 
-      {/* Row Details Modal - opened by clicking any row */}
-      <RowDetailsModal
-        open={!!detailsRow}
-        onClose={() => setDetailsRow(null)}
-        title={detailsRow?.product || "Stock Item"}
-        subtitle="Stock details"
-        sections={[
-          {
-            title: "Product",
-            fields: [
-              { label: "Product", value: detailsRow?.product, fullWidth: true },
-              { label: "Status", value: detailsRow?.status, type: "status" },
-              {
-                label: "Last Stock Update",
-                value: detailsRow?.lastStockUpdate,
-                type: "date",
-              },
-            ],
-          },
-          {
-            title: "Quantities",
-            fields: [
-              { label: "Stock Balance", value: detailsRow?.stockBalance },
-              { label: "Reserved Stock", value: detailsRow?.reservedStock },
-              { label: "Awaiting Loading", value: detailsRow?.awaitingLoading },
-            ],
-          },
-        ]}
-      />
+      {/*
+        A filtered figure is NOT a slice of the whole.
+        The window selects orders PLACED in it, minus whatever has since been
+        delivered against them however late - so an order placed before the
+        window is excluded outright even if it is still uncollected, and two
+        adjacent windows do not add up to the unfiltered total.
+      */}
+      {isFiltered && (
+        <div className="rounded-lg border border-orange/30 bg-orange/10 px-4 py-3">
+          <Text variant="caption" weight="medium" color="orange">
+            These totals cover orders placed in the selected dates only. They
+            are not a slice of the overall balance - an order placed earlier is
+            excluded even if it is still uncollected.
+          </Text>
+        </div>
+      )}
+
+      {/* Outstanding products */}
+      <div>
+        <Text
+          variant="caption"
+          weight="bold"
+          color="muted"
+          className="uppercase tracking-wider"
+        >
+          Still to collect
+        </Text>
+
+        {products.length === 0 ? (
+          /*
+            An empty list with non-zero totals is CORRECT, not a failure -
+            it means everything purchased has been collected.
+          */
+          <div className="mt-2 rounded-lg border border-muted/20 bg-white px-4 py-6 text-center">
+            <Text variant="caption" weight="medium" color="foreground">
+              Nothing outstanding
+            </Text>
+            <Text variant="thinnote" color="muted" className="block mt-1">
+              Every carton purchased has been collected.
+            </Text>
+          </div>
+        ) : (
+          <div className="overflow-x-auto mt-2">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr>
+                  {[
+                    "PRODUCT",
+                    "CODE",
+                    "PAID",
+                    "LOADED",
+                    "REMAINING",
+                    "LAST ORDER",
+                  ].map((title) => (
+                    <th
+                      key={title}
+                      className="whitespace-nowrap text-[12px] font-bold text-muted p-2 text-left bg-[#F0F5F9]"
+                    >
+                      {title}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((product, index) => (
+                  <tr
+                    /*
+                      Keyed on the NAME. `itemCode` is null on most rows - the
+                      ERP carries it on a fraction of line rows, and rows are
+                      grouped by product name in the first place.
+                    */
+                    key={`${product.productName}-${index}`}
+                    className={index % 2 === 1 ? "bg-white" : "bg-[#F0F5F9]"}
+                  >
+                    <td className="text-left text-[13px] font-medium text-foreground p-2">
+                      {safeText(product.productName, "—")}
+                    </td>
+                    <td className="whitespace-nowrap text-left text-[13px] font-medium text-muted p-2">
+                      {safeText(product.itemCode, "—")}
+                    </td>
+                    <td className="whitespace-nowrap text-left text-[13px] font-medium text-muted p-2">
+                      {formatNumberExact(product.quantityPaid ?? 0)}
+                    </td>
+                    <td className="whitespace-nowrap text-left text-[13px] font-medium text-muted p-2">
+                      {formatNumberExact(product.quantityLoaded ?? 0)}
+                    </td>
+                    <td className="whitespace-nowrap text-left text-[13px] font-bold text-foreground p-2">
+                      {formatNumberExact(product.quantityRemaining ?? 0)}
+                    </td>
+                    <td className="whitespace-nowrap text-left text-[13px] font-medium text-muted p-2">
+                      {safeText(product.lastOrderDate, "—")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {products.length > 0 && (
+          <Text variant="thinnote" color="muted" className="mt-2 block">
+            {/* Says so explicitly, because the arithmetic invites the wrong
+                conclusion otherwise */}
+            Only products with cartons still to collect are listed, so this does
+            not add up to the purchased total.
+          </Text>
+        )}
+      </div>
     </div>
   );
 }
