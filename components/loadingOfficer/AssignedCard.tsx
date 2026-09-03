@@ -3,6 +3,7 @@
 import { AssignedCardProps } from "@/src/types/assignment";
 import { Text } from "../common";
 import { safeText } from "@/utils/safe";
+import { getStatusBadgeStyle } from "@/components/common/Table";
 
 interface Props extends AssignedCardProps {
   isSelected?: boolean;
@@ -10,16 +11,16 @@ interface Props extends AssignedCardProps {
 }
 
 /**
- * Status badge colour. The API sends UPPER_SNAKE, which LoadingOfficer
- * humanises before it gets here - match on the humanised label but stay
- * tolerant of anything unexpected rather than rendering an unstyled chip.
+ * Status badge colour, from the SHARED palette.
+ *
+ * This card had its own three-way map, which left ASSIGNED on the fallback
+ * amber - the same colour the regional admin's table gives PENDING, and a
+ * different one from the purple it now gives ASSIGNED. These are the same
+ * loading requests seen from another screen, so they have to look the same.
  */
 const badgeClass = (status: string) => {
-  const value = status.toLowerCase();
-  if (value.includes("complete")) return "bg-[#D4FFE9] text-[#04B054]";
-  if (value.includes("progress")) return "bg-[#4B5BD1]/20 text-[#4B5BD1]";
-  if (value.includes("cancel")) return "bg-[#FFE1E1] text-[#B00020]";
-  return "bg-[#FFF4E1] text-[#FFA10B]";
+  const { bgColor, textColor } = getStatusBadgeStyle(status);
+  return `${bgColor} ${textColor}`;
 };
 
 const AssignedCard = ({

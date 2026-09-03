@@ -3,6 +3,7 @@
 import { Modal } from "@/components/common/Modal";
 import { Text } from "@/components/common/Text";
 import Image, { StaticImageData } from "next/image";
+import StatusBadge from "@/components/common/StatusBadge";
 
 /**
  * The subset of a flyer this modal renders. Kept looser than the API's
@@ -114,15 +115,10 @@ export default function PreviewFlyerModal({
             <Text variant="small" weight="bold" color="foreground">
               Status
             </Text>
-            <span
-              className={`${
-                isActive
-                  ? "bg-[#D4FFE9] text-[#04B054]"
-                  : "bg-[#FFF4E1] text-[#FFA10B]"
-              } py-1 px-3 rounded-xl text-[12px] font-semibold inline-block w-max`}
-            >
-              {isActive ? "Active" : "Inactive"}
-            </span>
+            {/* Shared palette - Inactive was amber here, which is the colour
+                "pending" wears everywhere else. It is grey now, like every
+                other switched-off state. */}
+            <StatusBadge status={isActive ? "Active" : "Inactive"} />
           </div>
         </div>
       </div>

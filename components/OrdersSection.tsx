@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { Table, Text } from "@/components/common";
 import Pagination from "@/components/Pagination";
 import RowDetailsModal from "@/components/RowDetailsModal";
+import StatusBadge from "@/components/common/StatusBadge";
 import { DEFAULT_SECTION_PAGE_SIZE } from "@/constants/pagination";
 import { Order as APIOrder } from "@/src/lib/api/types";
 import { formatDateTime, formatToNairaExact } from "@/src/utils/formatter";
@@ -232,27 +233,6 @@ const mockOrders: Order[] = [
   },
 ];
 
-const getStatusBadge = (status: "Delivered" | "Processing") => {
-  if (status === "Delivered") {
-    return {
-      text: status,
-      bgColor: "#D4FFE9",
-      textColor: "#04B054",
-    };
-  } else if (status === "Processing") {
-    return {
-      text: status,
-      bgColor: "#FFF4E1",
-      textColor: "#FFA10B",
-    };
-  }
-  return {
-    text: status,
-    bgColor: "#F0F5F9",
-    textColor: "#4B5BD1",
-  };
-};
-
 // Helper function to map API Order to component Order format
 const mapAPIOrderToOrder = (apiOrder: APIOrder): Order => {
   return {
@@ -360,7 +340,6 @@ export default function OrdersSection({
           {/* Table Body */}
           <tbody>
             {paginatedOrders.map((order, index) => {
-              const statusBadge = getStatusBadge(order.status);
               const bgColor = index % 2 === 1 ? "white" : "bg-[#F0F5F9]";
               const borderClass =
                 index % 2 === 1 ? "" : "border-b border-[#F0F5F9]";
@@ -386,16 +365,14 @@ export default function OrdersSection({
                   <td className="whitespace-nowrap text-left text-[14px] font-medium text-muted p-2">
                     {order.totalValue}
                   </td>
+                  {/*
+                    The shared palette. This table used to carry its own
+                    two-status map, which is why "Processing" was amber here
+                    and blue on the loading tables - the same word meaning two
+                    different things depending on which screen you were on.
+                  */}
                   <td className="text-left text-[14px] font-medium text-muted p-2">
-                    <span
-                      style={{
-                        backgroundColor: statusBadge.bgColor,
-                        color: statusBadge.textColor,
-                      }}
-                      className="px-3 py-1 rounded-full text-sm font-semibold inline-block"
-                    >
-                      {statusBadge.text}
-                    </span>
+                    <StatusBadge status={order.status} />
                   </td>
                 </tr>
               );
