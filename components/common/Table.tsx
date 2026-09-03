@@ -55,54 +55,119 @@ export interface TableProps<T> {
   isRowSelectable?: (row: T) => boolean;
 }
 
-// Type for status badge colors
-type StatusColor = "pending" | "success" | "in-progress";
+/**
+ * The status palette.
+ *
+ * Seven bands, each meaning one thing. Kept as named tones rather than raw
+ * hex at the call sites so a status can never be given a colour that already
+ * means something else.
+ */
+export type StatusTone =
+  | "negative"
+  | "neutral"
+  | "positive"
+  | "waiting"
+  | "owned"
+  | "active"
+  | "new";
 
-// Function to get badge styling based on status
-// Exported so detail views render statuses exactly like the table does
-export const getStatusBadgeStyle = (
-  status: string,
-): { bgColor: string; textColor: string } => {
-  const lowerStatus = status.toLowerCase();
+export interface StatusBadgeStyle {
+  bgColor: string;
+  textColor: string;
+}
 
-  // Spec 39 - a cancelled load must not read as "pending"; checked first
-  // because "cancelled" would otherwise fall through to the default
-  if (lowerStatus.includes("cancel")) {
-    return {
-      bgColor: "bg-[#FFE4E4]",
-      textColor: "text-[#D42D2D]",
-    };
-  }
-
-  if (lowerStatus.includes("pending")) {
-    return {
-      bgColor: "bg-[#FFF4E1]",
-      textColor: "text-[#FFA10B]",
-    };
-  } else if (
-    lowerStatus.includes("success") ||
-    lowerStatus.includes("assigned") ||
-    lowerStatus.includes("completed")
-  ) {
-    return {
-      bgColor: "bg-[#D4FFE9]",
-      textColor: "text-[#04B054]",
-    };
-  } else if (
-    lowerStatus.includes("progress") ||
-    lowerStatus.includes("in progress")
-  ) {
-    return {
-      bgColor: "bg-[#D4D9FF]",
-      textColor: "text-[#4B5BD1]",
-    };
-  }
-
-  return {
-    bgColor: "bg-[#FFF4E1]",
-    textColor: "text-[#FFA10B]",
-  };
+const STATUS_TONES: Record<StatusTone, StatusBadgeStyle> = {
+  /** Called off, refused, failed - something went wrong or was stopped */
+  negative: { bgColor: "bg-[#FFE4E4]", textColor: "text-[#D42D2D]" },
+  /** Switched off or shelved - not an error, and not in play either */
+  neutral: { bgColor: "bg-[#ECEFF3]", textColor: "text-[#5B6472]" },
+  /** Finished well - completed, resolved, delivered, paid, in service */
+  positive: { bgColor: "bg-[#D4FFE9]", textColor: "text-[#04B054]" },
+  /** Needs somebody to act - pending, awaiting, unassigned, part-done */
+  waiting: { bgColor: "bg-[#FFF4E1]", textColor: "text-[#FFA10B]" },
+  /** Has an owner but has not started - assigned */
+  owned: { bgColor: "bg-[#EDE4FF]", textColor: "text-[#6B46C1]" },
+  /** Under way right now - in progress, processing, loading */
+  active: { bgColor: "bg-[#D4D9FF]", textColor: "text-[#4B5BD1]" },
+  /** Just arrived and untouched - an open ticket, a new submission */
+  new: { bgColor: "bg-[#D6F4FF]", textColor: "text-[#0E7490]" },
 };
+
+/**
+ * Which tone a status word belongs to.
+ *
+ * ORDER MATTERS - the first match wins, and several of these overlap as
+ * substrings. Three pairs in particular:
+ *
+ *   - "inactive" contains "active", so the off states are matched FIRST.
+ *     This was the real bug: nothing matched either word, so **Active and
+ *     Inactive rendered in exactly the same colour** on the Users and
+ *     Officers tables - the one place the distinction is the whole point of
+ *     the column.
+ *   - "unassigned" contains "assigned", so it is matched before it.
+ *   - "Pending Assignment" contains "assign", so pending is matched before it.
+ *
+ * Matching on substrings rather than an enum is deliberate: statuses reach
+ * this from four different vocabularies (loading requests, tickets, ERP
+ * orders, staff accounts) and some are humanised for display before they
+ * arrive. A word list degrades to a readable neutral badge for something new,
+ * where an enum lookup would have to throw or guess.
+ */
+const TONE_RULES: { tone: StatusTone; match: string[] }[] = [
+  { tone: "negative", match: ["cancel", "reject", "declin", "fail", "void", "error"] },
+  // Before "active" - see above
+  /**
+   * "closed" sits here rather than with the positive states on purpose.
+   *
+   * A RESOLVED ticket was fixed; a CLOSED one was shut, which is not the same
+   * claim - and both can appear in the ticket audit at once, so they were the
+   * only two statuses left sharing a colour inside one table. An ERP order
+   * reading CLOSED renders grey as a result, which is a fair description of a
+   * finished order and still clearly distinct from PROCESSING and OPEN
+   * beside it.
+   */
+  { tone: "neutral", match: ["inactive", "deactivat", "suspend", "disabl", "expire", "archiv", "draft", "closed"] },
+  // Before "assign"
+  { tone: "waiting", match: ["unassign"] },
+  // Before "paid" - a part payment is not a payment
+  { tone: "waiting", match: ["part"] },
+  // Before "assign" - "Pending Assignment" is a wait, not an assignment
+  { tone: "waiting", match: ["pending", "await", "queue", "hold", "unresolved"] },
+  { tone: "owned", match: ["assign"] },
+  { tone: "active", match: ["progress", "processing", "loading", "ongoing", "transit", "started"] },
+  { tone: "new", match: ["open", "new", "submitted", "received"] },
+  { tone: "positive", match: ["complete", "resolved", "deliver", "success", "paid", "done", "fulfil", "active", "enabled", "approved"] },
+];
+
+/** The tone for a status string, or "neutral" for one we do not recognise */
+export const getStatusTone = (status: string): StatusTone => {
+  const value = typeof status === "string" ? status.toLowerCase().trim() : "";
+  if (!value) return "neutral";
+
+  for (const rule of TONE_RULES) {
+    if (rule.match.some((word) => value.includes(word))) return rule.tone;
+  }
+
+  /**
+   * Neutral, not "waiting".
+   *
+   * The default used to be the same orange as Pending, which meant every
+   * status the list did not know about silently claimed to be pending -
+   * including Open, Resolved and Closed, so the whole ticket audit table was
+   * one colour. A grey badge asserts nothing, which is the honest answer for
+   * a value we cannot interpret.
+   */
+  return "neutral";
+};
+
+/**
+ * Badge styling for a status.
+ *
+ * Exported so detail views render statuses exactly like the table does - the
+ * row and the modal it opens must never disagree about a colour.
+ */
+export const getStatusBadgeStyle = (status: string): StatusBadgeStyle =>
+  STATUS_TONES[getStatusTone(status)];
 
 // Function to render status badge with dynamic colors
 const renderStatusBadge = (status: string) => {

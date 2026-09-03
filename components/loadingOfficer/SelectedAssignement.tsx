@@ -17,6 +17,7 @@ import {
 } from "@/hooks/api/useLoading";
 import CancelLoadingRequestModal from "@/components/CancelLoadingRequestModal";
 import AttachmentPreview from "@/components/common/AttachmentPreview";
+import { getStatusBadgeStyle } from "@/components/common/Table";
 import { chatService } from "@/services/chat.service";
 import { getErrorMessage } from "@/utils/apiError";
 import { safeText, safeNumber, safeDateText, humanizeEnum } from "@/utils/safe";
@@ -419,13 +420,14 @@ const SelectedAssignement = ({ assignmentId }: SelectedAssignementProps) => {
     }
   };
 
-  const headerBadge = isCancelled
-    ? "bg-[#FFE4E4] text-[#D42D2D]"
-    : isCompleted
-      ? "bg-[#D4FFE9] text-[#04B054]"
-      : isInProgress
-        ? "bg-[#4B5BD1]/20 text-[#4B5BD1]"
-        : "bg-[#FFF4E1] text-[#FFA10B]";
+  /**
+   * From the SHARED palette rather than a local ladder, so this load's badge
+   * matches the one on the regional admin's table for the same request. The
+   * local version left ASSIGNED on the fallback amber, which now reads as
+   * "pending" everywhere else.
+   */
+  const headerBadgeStyle = getStatusBadgeStyle(humanizeEnum(status, "Assigned"));
+  const headerBadge = `${headerBadgeStyle.bgColor} ${headerBadgeStyle.textColor}`;
 
   return (
     <div>

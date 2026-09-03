@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Text } from "@/components/common";
 import Pagination from "@/components/Pagination";
 import { Modal } from "@/components/common/Modal";
+import StatusBadge from "@/components/common/StatusBadge";
 import { BoldTopText } from "@/components/common/BoldTopText";
 import { useInvoiceDetail } from "@/hooks/api/useOfficerCustomer";
 import {
@@ -135,10 +136,10 @@ export default function InvoicesSection({
                 <td className="whitespace-nowrap text-left text-[13px] font-medium text-muted p-2">
                   {formatToNairaExact(order.totalValue ?? 0)}
                 </td>
+                {/* The shared palette, so CLOSED / PROCESSING / OPEN are
+                    told apart here and match every other table */}
                 <td className="whitespace-nowrap text-left text-[13px] font-medium text-muted p-2">
-                  <span className="px-3 py-1 rounded-full text-[12px] font-semibold bg-[#F0F5F9] text-[#4B5BD1]">
-                    {safeText(order.status, "—")}
-                  </span>
+                  <StatusBadge status={order.status} />
                 </td>
               </tr>
             ))}
