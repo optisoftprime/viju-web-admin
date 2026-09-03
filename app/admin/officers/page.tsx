@@ -21,7 +21,9 @@ import {
   canBulkReassignOfficerRegion,
   formatRole,
   formatRoleScope,
+  normalizeStaffRole,
 } from "@/constants/roles";
+import { REGION_FILTER_TABS } from "@/constants/regions";
 import { useAuthStore } from "@/store/auth.store";
 import { STATUS_FILTER_OPTIONS } from "@/constants/roles";
 import type { BroadcastRegion, CreateOfficerResponse } from "@/lib/api/types";
@@ -140,7 +142,30 @@ function AccountOfficersContent() {
   const [searchTerm, setSearchTerm] = useState("");
   // "" means no isActive filter at all, which is the API's default
   const [statusFilter, setStatusFilter] = useState("");
+  /**
+   * "" means no `region` param at all, which is how the API says "every
+   * region" - there is no wildcard value to send.
+   */
+  const [regionFilter, setRegionFilter] = useState("");
   const itemsPerPage = 20;
+
+  /**
+   * The region picker is an ADMIN control.
+   *
+   * For a REGIONAL_ADMIN this route is pinned to their own region from the
+   * token: a `region` param is ACCEPTED AND IGNORED, answering 200 with their
+   * own region either way. A dropdown that appears to work and changes nothing
+   * is worse than no dropdown, so it is not rendered for them at all.
+   *
+   * This screen is already ADMIN-only behind `RoleProtectedRoute`, so in
+   * practice the guard never fires - it is here so the rule travels with the
+   * control if the component is ever reused somewhere less restricted.
+   *
+   * NOTE this deliberately differs from GET /admin/customers, which REFUSES a
+   * region a regional admin may not see. Nothing leaks either way: scope is
+   * read from the token, so no query string can widen it.
+   */
+  const canFilterByRegion = normalizeStaffRole(user?.role) === "ADMIN";
 
   // Fetch officers from API. No `role` is sent: the endpoint defaults to
   // OFFICER, which is exactly what this screen lists.
@@ -153,6 +178,12 @@ function AccountOfficersContent() {
     pageSize: itemsPerPage,
     search: searchTerm || undefined,
     isActive: statusFilter === "" ? undefined : statusFilter === "true",
+    /**
+     * Sent only when one is chosen. An unknown query parameter is a 400 on
+     * this route - it rejects properties it does not recognise - so a blank
+     * value must not reach the wire.
+     */
+    region: canFilterByRegion && regionFilter ? regionFilter : undefined,
   });
 
   /**
@@ -213,6 +244,17 @@ function AccountOfficersContent() {
   };
 
   /**
+   * Handle region filter change.
+   *
+   * The page must restart: `meta.total` counts what the new filter matches, so
+   * page 3 of Lagos is very likely past the end of Eastern.
+   */
+  const handleRegionFilter = (value: string) => {
+    setRegionFilter(value);
+    setCurrentPage(1);
+  };
+
+  /**
    * Handle action button click on table rows
    */
   const handleActionClick = (action: string, row: OfficerTableRow) => {
@@ -257,7 +299,9 @@ function AccountOfficersContent() {
           const failedIds = new Set(
             result.failed.map((failure) => failure.officerId),
           );
-          setSelectedRows((rows) => rows.filter((row) => failedIds.has(row.id)));
+          setSelectedRows((rows) =>
+            rows.filter((row) => failedIds.has(row.id)),
+          );
 
           setSuccessNotice(
             result.failed.length === 0
@@ -362,6 +406,70 @@ function AccountOfficersContent() {
 
         {/* Officers List Card */}
         <Card border={false}>
+          {/*
+            The filters live ABOVE the loading and error branches, not inside
+            them.
+
+            They used to sit inside `!isLoading && !error`, which had three
+            consequences: they were absent on first paint, they UNMOUNTED on
+            every filter change (React Query has no cache for the new key, so
+            `isLoading` goes true - taking the search box's focus with it), and
+            a failed request left no controls at all, so there was no way to
+            change the filter that might recover it.
+          */}
+          {/*
+              Region filter as a TAB STRIP, matching the customers, audits
+              and reassignment tables. It was a third dropdown sitting beside
+              the status one, which is where it went unnoticed - three
+              identical grey selects in a row read as one control.
+
+              The six regions come from the canonical list rather than from
+              the current page, which would only ever show regions that
+              happen to have officers.
+            */}
+          {canFilterByRegion && (
+            <div className="flex items-center flex-wrap gap-3 mt-4">
+              {REGION_FILTER_TABS.map((option) => (
+                <Button
+                  key={option.value || "all"}
+                  variant={
+                    regionFilter === option.value ? "primary" : "outline"
+                  }
+                  onClick={() => handleRegionFilter(option.value)}
+                  className={
+                    regionFilter === option.value
+                      ? "bg-linear-to-r from-primary via-orange to-primary text-white border border-primary whitespace-nowrap"
+                      : "bg-white border border-muted/30 text-muted hover:border-primary hover:bg-primary hover:text-white whitespace-nowrap"
+                  }
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </div>
+          )}
+
+          <div className="flex flex-wrap justify-end items-center gap-3 mt-4">
+            {/* Status filter - omitted entirely means "both", the default */}
+            <select
+              value={statusFilter}
+              onChange={(event) => handleStatusFilter(event.target.value)}
+              aria-label="Filter by status"
+              className="px-3 py-2 rounded-md border border-muted/50 bg-white text-[13px] font-medium"
+            >
+              {STATUS_FILTER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+
+            <SearchInput
+              placeholder="Search officers"
+              onSearch={handleSearch}
+              debounceDelay={500}
+            />
+          </div>
+
           {/* Loading/Error States */}
           {isLoading && (
             <div className="py-6 text-center text-muted">
@@ -378,28 +486,6 @@ function AccountOfficersContent() {
           {/* Data Table */}
           {!isLoading && !error && (
             <>
-              <div className="flex flex-wrap justify-end items-center gap-3 mt-4">
-                {/* Status filter - omitted entirely means "both", the default */}
-                <select
-                  value={statusFilter}
-                  onChange={(event) => handleStatusFilter(event.target.value)}
-                  aria-label="Filter by status"
-                  className="px-3 py-2 rounded-md border border-muted/50 bg-white text-[13px] font-medium"
-                >
-                  {STATUS_FILTER_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-
-                <SearchInput
-                  placeholder="Search officers"
-                  onSearch={handleSearch}
-                  debounceDelay={500}
-                />
-              </div>
-
               {/* Spec 39 - the bulk bar only exists while something is
                   selected, so the table is unchanged for anyone not using it */}
               {canBulkReassign && selectedRows.length > 0 && (
@@ -427,18 +513,40 @@ function AccountOfficersContent() {
                 </div>
               )}
 
-              <div className="overflow-x-auto mt-6">
-                <Table
-                  columns={tableColumns}
-                  data={tableData}
-                  onRowClick={setDetailsRow}
-                  onActionClick={handleActionClick}
-                  selectable={canBulkReassign}
-                  rowKey={(row: OfficerTableRow) => row.id}
-                  selectedKeys={selectedRows.map((row) => row.id)}
-                  onSelectionChange={handleSelectionChange}
-                />
-              </div>
+              {/*
+                A region with no officers answers `data: []` with a valid
+                `meta` - never a 404 - so an empty result is a staffing fact,
+                not a failure. Worth saying plainly for OTHERS in particular:
+                it is a real region holding real distributors that simply has
+                nobody assigned to it yet, and a bare "No data available" reads
+                like the filter is broken.
+              */}
+              {tableData.length === 0 ? (
+                <div className="mt-6 rounded-lg border border-muted/20 bg-white px-4 py-8 text-center">
+                  <Text variant="caption" weight="bold" color="foreground">
+                    No account officers
+                    {regionFilter ? ` in ${formatRegion(regionFilter)}` : ""}
+                  </Text>
+                  <Text variant="caption" color="muted">
+                    {regionFilter
+                      ? "Nobody is assigned to this region yet. Create an officer here, or move one across from another region."
+                      : "Nothing matches the current filters."}
+                  </Text>
+                </div>
+              ) : (
+                <div className="overflow-x-auto mt-6">
+                  <Table
+                    columns={tableColumns}
+                    data={tableData}
+                    onRowClick={setDetailsRow}
+                    onActionClick={handleActionClick}
+                    selectable={canBulkReassign}
+                    rowKey={(row: OfficerTableRow) => row.id}
+                    selectedKeys={selectedRows.map((row) => row.id)}
+                    onSelectionChange={handleSelectionChange}
+                  />
+                </div>
+              )}
 
               {/* Pagination Component */}
               <Pagination
